@@ -2,12 +2,18 @@
 using System.CommandLine;
 using System.Diagnostics;
 using CliWrap;
+using CliWrap.Buffered;
 
 var file = new Argument<string>
 (
     "input",
     "The input file to compile"
 );
+file.AddValidator(arg =>
+{
+    if (!File.Exists(arg.GetValueForArgument(file)))
+        arg.ErrorMessage = "File does not exist";
+});
 
 var lex = new Option<bool>
 (
@@ -43,24 +49,37 @@ root.SetHandler(async (ctx) =>
 
     if (ctx.ParseResult.GetValueForOption(lex))
     {
-        Debugger.Break();
+        if ((ctx.ExitCode = await PreprocessAsync(input, token)) != 0)        
+            return;
     }
     
     await Task.CompletedTask;
 });
 
 await root.InvokeAsync(args);
+return;
 
-static Task PreprocessAsync(string file, CancellationToken token = default)
+static async Task<int> PreprocessAsync(string file, CancellationToken token = default)
 {
-    return Cli.Wrap("gcc")
-        .WithArguments([
-            "-E",
-            "-P",
-            "INPUT_FILE",
-            $"-o INPUT_FILE.i"
-        ])
+    var result = await Cli.Wrap("gcc")
+        .WithArguments(args => args
+            .Add("-E")
+            .Add("-P")
+            .Add(file)
+            .Add("-o").Add($"{file}.i"))
+        .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
+        .WithStandardErrorPipe(PipeTarget.ToDelegate(WriteError))
+        .WithValidation(CommandResultValidation.None)
         .ExecuteAsync(token);
+
+    return result.ExitCode;
+}
+
+static void WriteError(string message)
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.Error.WriteLine(message);
+    Console.ResetColor();
 }
 
 
