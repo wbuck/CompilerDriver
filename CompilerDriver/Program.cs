@@ -41,6 +41,12 @@ var codegen = new Option<bool>
     "Run the lexer, parser, and assembly generation but stop before code generation"
 );
 
+var asm = new Option<bool>
+(
+    ["--assembly, -S"], 
+    "Generate assembly code"
+);
+
 var root = new RootCommand("Compiler Driver");
 root.AddArgument(file);
 root.AddOption(lex);
@@ -53,14 +59,19 @@ root.SetHandler(async (ctx) =>
     var token = ctx.GetCancellationToken();
     var input = ctx.ParseResult.GetValueForArgument(file);
 
-    if (await PreprocessAsync(input, token) is { IsSuccess: false } result)
+    var result = await PreprocessAsync(input, token);
+    if (!result.IsSuccess)
     {
         ctx.ExitCode = result;
         return;
     }
-    
-    if (!(result = await CompileAsync(input, token)).IsSuccess)
+
+    result = await CompileAsync(result.Value, token);
+    if (!result.IsSuccess)
+    {
+        ctx.ExitCode = result;
         return;
+    }
    
     if ((ctx.ExitCode = await AssembleAndLinkAsync(result.Value, ctx.GetOption(output), token)) != 0)
         return;
@@ -82,11 +93,13 @@ static async Task<int> AssembleAndLinkAsync(string assembly, string? output = nu
         .WithValidation(CommandResultValidation.None)
         .ExecuteAsync(token);
 
+    File.Delete(assembly);
     return result.ExitCode;
 }
 
 static Task<Result<string>> CompileAsync(string file, CancellationToken token = default)
 {
+    File.Delete(file);
     throw new NotImplementedException();
 }
 

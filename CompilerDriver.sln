@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerDriver", "CompilerDriver\CompilerDriver.csproj", "{8B83EAC8-3634-413F-9FE0-90413E952D75}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler.Common", "Compiler.Common\Compiler.Common.csproj", "{E2B46A6D-984C-441C-8B55-133D5391C649}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler.Lexer", "Compiler.Lexer\Compiler.Lexer.csproj", "{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,13 @@ Global
 		{8B83EAC8-3634-413F-9FE0-90413E952D75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B83EAC8-3634-413F-9FE0-90413E952D75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B83EAC8-3634-413F-9FE0-90413E952D75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2B46A6D-984C-441C-8B55-133D5391C649}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2B46A6D-984C-441C-8B55-133D5391C649}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2B46A6D-984C-441C-8B55-133D5391C649}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2B46A6D-984C-441C-8B55-133D5391C649}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
