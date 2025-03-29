@@ -1,6 +1,7 @@
 ﻿
 using System.CommandLine;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;using System.Reflection.Metadata;
 using CliWrap;
 using CliWrap.Buffered;
 using CompilerDriver.Extensions;
@@ -51,27 +52,30 @@ root.SetHandler(async (ctx) =>
 {
     var token = ctx.GetCancellationToken();
     var input = ctx.ParseResult.GetValueForArgument(file);
-    
-    if ((ctx.ExitCode = await PreprocessAsync(input, token)) != 0)        
+
+    if (await PreprocessAsync(input, token) is { IsSuccess: false } result)
+    {
+        ctx.ExitCode = result;
         return;
+    }
     
-    if ((ctx.ExitCode = await CompileAsync(input, token)) != 0)
+    if (!(result = await CompileAsync(input, token)).IsSuccess)
         return;
    
-    if ((ctx.ExitCode = await AssembleAndLinkAsync(input, ctx.GetOption(output), token)) != 0)
+    if ((ctx.ExitCode = await AssembleAndLinkAsync(result.Value, ctx.GetOption(output), token)) != 0)
         return;
 });
 
 await root.InvokeAsync(args);
 return;
 
-static async Task<int> AssembleAndLinkAsync(string assemblyFile, string? output = null, CancellationToken token = default)
+static async Task<int> AssembleAndLinkAsync(string assembly, string? output = null, CancellationToken token = default)
 {
-    output ??= Path.ChangeExtension(assemblyFile, ".o");
+    output ??= Path.ChangeExtension(assembly, ".o");
     
     var result = await Cli.Wrap("gcc")
         .WithArguments(args => args
-            .Add(assemblyFile)
+            .Add(assembly)
             .Add("-o").Add(output))
         .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
         .WithStandardErrorPipe(PipeTarget.ToDelegate(WriteError))
@@ -81,25 +85,26 @@ static async Task<int> AssembleAndLinkAsync(string assemblyFile, string? output 
     return result.ExitCode;
 }
 
-static Task<int> CompileAsync(string file, CancellationToken token = default)
+static Task<Result<string>> CompileAsync(string file, CancellationToken token = default)
 {
     throw new NotImplementedException();
 }
 
-static async Task<int> PreprocessAsync(string file, CancellationToken token = default)
+static async Task<Result<string>> PreprocessAsync(string file, CancellationToken token = default)
 {
+    var output = Path.ChangeExtension(file, ".i");
     var result = await Cli.Wrap("gcc")
         .WithArguments(args => args
             .Add("-E")
             .Add("-P")
             .Add(file)
-            .Add("-o").Add($"{file}.i"))
+            .Add("-o").Add(output))
         .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
         .WithStandardErrorPipe(PipeTarget.ToDelegate(WriteError))
         .WithValidation(CommandResultValidation.None)
         .ExecuteAsync(token);
 
-    return result.ExitCode;
+    return new(result.ExitCode, output);
 }
 
 static void WriteError(string message)
@@ -107,6 +112,18 @@ static void WriteError(string message)
     Console.ForegroundColor = ConsoleColor.Red;
     Console.Error.WriteLine(message);
     Console.ResetColor();
+}
+
+internal record Result<T>(int Code, T? Value = default)
+{
+    private const int Success = 0;
+    
+    [MemberNotNullWhen(true, nameof(Value))]
+    public bool IsSuccess => Code == Success;
+    public T? Value { get; } = Value;
+    public int Code { get; } = Code;
+    public static implicit operator int(Result<T> result) => result.Code;
+    public static implicit operator bool(Result<T> result) => result.Code == Success;
 }
 
 
