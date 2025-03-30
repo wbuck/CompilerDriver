@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerDriver", "CompilerD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler.Common", "Compiler.Common\Compiler.Common.csproj", "{E2B46A6D-984C-441C-8B55-133D5391C649}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler.Lexer", "Compiler.Lexer\Compiler.Lexer.csproj", "{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler.Common.Test", "Compiler.Common.Test\Compiler.Common.Test.csproj", "{B5E6EF5E-DD25-485E-AFB4-EF07CAB75D64}"
 EndProject
 Global
@@ -22,10 +20,6 @@ Global
 		{E2B46A6D-984C-441C-8B55-133D5391C649}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2B46A6D-984C-441C-8B55-133D5391C649}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2B46A6D-984C-441C-8B55-133D5391C649}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F548B62D-B98C-44C0-BFE4-EFE7ECD64664}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B5E6EF5E-DD25-485E-AFB4-EF07CAB75D64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B5E6EF5E-DD25-485E-AFB4-EF07CAB75D64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5E6EF5E-DD25-485E-AFB4-EF07CAB75D64}.Release|Any CPU.ActiveCfg = Release|Any CPU
