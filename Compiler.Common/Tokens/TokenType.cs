@@ -14,5 +14,5 @@ public enum TokenType
     Semicolon,
     Colon,
     String,
-    Constant
+    IntegralConstant
 }
