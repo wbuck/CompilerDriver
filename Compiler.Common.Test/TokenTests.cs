@@ -18,11 +18,17 @@ public class TokenTests
         IdentifierToken.Parse(input, tokens);
         
         Assert.Equal(4, tokens.Count);
-        Assert.All(tokens, token => Assert.Equal(TokenType.Identifier, token.Type));
-        Assert.Equal("int", GetSection(input, tokens[0]));
-        Assert.Equal("main", GetSection(input, tokens[1]));
-        Assert.Equal("void", GetSection(input, tokens[2]));
-        Assert.Equal("return", GetSection(input, tokens[3]));
+        Validate(tokens[0], TokenType.Keyword, "int");
+        Validate(tokens[1], TokenType.Identifier, "main");
+        Validate(tokens[2], TokenType.Keyword, "void");
+        Validate(tokens[3], TokenType.Keyword, "return");
+        return;
+        
+        void Validate(Token token, TokenType expectedType,  ReadOnlySpan<char> expectedValue)
+        {
+            Assert.Equal(expectedValue, GetSection(input, token));
+            Assert.Equal(expectedType, token.Type);
+        }
     }
     
     [Fact]

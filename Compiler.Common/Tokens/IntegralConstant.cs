@@ -13,7 +13,7 @@ public partial record IntegralConstant<T>(T Value, int Length)
     {
         foreach (var match in Pattern.EnumerateMatches(value))
         {
-            tokens.Add(new IdentifierToken(match.Index, match.Length));
+            // tokens.Add(new IntegralConstant<T>(match.Index, match.Length));
         }
     }
 }
