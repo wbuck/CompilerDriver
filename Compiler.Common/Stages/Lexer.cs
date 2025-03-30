@@ -1,5 +1,6 @@
 ﻿
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Compiler.Common.Tokens;
 
@@ -10,9 +11,9 @@ public static partial class Lexer
     [GeneratedRegex(@"\S+", RegexOptions.Singleline)]
     private static partial Regex NonWhiteSpacePattern { get; }
     
-    public static List<IToken> Lex(ReadOnlySpan<char> fileContent)
-    {
-        List<IToken> tokens = [];
+    public static bool TryTokenize(ReadOnlySpan<char> fileContent, [NotNullWhen(true)] out List<IToken>? tokens)
+    {        
+        tokens = [];
         foreach (var range in fileContent.Split('\n'))
         {                        
             var line = fileContent[range];
@@ -42,7 +43,7 @@ public static partial class Lexer
                     continue;
                 }
                 if ((token = Parse<CloseParenthesisToken>(trimmed, offset)) is not null)
-                {
+                {                    
                     tokens.Add(token);
                     trimmed = trimmed[token.Length..].TrimStart();
                     continue;
@@ -54,13 +55,13 @@ public static partial class Lexer
                     continue;
                 }          
                 if ((token = Parse<IdentifierToken>(trimmed, offset)) is not null)
-                {
+                {                    
                     tokens.Add(token);
                     trimmed = trimmed[token.Length..].TrimStart();
                     continue;
                 } 
                 if ((token = Parse<SemiColonToken>(trimmed, offset)) is not null)
-                {
+                {                    
                     tokens.Add(token);
                     trimmed = trimmed[token.Length..].TrimStart();
                     continue;
@@ -87,20 +88,17 @@ public static partial class Lexer
                 var enumerator = NonWhiteSpacePattern.EnumerateMatches(trimmed);
                 if (enumerator.MoveNext())
                 {
-                    trimmed = trimmed[enumerator.Current.Length ..].TrimStart();
-                    Debugger.Break();
+                    var match = enumerator.Current;
+                    var unknown = trimmed.Slice(match.Index, match.Length);
+                    
+                    Console.Error.WriteLine($"Unexpected token: {unknown}");
+                    return false;
                 }
-            }
-            
+            }     
         }
         
-        
-        
-        
-        
-        
         tokens.Sort((t1, t2) => t1.Index.CompareTo(t2.Index));
-        return tokens;
+        return true;
         
         static IToken? Parse<T>(ReadOnlySpan<char> fileContent, int offset) where T : IToken
             => T.Parse(fileContent, offset);

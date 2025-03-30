@@ -2,6 +2,7 @@
 using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
 using CliWrap;
+using Compiler.Common.Stages;
 using CompilerDriver.Extensions;
 
 var file = new Argument<string>
@@ -71,12 +72,11 @@ root.SetHandler(async (ctx) =>
         return;
     }
    
-    if ((ctx.ExitCode = await AssembleAndLinkAsync(result.Value, ctx.GetOption(output), token)) != 0)
-        return;
+    // if ((ctx.ExitCode = await AssembleAndLinkAsync(result.Value, ctx.GetOption(output), token)) != 0)
+    //     return;
 });
 
-await root.InvokeAsync(args);
-return;
+return await root.InvokeAsync(args);
 
 static async Task<int> AssembleAndLinkAsync(string assembly, string? output = null, CancellationToken token = default)
 {
@@ -95,10 +95,14 @@ static async Task<int> AssembleAndLinkAsync(string assembly, string? output = nu
     return result.ExitCode;
 }
 
-static Task<Result<string>> CompileAsync(string file, CancellationToken token = default)
+static async Task<Result<string>> CompileAsync(string file, CancellationToken token = default)
 {
-    File.Delete(file);
-    throw new NotImplementedException();
+    var content = await File.ReadAllTextAsync(file, token);
+    if (Lexer.TryTokenize(content, out var _))
+    {
+        return new(0, content);
+    }
+    return new(1);
 }
 
 static async Task<Result<string>> PreprocessAsync(string file, CancellationToken token = default)
