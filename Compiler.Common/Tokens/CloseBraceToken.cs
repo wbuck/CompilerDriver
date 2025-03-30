@@ -1,8 +1,11 @@
 namespace Compiler.Common.Tokens;
 
-public record CloseBraceToken(int Index) 
-    : Token(TokenType.CloseBrace, Index, 1)
+public record CloseBraceToken(int Index) : IToken
 {
-    public static void Parse(ReadOnlySpan<char> value, in List <Token> tokens)
-        => FindCharacter(value, '}', tokens, static (index, tokens) => tokens.Add(new CloseBraceToken(index)));
+    public TokenType Type => TokenType.CloseBrace;
+    public int Length => 1;
+    
+    public static void Parse(ReadOnlySpan<char> value, in List<IToken> tokens)
+        => IToken.FindCharacter(value, '}', tokens, 
+            static (index, tokens) => tokens.Add(new CloseBraceToken(index)));
 }

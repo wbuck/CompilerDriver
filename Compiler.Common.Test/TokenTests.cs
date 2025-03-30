@@ -14,7 +14,7 @@ public class TokenTests
             }
             """;
         
-        List<Token> tokens = [];
+        List<IToken> tokens = [];
         IdentifierToken.Parse(input, tokens);
         
         Assert.Equal(4, tokens.Count);
@@ -24,10 +24,14 @@ public class TokenTests
         Validate(tokens[3], TokenType.Keyword, "return");
         return;
         
-        void Validate(Token token, TokenType expectedType,  ReadOnlySpan<char> expectedValue)
+        void Validate(IToken token, TokenType expectedType,  ReadOnlySpan<char> expectedValue)
         {
             Assert.Equal(expectedValue, GetSection(input, token));
             Assert.Equal(expectedType, token.Type);
+            if (token is IdentifierToken { Type: TokenType.Keyword } keywordToken)
+            {
+                Assert.Equal(expectedValue, keywordToken.Keyword);
+            }
         }
     }
     
@@ -41,7 +45,7 @@ public class TokenTests
                              }
                              """;
         
-        List<Token> tokens = [];
+        List<IToken> tokens = [];
         OpenParenthesisToken.Parse(input, tokens);
         
         Assert.Single(tokens);
@@ -59,7 +63,7 @@ public class TokenTests
                              }
                              """;
         
-        List<Token> tokens = [];
+        List<IToken> tokens = [];
         CloseParenthesisToken.Parse(input, tokens);
         
         Assert.Single(tokens);
@@ -67,6 +71,126 @@ public class TokenTests
         Assert.Equal(")", GetSection(input, tokens[0]));
     }
     
-    private static ReadOnlySpan<char> GetSection(string input, Token token) 
+    [Fact]
+    public void ParseCommaToken()
+    {
+        const string input = """
+                             void add(int a, int b)
+                             {
+                                 return a + b;
+                             }
+
+                             int main(void) 
+                             {
+                                return add(1, 2);
+                             }
+                             """;
+        
+        List<IToken> tokens = [];
+        CommaToken.Parse(input, tokens);
+        
+        Assert.Equal(2, tokens.Count);
+        Assert.All(tokens, token => Assert.Equal(TokenType.Comma, token.Type));
+        Assert.Equal(",", GetSection(input, tokens[0]));
+        Assert.Equal(",", GetSection(input, tokens[1]));
+    }
+    
+    [Fact]
+    public void ParseIntegralConstantToken()
+    {
+        const string input = """
+                             void add(int a, int b)
+                             {
+                                 return a + b;
+                             }
+
+                             int main(void) 
+                             {
+                                return add(1, 2);
+                             }
+                             """;
+        
+        List<IToken> tokens = [];
+        IntegralConstantToken.Parse(input, tokens);
+        
+        Assert.Equal(2, tokens.Count);
+        Assert.All(tokens, token => Assert.Equal(TokenType.IntegralConstant, token.Type));
+        Assert.Equal("1", GetSection(input, tokens[0]));
+        Assert.Equal("2", GetSection(input, tokens[1]));
+    }
+    
+    [Fact]
+    public void ParseCloseBraceToken()
+    {
+        const string input = """
+                             void add(int a, int b)
+                             {
+                                 return a + b;
+                             }
+
+                             int main(void) 
+                             {
+                                return add(1, 2);
+                             }
+                             """;
+        
+        List<IToken> tokens = [];
+        CloseBraceToken.Parse(input, tokens);
+        
+        Assert.Equal(2, tokens.Count);
+        Assert.All(tokens, token => Assert.Equal(TokenType.CloseBrace, token.Type));
+        Assert.Equal("}", GetSection(input, tokens[0]));
+        Assert.Equal("}", GetSection(input, tokens[1]));
+    }
+    
+    [Fact]
+    public void ParseOpenBraceToken()
+    {
+        const string input = """
+                             void add(int a, int b)
+                             {
+                                 return a + b;
+                             }
+
+                             int main(void) 
+                             {
+                                return add(1, 2);
+                             }
+                             """;
+        
+        List<IToken> tokens = [];
+        OpenBraceToken.Parse(input, tokens);
+        
+        Assert.Equal(2, tokens.Count);
+        Assert.All(tokens, token => Assert.Equal(TokenType.OpenBrace, token.Type));
+        Assert.Equal("{", GetSection(input, tokens[0]));
+        Assert.Equal("{", GetSection(input, tokens[1]));
+    }
+    
+    [Fact]
+    public void ParseSemiColonToken()
+    {
+        const string input = """
+                             void add(int a, int b)
+                             {
+                                 return a + b;
+                             }
+
+                             int main(void) 
+                             {
+                                return add(1, 2);
+                             }
+                             """;
+        
+        List<IToken> tokens = [];
+        SemiColonToken.Parse(input, tokens);
+        
+        Assert.Equal(2, tokens.Count);
+        Assert.All(tokens, token => Assert.Equal(TokenType.Semicolon, token.Type));
+        Assert.Equal(";", GetSection(input, tokens[0]));
+        Assert.Equal(";", GetSection(input, tokens[1]));
+    }
+    
+    private static ReadOnlySpan<char> GetSection(string input, IToken token) 
         => input.AsSpan(token.Index, token.Length);
 }

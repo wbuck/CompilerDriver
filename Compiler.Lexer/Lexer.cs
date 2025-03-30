@@ -1,5 +1,16 @@
-﻿namespace Compiler.Lexer;
+﻿using Compiler.Common.Tokens;
 
-public sealed class Lexer
+namespace Compiler.Lexer;
+
+public static class Lexer
 {
+    public static List<IToken> Lex(string file)
+    {
+        List<IToken> tokens = [];
+        var input = file.AsSpan();
+        
+        
+        
+        return tokens;
+    }
 }
