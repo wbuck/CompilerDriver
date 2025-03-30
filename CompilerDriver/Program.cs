@@ -1,9 +1,7 @@
 ﻿
 using System.CommandLine;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;using System.Reflection.Metadata;
+using System.Diagnostics.CodeAnalysis;
 using CliWrap;
-using CliWrap.Buffered;
 using CompilerDriver.Extensions;
 
 var file = new Argument<string>
@@ -41,11 +39,11 @@ var codegen = new Option<bool>
     "Run the lexer, parser, and assembly generation but stop before code generation"
 );
 
-var asm = new Option<bool>
-(
-    ["--assembly, -S"], 
-    "Generate assembly code"
-);
+// var asm = new Option<bool>
+// (
+//     ["--assembly, -S"], 
+//     "Generate assembly code"
+// );
 
 var root = new RootCommand("Compiler Driver");
 root.AddArgument(file);

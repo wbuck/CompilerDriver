@@ -1,3 +1,3 @@
 namespace Compiler.Common.Tokens;
 
-public record SemicolonToken() : Token(TokenType.Semicolon);
+public record SemicolonToken() : Token(TokenType.Semicolon, 1);

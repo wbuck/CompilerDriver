@@ -1,3 +1,3 @@
 namespace Compiler.Common.Tokens;
 
-public record CloseBracketToken() : Token(TokenType.CloseBracket);
+public record CloseBracketToken() : Token(TokenType.CloseBracket, 1);
