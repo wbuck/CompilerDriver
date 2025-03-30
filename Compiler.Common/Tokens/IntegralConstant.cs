@@ -1,12 +1,12 @@
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
-public partial record IdentifierToken(int Index, int Length) 
-    : Token(TokenType.Identifier, Index, Length)
+
+public partial record IntegralConstant<T>(T Value, int Length)
+    : Token(TokenType.Constant, Length) where T : IBinaryInteger<T>
 {
-    [GeneratedRegex(@"[a-zA-Z_]\w*\b", RegexOptions.Multiline)]
+    [GeneratedRegex(@"[0-9]+\b", RegexOptions.Multiline)]
     private static partial Regex Pattern { get; }
 
     public static void Parse(ReadOnlySpan<char> value, in List <Token> tokens)

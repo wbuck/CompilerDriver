@@ -2,10 +2,9 @@ using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
 
-public abstract record Token(TokenType Type, int Index = 0, int Length = 0)
+public interface IToken
 {
-    public static Token Parse(ReadOnlySpan<char> value)
-    {
-        throw new NotImplementedException();
-    }
+    static abstract Token Parse(ReadOnlySpan<char> value, in List<Token> tokens);
 }
+
+public abstract record Token(TokenType Type, int Index = 0, int Length = 0);
