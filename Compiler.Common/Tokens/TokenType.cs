@@ -8,11 +8,16 @@ public enum TokenType
     CloseParenthesis,
     OpenBrace,
     CloseBrace,
-    OpenBracket,
-    CloseBracket,
     Comma,
     Semicolon,
-    Colon,
-    String,
-    IntegralConstant
+    IntegralConstant,
+    Plus,
+    Minus,
+    Multiply,
+    Divide,
+    Equal,
+    Not,
+    LessThan,
+    GreaterThan,
+    Modulo
 }

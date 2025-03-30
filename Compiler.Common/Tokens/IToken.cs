@@ -5,7 +5,7 @@ public interface IToken
     public TokenType Type { get; }
     public int Index { get; }
     public int Length { get; }
-    static virtual void Parse(ReadOnlySpan<char> value, in List<IToken> tokens) =>
+    static virtual IToken? Parse(ReadOnlySpan<char> value, int offset) =>
         throw new NotImplementedException();
     
     static void FindCharacter(

@@ -18,22 +18,23 @@ public partial record IdentifierToken : IToken
     public int Length { get; }
     public string? Keyword { get; }
     
-    [GeneratedRegex(@"[a-zA-Z_]\w*\b", RegexOptions.Multiline)]
+    [GeneratedRegex(@"[a-zA-Z_]\w*\b", RegexOptions.Singleline)]
     private static partial Regex Pattern { get; }
 
-    public static void Parse(ReadOnlySpan<char> value, in List<IToken> tokens)
+    public static IToken? Parse(ReadOnlySpan<char> value, int offset)
     {
-        var lookup = Keywords.GetAlternateLookup<ReadOnlySpan<char>>();        
-        foreach (var match in Pattern.EnumerateMatches(value))
-        {
-            var identifier = value.Slice(match.Index, match.Length);
+        var lookup = Keywords.GetAlternateLookup<ReadOnlySpan<char>>();
+        var enumerator = Pattern.EnumerateMatches(value);
+
+        if (!enumerator.MoveNext() || enumerator.Current.Index != 0) 
+            return null;
+        
+        var match = enumerator.Current;
+        var identifier = value.Slice(match.Index, match.Length);
             
-            IToken token = lookup.TryGetValue(identifier, out var keyword)
-                ? new IdentifierToken(match.Index, match.Length, keyword)
-                : new IdentifierToken(match.Index, match.Length);
-            
-            tokens.Add(token);
-        }
+        return lookup.TryGetValue(identifier, out var keyword)
+            ? new IdentifierToken(match.Index + offset, match.Length, keyword)
+            : new IdentifierToken(match.Index + offset, match.Length);
     }
     
     private IdentifierToken(int index, int length)

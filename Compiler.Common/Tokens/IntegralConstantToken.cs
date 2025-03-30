@@ -10,9 +10,14 @@ public partial record IntegralConstantToken(int Index, int Length) : IToken
     [GeneratedRegex(@"[0-9]+\b", RegexOptions.Multiline)]
     private static partial Regex Pattern { get; }
 
-    public static void Parse(ReadOnlySpan<char> value, in List<IToken> tokens)
+    public static IToken? Parse(ReadOnlySpan<char> value, int offset)
     {
-        foreach (var match in Pattern.EnumerateMatches(value))        
-            tokens.Add(new IntegralConstantToken(match.Index, match.Length));        
+        var enumerator = Pattern.EnumerateMatches(value);
+
+        if (!enumerator.MoveNext() || enumerator.Current.Index != 0) 
+            return null;
+        
+        var match = enumerator.Current;
+        return new IntegralConstantToken(match.Index + offset, match.Length);       
     }
 }
