@@ -1,10 +1,30 @@
-﻿using Compiler.Common.Stages;
+﻿using System.Collections;
+using Compiler.Common.Stages;
 using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Test;
 
+
+
 public class TokenTests
-{    
+{
+    [Theory]
+    [ClassData(typeof(IdentifierTokenTestData))]
+    public void ParseIdentifierToken(int offset, string input, TokenType expectedType, string expectedValue)
+    {
+        var line = input.AsSpan()[offset..];
+        var token = IdentifierToken.Parse(line, offset);
+        
+        Assert.NotNull(token);
+        var idToken = Assert.IsType<IdentifierToken>(token);
+        
+        Assert.Equal(expectedValue, GetSection(input, idToken));
+        Assert.Equal(expectedType, token.Type);
+        Assert.Equal(offset, token.Index);
+        Assert.Equal(expectedValue.Length, token.Length);
+        Assert.Equal(idToken.Type is TokenType.Keyword ? expectedValue : null, idToken.Keyword);
+    }
+    
     [Fact]
     public void LexerShouldSuccessfullyTokenizeInput()
     {
@@ -69,3 +89,14 @@ public class TokenTests
     private static ReadOnlySpan<char> GetSection(string input, IToken token) 
         => input.AsSpan(token.Index, token.Length);
 }
+
+public class IdentifierTokenTestData : TheoryData<int, string, TokenType, string>
+{
+    public IdentifierTokenTestData()
+    {
+        // Offset, Input, Expected Type, Expected Value.
+        Add(0, "int main(void) ", TokenType.Keyword, "int");
+        Add(4, "int main(void) ", TokenType.Identifier, "main");
+        Add(9, "int main(void) ", TokenType.Keyword, "void");
+    }
+};
