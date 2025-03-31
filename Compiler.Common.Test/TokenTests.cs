@@ -10,7 +10,7 @@ public class TokenTests
 {
     [Theory]
     [ClassData(typeof(IdentifierTokenTestData))]
-    public void ParseIdentifierToken(int offset, string input, TokenType expectedType, string expectedValue)
+    public void ParseIdentifierTokenWithValidInputsShouldSuccessfullyReturnParsedToken(int offset, string input, TokenType expectedType, string expectedValue)
     {
         var line = input.AsSpan()[offset..];
         var token = IdentifierToken.Parse(line, offset);
@@ -23,6 +23,16 @@ public class TokenTests
         Assert.Equal(offset, token.Index);
         Assert.Equal(expectedValue.Length, token.Length);
         Assert.Equal(idToken.Type is TokenType.Keyword ? expectedValue : null, idToken.Keyword);
+    }
+    
+    [Theory]
+    [InlineData("+, -")]
+    [InlineData("@1")]
+    [InlineData("1 + 2")]
+    public void ParseIdentifierTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var token = IdentifierToken.Parse(input, 0);
+        Assert.Null(token);
     }
     
     [Fact]
@@ -98,5 +108,9 @@ public class IdentifierTokenTestData : TheoryData<int, string, TokenType, string
         Add(0, "int main(void) ", TokenType.Keyword, "int");
         Add(4, "int main(void) ", TokenType.Identifier, "main");
         Add(9, "int main(void) ", TokenType.Keyword, "void");
+        Add(0, "return add(a, b);", TokenType.Keyword, "return");
+        Add(7, "return add(a, b);", TokenType.Identifier, "add");
+        Add(11, "return add(a, b);", TokenType.Identifier, "a");
+        Add(14, "return add(a, b);", TokenType.Identifier, "b");
     }
 };
