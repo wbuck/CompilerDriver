@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Compiler.Common.Stages;
+using Compiler.Common.Test.Data;
 using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Test;
@@ -23,6 +24,22 @@ public class TokenTests
         Assert.Equal(offset, token.Index);
         Assert.Equal(expectedValue.Length, token.Length);
         Assert.Equal(idToken.Type is TokenType.Keyword ? expectedValue : null, idToken.Keyword);
+    }
+    
+    [Theory]
+    [ClassData(typeof(IntegralConstantTestData))]
+    public void ParseIntegralConstantTokenWithValidInputsShouldSuccessfullyReturnParsedToken(int offset, string input, TokenType expectedType, string expectedValue)
+    {
+        var line = input.AsSpan()[offset..];
+        var token = IntegralConstantToken.Parse(line, offset);
+        
+        Assert.NotNull(token);
+        var idToken = Assert.IsType<IntegralConstantToken>(token);
+        
+        Assert.Equal(expectedValue, GetSection(input, idToken));
+        Assert.Equal(expectedType, token.Type);
+        Assert.Equal(offset, token.Index);
+        Assert.Equal(expectedValue.Length, token.Length);
     }
     
     [Theory]
@@ -99,18 +116,3 @@ public class TokenTests
     private static ReadOnlySpan<char> GetSection(string input, IToken token) 
         => input.AsSpan(token.Index, token.Length);
 }
-
-public class IdentifierTokenTestData : TheoryData<int, string, TokenType, string>
-{
-    public IdentifierTokenTestData()
-    {
-        // Offset, Input, Expected Type, Expected Value.
-        Add(0, "int main(void) ", TokenType.Keyword, "int");
-        Add(4, "int main(void) ", TokenType.Identifier, "main");
-        Add(9, "int main(void) ", TokenType.Keyword, "void");
-        Add(0, "return add(a, b);", TokenType.Keyword, "return");
-        Add(7, "return add(a, b);", TokenType.Identifier, "add");
-        Add(11, "return add(a, b);", TokenType.Identifier, "a");
-        Add(14, "return add(a, b);", TokenType.Identifier, "b");
-    }
-};

@@ -24,7 +24,7 @@ public sealed class Parser
             {
                 nodes.Add(ParseFunction(ref input));
             }
-            return new Program(nodes);
+            return new RootNode(nodes);
         }
         catch (Exception x)
         {
@@ -33,7 +33,7 @@ public sealed class Parser
         return null;        
     }
 
-    private Function ParseFunction(ref Span<IToken> tokens)
+    private FunctionNode ParseFunction(ref Span<IToken> tokens)
     {
         Check("int", TokenType.Keyword, ConsumeFirst(ref tokens));
         var name = ParseIdentifier(ref tokens);
@@ -47,7 +47,7 @@ public sealed class Parser
         
         Check("}", TokenType.CloseBrace, ConsumeFirst(ref tokens));
         
-        return new Function(name.ToString(), body);
+        return new FunctionNode(name.ToString(), body);
     }
 
     private ReadOnlySpan<char> ParseIdentifier(ref Span<IToken> tokens)
@@ -56,22 +56,22 @@ public sealed class Parser
         return _fileContent.Slice(token.Index, token.Length).Span;
     }
 
-    private Return ParseStatement(ref Span<IToken> tokens)
+    private ReturnNode ParseStatement(ref Span<IToken> tokens)
     {
         Check("return", TokenType.Keyword, ConsumeFirst(ref tokens));
         var expression = ParseExpression(ref tokens);
         Check(";", TokenType.Semicolon, ConsumeFirst(ref tokens));
-        return new Return(expression);
+        return new ReturnNode(expression);
     }
     
-    private Constant<int> ParseExpression(ref Span<IToken> tokens)
+    private IntegralConstantNode<int> ParseExpression(ref Span<IToken> tokens)
     {
         var token = ConsumeFirst(ref tokens);
         var value = _fileContent.Slice(token.Index, token.Length).Span;
 
         return !int.TryParse(value, out var result)
             ? throw new ApplicationException($"Invalid token {value}")
-            : new Constant<int>(result);
+            : new IntegralConstantNode<int>(result);
     }
 
     private static IToken ConsumeFirst(ref Span<IToken> tokens)

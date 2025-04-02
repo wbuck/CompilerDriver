@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Compiler.Common.Nodes;
 
-public record Program(List<Node> Nodes) : Node
+public record RootNode(List<Node> Nodes) : Node
 {
     
     public override NodeType Type => NodeType.Program;
