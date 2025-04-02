@@ -34,12 +34,52 @@ public class TokenTests
         var token = IntegralConstantToken.Parse(line, offset);
         
         Assert.NotNull(token);
-        var idToken = Assert.IsType<IntegralConstantToken>(token);
+        Assert.IsType<IntegralConstantToken>(token);
         
-        Assert.Equal(expectedValue, GetSection(input, idToken));
+        Assert.Equal(expectedValue, GetSection(input, token));
         Assert.Equal(expectedType, token.Type);
         Assert.Equal(offset, token.Index);
         Assert.Equal(expectedValue.Length, token.Length);
+    }
+    
+    [Fact]
+    public void ParseCloseBraceTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
+    {
+        const string input = "}";
+        var token = CloseBraceToken.Parse(input, 0);
+        
+        Assert.NotNull(token);
+        Assert.IsType<CloseBraceToken>(token);
+        
+        Assert.Equal(input, GetSection(input, token));
+        Assert.Equal(TokenType.CloseBrace, token.Type);
+        Assert.Equal(0, token.Index);
+        Assert.Equal(input.Length, token.Length);
+    }
+    
+    [Fact]
+    public void ParseCloseParenthesisTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
+    {
+        const string input = ")";
+        var token = CloseParenthesisToken.Parse(input, 0);
+        
+        Assert.NotNull(token);
+        Assert.IsType<CloseParenthesisToken>(token);
+        
+        Assert.Equal(input, GetSection(input, token));
+        Assert.Equal(TokenType.CloseParenthesis, token.Type);
+        Assert.Equal(0, token.Index);
+        Assert.Equal(input.Length, token.Length);
+    }
+    
+    [Theory]
+    [InlineData("@")]
+    [InlineData("A")]
+    [InlineData("-")]
+    public void ParseIntegralConstantWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var token = IntegralConstantToken.Parse(input, 0);
+        Assert.Null(token);
     }
     
     [Theory]
@@ -51,6 +91,17 @@ public class TokenTests
         var token = IdentifierToken.Parse(input, 0);
         Assert.Null(token);
     }
+    
+    [Theory]
+    [InlineData("@")]
+    [InlineData("{")]
+    [InlineData("(")]
+    public void ParseCloseBraceTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var token = CloseBraceToken.Parse(input, 0);
+        Assert.Null(token);
+    }
+
     
     [Fact]
     public void LexerShouldSuccessfullyTokenizeInput()

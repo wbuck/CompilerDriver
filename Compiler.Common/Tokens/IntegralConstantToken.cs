@@ -7,7 +7,7 @@ public partial record IntegralConstantToken(int Index, int Length) : IToken
 {
     public TokenType Type => TokenType.IntegralConstant;
     
-    [GeneratedRegex(@"[0-9]+\b", RegexOptions.Multiline)]
+    [GeneratedRegex(@"-?[0-9]+\b", RegexOptions.Multiline)]
     private static partial Regex Pattern { get; }
 
     public static IToken? Parse(ReadOnlySpan<char> value, int offset)
