@@ -98,11 +98,18 @@ static async Task<int> AssembleAndLinkAsync(string assembly, string? output = nu
 static async Task<Result<string>> CompileAsync(string file, CancellationToken token = default)
 {
     var content = await File.ReadAllTextAsync(file, token);
-    if (Lexer.TryTokenize(content, out var _))
+    if (!Lexer.TryTokenize(content, out var tokens))
     {
-        return new(0, content);
+        return new(1);
     }
-    return new(1);
+
+    var parser = new Parser(content.AsMemory());
+    var ast = parser.Parse(tokens);
+    
+    Console.WriteLine(ast);
+    
+    
+    return new(ast is null ? 1 : 0);
 }
 
 static async Task<Result<string>> PreprocessAsync(string file, CancellationToken token = default)

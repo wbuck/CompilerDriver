@@ -13,12 +13,27 @@ public sealed class Parser
         _fileContent = fileContent;
     }
     
-    public Node Parse(List<IToken> tokens)
+    public Node? Parse(List<IToken> tokens)
     {
-        return new Program(ParseFunction(CollectionsMarshal.AsSpan(tokens)));
+        try
+        {
+            var input = CollectionsMarshal.AsSpan(tokens);
+            var nodes = new List<Node>();
+       
+            while (!input.IsEmpty)
+            {
+                nodes.Add(ParseFunction(ref input));
+            }
+            return new Program(nodes);
+        }
+        catch (Exception x)
+        {
+            Console.Error.WriteLine(x);
+        }
+        return null;        
     }
 
-    private Function ParseFunction(Span<IToken> tokens)
+    private Function ParseFunction(ref Span<IToken> tokens)
     {
         Check("int", TokenType.Keyword, ConsumeFirst(ref tokens));
         var name = ParseIdentifier(ref tokens);
@@ -73,7 +88,7 @@ public sealed class Parser
     private IToken Check(in ReadOnlySpan<char> expectedValue, TokenType expectedType, IToken token)
     {
         var actual = _fileContent.Span.Slice(token.Index, token.Length);
-        return expectedType != token.Type || expectedValue != actual 
+        return expectedType != token.Type || !expectedValue.SequenceEqual(actual)
             ? throw new ApplicationException($"Expected {expectedValue} but found {actual}") 
             : token;
     }
