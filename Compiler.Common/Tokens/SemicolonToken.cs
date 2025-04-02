@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record SemiColonToken(int Index) : IToken
+public record SemicolonToken(int Index) : IToken
 {
     public TokenType Type => TokenType.Semicolon;
     public int Length => 1;
@@ -10,6 +10,6 @@ public record SemiColonToken(int Index) : IToken
         if (value.IsEmpty || value[0] != ';')
             return null;
         
-        return new SemiColonToken(offset);
+        return new SemicolonToken(offset);
     }        
 }

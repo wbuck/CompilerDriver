@@ -60,13 +60,13 @@ public static partial class Lexer
                     trimmed = trimmed[token.Length..].TrimStart();
                     continue;
                 } 
-                if ((token = Parse<SemiColonToken>(trimmed, offset)) is not null)
+                if ((token = Parse<SemicolonToken>(trimmed, offset)) is not null)
                 {                    
                     tokens.Add(token);
                     trimmed = trimmed[token.Length..].TrimStart();
                     continue;
                 } 
-                if ((token = Parse<SemiColonToken>(trimmed, offset)) is not null)
+                if ((token = Parse<SemicolonToken>(trimmed, offset)) is not null)
                 {
                     tokens.Add(token);
                     trimmed = trimmed[token.Length..].TrimStart();

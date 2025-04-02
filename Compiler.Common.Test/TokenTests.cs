@@ -72,6 +72,116 @@ public class TokenTests
         Assert.Equal(input.Length, token.Length);
     }
     
+    [Fact]
+    public void ParseCommaTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
+    {
+        const string input = ",";
+        var token = CommaToken.Parse(input, 0);
+        
+        Assert.NotNull(token);
+        Assert.IsType<CommaToken>(token);
+        
+        Assert.Equal(input, GetSection(input, token));
+        Assert.Equal(TokenType.Comma, token.Type);
+        Assert.Equal(0, token.Index);
+        Assert.Equal(input.Length, token.Length);
+    }
+    
+    [Fact]
+    public void ParseOpenParenthesisTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
+    {
+        const string input = "(";
+        var token = CommaToken.Parse(input, 0);
+        
+        Assert.NotNull(token);
+        Assert.IsType<OpenParenthesisToken>(token);
+        
+        Assert.Equal(input, GetSection(input, token));
+        Assert.Equal(TokenType.OpenParenthesis, token.Type);
+        Assert.Equal(0, token.Index);
+        Assert.Equal(input.Length, token.Length);
+    }
+    
+    [Fact]
+    public void ParseOpenBraceTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
+    {
+        const string input = "{";
+        var token = OpenBraceToken.Parse(input, 0);
+        
+        Assert.NotNull(token);
+        Assert.IsType<OpenBraceToken>(token);
+        
+        Assert.Equal(input, GetSection(input, token));
+        Assert.Equal(TokenType.OpenBrace, token.Type);
+        Assert.Equal(0, token.Index);
+        Assert.Equal(input.Length, token.Length);
+    }
+    
+    [Fact]
+    public void ParseSemicolonTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
+    {
+        const string input = ";";
+        var token = SemicolonToken.Parse(input, 0);
+        
+        Assert.NotNull(token);
+        Assert.IsType<SemicolonToken>(token);
+        
+        Assert.Equal(input, GetSection(input, token));
+        Assert.Equal(TokenType.Semicolon, token.Type);
+        Assert.Equal(0, token.Index);
+        Assert.Equal(input.Length, token.Length);
+    }
+    
+    [Theory]
+    [InlineData("@")]
+    [InlineData(":")]
+    [InlineData(",")]
+    public void ParseSemicolonTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var token = CommaToken.Parse(input, 0);
+        Assert.Null(token);
+    }
+    
+    [Theory]
+    [InlineData("@")]
+    [InlineData("}")]
+    [InlineData(")")]
+    public void ParseOpenBraceTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var token = CommaToken.Parse(input, 0);
+        Assert.Null(token);
+    }
+    
+    [Theory]
+    [InlineData("@")]
+    [InlineData("{")]
+    [InlineData(")")]
+    public void ParseOpenParenthesisTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var token = CommaToken.Parse(input, 0);
+        Assert.Null(token);
+    }
+    
+    [Theory]
+    [InlineData("@")]
+    [InlineData("'")]
+    [InlineData(".")]
+    public void ParseCommaTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var token = CommaToken.Parse(input, 0);
+        Assert.Null(token);
+    }
+    
+    [Theory]
+    [InlineData("@")]
+    [InlineData("{")]
+    [InlineData("(")]
+    public void ParseCloseParenthesisTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var token = CloseParenthesisToken.Parse(input, 0);
+        Assert.Null(token);
+    }
+    
     [Theory]
     [InlineData("@")]
     [InlineData("A")]
