@@ -17,13 +17,24 @@ public class TokenTests
         var token = IdentifierToken.Parse(line, offset);
         
         Assert.NotNull(token);
-        var idToken = Assert.IsType<IdentifierToken>(token);
-        
-        Assert.Equal(expectedValue, GetSection(input, idToken));
+
+        switch (token.Type)
+        {
+            case TokenType.Keyword:
+                Assert.IsType<KeywordToken>(token);
+                break;
+            case TokenType.Identifier:
+                Assert.IsType<IdentifierToken>(token);
+                break;
+        }
+
+        Assert.Equal(expectedValue, GetSection(input, token));
         Assert.Equal(expectedType, token.Type);
         Assert.Equal(offset, token.Index);
         Assert.Equal(expectedValue.Length, token.Length);
-        Assert.Equal(idToken.Type is TokenType.Keyword ? expectedValue : null, idToken.Keyword);
+        
+        if (token is KeywordToken keywordToken)
+            Assert.Equal(expectedValue, keywordToken.Keyword);
     }
     
     [Theory]
@@ -91,7 +102,7 @@ public class TokenTests
     public void ParseOpenParenthesisTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
     {
         const string input = "(";
-        var token = CommaToken.Parse(input, 0);
+        var token = OpenParenthesisToken.Parse(input, 0);
         
         Assert.NotNull(token);
         Assert.IsType<OpenParenthesisToken>(token);
@@ -138,7 +149,7 @@ public class TokenTests
     [InlineData(",")]
     public void ParseSemicolonTokenWithUnrecognizedInputShouldReturnNull(string input)
     {
-        var token = CommaToken.Parse(input, 0);
+        var token = SemicolonToken.Parse(input, 0);
         Assert.Null(token);
     }
     
@@ -148,7 +159,7 @@ public class TokenTests
     [InlineData(")")]
     public void ParseOpenBraceTokenWithUnrecognizedInputShouldReturnNull(string input)
     {
-        var token = CommaToken.Parse(input, 0);
+        var token = OpenBraceToken.Parse(input, 0);
         Assert.Null(token);
     }
     
@@ -158,7 +169,7 @@ public class TokenTests
     [InlineData(")")]
     public void ParseOpenParenthesisTokenWithUnrecognizedInputShouldReturnNull(string input)
     {
-        var token = CommaToken.Parse(input, 0);
+        var token = OpenParenthesisToken.Parse(input, 0);
         Assert.Null(token);
     }
     

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Ast;
@@ -7,7 +8,11 @@ public record ArgumentNode(ReadOnlyMemory<char> Name, string Type) : Node
 {
     public override NodeType NodeType => NodeType.Argument;
     
-    public static ArgumentNode[] Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    /*
+     * <argument_list> :: = <argument>* | "void"
+     * <argument> :: = <keyword><identifier>
+     */
+    public static List<ArgumentNode> Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         if (CheckKeyword(tokens, "void"))
             return [];
@@ -29,19 +34,17 @@ public record ArgumentNode(ReadOnlyMemory<char> Name, string Type) : Node
         
         var count = tokens.Length - shifted.Length;
         var arguments = tokens[..count];      
-        var nodes = new ArgumentNode[(arguments.Length - arguments.Length % 2) / 2];   
+        var nodes = new List<ArgumentNode>((arguments.Length - arguments.Length % 2) / 2);
         
-        int index = 0;
         while(!arguments.IsEmpty)
         {
-            var id = (IdentifierToken)arguments[0];
-            var type = id.Keyword;
-            Debug.Assert(type is not null);
+            var id = (KeywordToken)arguments[0];
+            Debug.Assert(id.Keyword is not null);
             
-            id = (IdentifierToken)arguments[1];
+            id = (KeywordToken)arguments[1];
             var name = fileContent.Slice(id.Index, id.Length);
-
-            nodes[index++] = new ArgumentNode(name, type);
+            
+            nodes.Add(new ArgumentNode(name, id.Keyword!));
             var shift = CheckType(arguments, TokenType.Comma, 2) ? 3 : 2;
             
             Shift(arguments, out arguments, shift);

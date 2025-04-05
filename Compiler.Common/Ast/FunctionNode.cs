@@ -7,12 +7,7 @@ namespace Compiler.Common.Ast;
 public record FunctionNode(string Name, Node[] Arguments, Node Body) : Node
 {
     public override NodeType NodeType => NodeType.Function;
-    /*
-     * <argument_list> :: = <argument>* | "void"
-     * <argument> :: = <keyword><identifier>
-     */
-    
-   
+
     /*
      * <function> ::= "int" <identifier> "(" "void" ")" "{" <statement> "}"
      */

@@ -10,7 +10,7 @@ public abstract record Node
     [Pure]
     protected static bool CheckKeyword(in Span<IToken> tokens, ReadOnlySpan<char> keyword) => 
         !tokens.IsEmpty && 
-        tokens[0] is IdentifierToken token && 
+        tokens[0] is KeywordToken token && 
         token.Keyword.AsSpan().SequenceEqual(keyword);
 
     protected static bool CheckTypeAndConsume(Span<IToken> tokens, in TokenType tokenType, out Span<IToken> shifted)

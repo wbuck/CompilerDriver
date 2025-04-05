@@ -59,7 +59,7 @@ public class LexerTests
         {
             Assert.Equal(expectedValue, GetSection(input, token));
             Assert.Equal(expectedType, token.Type);
-            if (token is IdentifierToken { Type: TokenType.Keyword } keywordToken)
+            if (token is KeywordToken keywordToken)
             {
                 Assert.Equal(expectedValue, keywordToken.Keyword);
             }
