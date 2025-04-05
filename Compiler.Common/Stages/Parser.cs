@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Compiler.Common.Nodes;
+using Compiler.Common.Ast;
 using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Stages;
@@ -47,7 +47,7 @@ public sealed class Parser
         
         Check("}", TokenType.CloseBrace, ConsumeFirst(ref tokens));
         
-        return new FunctionNode(name.ToString(), body);
+        return new FunctionNode(name.ToString(), [], body);
     }
 
     private ReadOnlySpan<char> ParseIdentifier(ref Span<IToken> tokens)
