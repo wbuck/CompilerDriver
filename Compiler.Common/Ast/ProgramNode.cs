@@ -2,10 +2,9 @@ using System.Text;
 
 namespace Compiler.Common.Ast;
 
-public record RootNode(List<Node> Nodes) : Node
+public record ProgramNode(List<INode> Nodes) : INode
 {
-    
-    public override NodeType NodeType => NodeType.Program;
+    public NodeType NodeType => NodeType.Program;
     public override string ToString()
     {
         var builder = new StringBuilder();

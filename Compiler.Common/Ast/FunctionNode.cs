@@ -4,30 +4,30 @@ using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Ast;
 
-public record FunctionNode(string Name, Node[] Arguments, Node Body) : Node
+public record FunctionNode(string Name, INode[] Arguments, INode Body) : INode
 {
-    public override NodeType NodeType => NodeType.Function;
+    public NodeType NodeType => NodeType.Function;
 
     /*
      * <function> ::= "int" <identifier> "(" "void" ")" "{" <statement> "}"
      */
     public static FunctionNode? Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
-        if (!CheckTypeAndConsume(tokens, TokenType.Keyword, out var shifted))
+        if (!INode.CheckTypeAndConsume(tokens, TokenType.Keyword, out var shifted))
             return null;
         
-        if (!CheckTypeAndConsume(shifted, TokenType.Identifier, out shifted))
+        if (!INode.CheckTypeAndConsume(shifted, TokenType.Identifier, out shifted))
             return null;
         
-        if (!CheckTypeAndConsume(shifted, TokenType.OpenParenthesis, out shifted))
+        if (!INode.CheckTypeAndConsume(shifted, TokenType.OpenParenthesis, out shifted))
             return null;
         
         var arguments = ArgumentNode.Parse(ref shifted, fileContent);
         
-        if (!CheckTypeAndConsume(shifted, TokenType.CloseParenthesis, out shifted))
+        if (!INode.CheckTypeAndConsume(shifted, TokenType.CloseParenthesis, out shifted))
             return null;
         
-        if (!CheckTypeAndConsume(shifted, TokenType.OpenBrace, out shifted))
+        if (!INode.CheckTypeAndConsume(shifted, TokenType.OpenBrace, out shifted))
             return null;
 
         // TODO: parse statement

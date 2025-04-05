@@ -3,9 +3,9 @@ using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Ast;
 
-public abstract record Node
+public interface INode
 {
-    public abstract NodeType NodeType { get; }
+    NodeType NodeType { get; }
     
     [Pure]
     protected static bool CheckKeyword(in Span<IToken> tokens, ReadOnlySpan<char> keyword) => 

@@ -1,6 +1,6 @@
 namespace Compiler.Common.Ast;
 
-public record ReturnNode(Node Expression) : Node
+public record ReturnNode(INode Expression) : INode
 {
-    public override NodeType NodeType => NodeType.Return;
+    public NodeType NodeType => NodeType.Return;
 }

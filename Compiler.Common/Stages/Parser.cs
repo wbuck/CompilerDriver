@@ -13,18 +13,18 @@ public sealed class Parser
         _fileContent = fileContent;
     }
     
-    public Node? Parse(List<IToken> tokens)
+    public INode? Parse(List<IToken> tokens)
     {
         try
         {
             var input = CollectionsMarshal.AsSpan(tokens);
-            var nodes = new List<Node>();
+            var nodes = new List<INode>();
        
             while (!input.IsEmpty)
             {
                 nodes.Add(ParseFunction(ref input));
             }
-            return new RootNode(nodes);
+            return new ProgramNode(nodes);
         }
         catch (Exception x)
         {

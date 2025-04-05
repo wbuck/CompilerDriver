@@ -6,5 +6,6 @@ public enum NodeType
     Function, 
     Return, 
     Constant,
-    Argument
+    Argument,
+    BlockStatement
 }
