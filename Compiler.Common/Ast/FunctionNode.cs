@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using Compiler.Common.Tokens;
 
@@ -10,7 +11,7 @@ public record FunctionNode(string Name, Node[] Arguments, Node Body) : Node
      * <argument_list> :: = <argument>* | "void"
      * <argument> :: = <keyword><identifier>
      */
-    public static Node[] ParseArguments(ref Span<IToken> tokens)
+    private static Node[] ParseArguments(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         if (CheckKeyword(tokens, "void"))
             return [];
@@ -20,26 +21,44 @@ public record FunctionNode(string Name, Node[] Arguments, Node Body) : Node
         {
             if (!CheckType(shifted, TokenType.Keyword) || !CheckType(shifted, TokenType.Identifier, 1))
                 break;
+            
+            // TODO: Make sure the keyword is a valid type for a function argument.
 
-            Shift(shifted, out shifted, 2);
+            var shift = CheckType(shifted, TokenType.Comma, 2) ? 3 : 2;
+            Shift(shifted, out shifted, shift);
         }
 
         if (tokens.Length == shifted.Length)
             return [];
         
-        var arguments = tokens[..shifted.Length];
+        var count = tokens.Length - shifted.Length;
+        var arguments = tokens[..count];      
+        var nodes = new Node[(arguments.Length - arguments.Length % 2) / 2];   
+        
+        int index = 0;
         while(!arguments.IsEmpty)
         {
+            var id = (IdentifierToken)arguments[0];
+            var type = id.Keyword;
+            Debug.Assert(type is not null);
             
-        }
+            id = (IdentifierToken)arguments[1];
+            var name = fileContent.Slice(id.Index, id.Length);
 
-        return [];
+            nodes[index++] = new ArgumentNode(name, type);
+            var shift = CheckType(arguments, TokenType.Comma, 2) ? 3 : 2;
+            
+            Shift(arguments, out arguments, shift);
+        }
+        
+        tokens = shifted;
+        return nodes;
     }
    
     /*
      * <function> ::= "int" <identifier> "(" "void" ")" "{" <statement> "}"
      */
-    public static FunctionNode? Parse(ref Span<IToken> tokens)
+    public static FunctionNode? Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         if (!CheckType(tokens, TokenType.Keyword))
             return null;
@@ -59,7 +78,13 @@ public record FunctionNode(string Name, Node[] Arguments, Node Body) : Node
         if (!Shift(shifted, out shifted))
             return null;
         
-        // Parse arguments.
+        var arguments = ParseArguments(ref shifted, fileContent);
+        
+        if (!CheckType(shifted, TokenType.CloseParenthesis))
+            return null;
+        
+        if (!Shift(shifted, out shifted))
+            return null;
 
         return null;
     }

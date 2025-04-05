@@ -35,6 +35,7 @@ public sealed class Parser
 
     private FunctionNode ParseFunction(ref Span<IToken> tokens)
     {
+        FunctionNode.Parse(ref tokens, _fileContent);
         Check("int", TokenType.Keyword, ConsumeFirst(ref tokens));
         var name = ParseIdentifier(ref tokens);
         

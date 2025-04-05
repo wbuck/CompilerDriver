@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
+
+
 public partial record IdentifierToken : IToken
 {
     private static readonly HashSet<string> Keywords = [
