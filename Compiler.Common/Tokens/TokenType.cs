@@ -21,13 +21,28 @@ public enum TokenType
     [Display(Name = ";")]
     Semicolon,
     NumericConstant,
+    [Display(Name = "~")]
+    BitwiseComplement,
+    [Display(Name = "--")]
+    Decrement,
+    [Display(Name = "++")]
+    Increment,
+    [Display(Name = "+")]
     Plus,
-    Minus,
+    [Display(Name = "-")]
+    Negation,
+    [Display(Name = "*")]   
     Multiply,
+    [Display(Name = "/")]  
     Divide,
+    [Display(Name = "=")] 
     Equal,
+    [Display(Name = "!")]
     Not,
+    [Display(Name = "<")]
     LessThan,
+    [Display(Name = ">")]
     GreaterThan,
+    [Display(Name = "%")]
     Modulo
 }

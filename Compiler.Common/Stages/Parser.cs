@@ -7,7 +7,7 @@ namespace Compiler.Common.Stages;
 
 public static class Parser
 {
-    public static bool TryParse(in List<IToken> tokens, ReadOnlyMemory<char> fileContent, [NotNullWhen(true)] out INode? node)
+    public static bool TryParse(in List<IToken> tokens, ReadOnlyMemory<char> fileContent, [NotNullWhen(true)] out ProgramNode? node)
     {
         try
         {
@@ -22,7 +22,7 @@ public static class Parser
         return false;
     }
     
-    public static INode Parse(in List<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    public static ProgramNode Parse(in List<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         var input = CollectionsMarshal.AsSpan(tokens);
         return ProgramNode.Parse(ref input, fileContent)!;                 

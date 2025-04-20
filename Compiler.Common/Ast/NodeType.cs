@@ -9,5 +9,8 @@ public enum NodeType
     FloatConstant,
     Argument,
     ArgumentList,
-    BlockStatement
+    BlockStatement,
+    Negation,
+    BitwiseComplement,
+    UnaryOperator
 }

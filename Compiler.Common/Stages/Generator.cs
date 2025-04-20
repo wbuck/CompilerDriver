@@ -1,47 +1,34 @@
+using System.Diagnostics.CodeAnalysis;
 using Compiler.Common.Ast;
 using Compiler.Common.Generation;
+using Compiler.Common.Tacky;
 
 namespace Compiler.Common.Stages;
 
 public static class Generator
 {
-    public static Program Visit(INode input)
+    public static bool TryGenerate(ProgramNode node, [NotNullWhen(true)] out Program? program)
     {
-        if (input is not ProgramNode program)
-            throw new InvalidOperationException();
-                
-        foreach (var node in program.Nodes)
+        program = null;
+        try
         {
-            if (node is FunctionNode function)
-                return new Program(VisitFunction(function));
+            program = Generate(node);
+            return true;            
         }
-        throw new NotImplementedException();
-    }
-
-    private static Function VisitFunction(FunctionNode node)
-    {
-        if (node.Body is not BlockStatementNode block)
-            throw new InvalidOperationException();
-        
-        var instructions = VisitBlockStatement(block);
-        instructions.Add(new Ret());
-        
-        return new Function(node.Name, instructions);
-    }
-
-    private static List<IInstruction> VisitBlockStatement(BlockStatementNode block)
-    {
-        if (block.Body is [ReturnNode { Expression: not null and (IntegerConstantNode or FloatConstantNode) }] expression)
-            return [new Mov(VisitExpression(((ReturnNode)expression[0]).Expression!), new Register())];
-        
-        throw new NotImplementedException();
-    }
-
-    private static IOperand VisitExpression(INode expression) =>
-        expression switch
+        catch (FormatException ex)
         {
-            IntegerConstantNode integer => new Imm<int>(integer.Value),
-            FloatConstantNode floating => new Imm<double>(floating.Value),
-            _ => throw new NotImplementedException()
-        };
+            PrintError(ex.Message);
+            return false;
+        }       
+    }
+
+    public static Program Generate(ProgramNode node)
+        => Program.Visit(TackyBase.Visit(node));
+    
+    private static void PrintError(ReadOnlySpan<char> error)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Error.WriteLine(error);
+        Console.ResetColor();
+    }
 }

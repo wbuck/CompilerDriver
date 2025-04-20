@@ -1,9 +1,55 @@
-namespace Compiler.Common.Test.Data;
+
+namespace Compiler.Common.Test.Data.NodeData;
 
 public class InvalidParseData : TheoryData<string, string>
 {
     public InvalidParseData()
     {
+        Add("""
+            int main(void)
+            {
+                return (1;
+            }
+            """, 
+            "Expected ')' but found ';'");
+        Add("""
+            int main(void) {
+                return (-)3;
+            }
+            """, 
+            "Expected expression but found ')'");
+        Add("""
+            int main(void)
+            {
+                return -~;
+            }
+            """, 
+            "Expected expression but found ';'");
+        Add("""
+            int main(void) {
+                return 4-;
+            }
+            """, 
+            "Expected expression but found ';'");
+        Add("""
+            int main(void) {
+                return -5
+            }
+            """, 
+            "Expected ';' but found '}'");
+        Add("""
+            int main(void) {
+                return ~;
+            }
+            """, 
+            "Expected expression but found ';'");
+        Add("""
+            int main(void)
+            {
+                return (3));
+            }
+            """, 
+            "Expected ';' but found ')'");
         Add("""
             int main(void) {
             return
@@ -46,13 +92,13 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0
             }
             """, 
-            "Unexpected token: }");
+            "Expected ';' but found '}'");
         Add("""
             int main(void) {
                 return int;
             }
             """, 
-            "Unexpected token: int");
+            "Expected ';' but found 'int'");
         Add("""
             int main(void){
                 retur n 0;
@@ -75,7 +121,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """, 
-            "Unexpected token: {");
+            "Expected ')' but found '{'");
         
     }
 }

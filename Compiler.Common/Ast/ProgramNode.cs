@@ -7,7 +7,7 @@ public record ProgramNode(List<INode> Nodes) : INode
 {
     public NodeType NodeType => NodeType.Program;
     
-    public static INode? Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    public static ProgramNode Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         List<INode> nodes = [];
 

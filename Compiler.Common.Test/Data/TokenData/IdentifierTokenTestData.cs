@@ -1,6 +1,6 @@
 using Compiler.Common.Tokens;
 
-namespace Compiler.Common.Test.Data;
+namespace Compiler.Common.Test.Data.TokenData;
 
 public class IdentifierTokenTestData : TheoryData<int, string, TokenType, string>
 {

@@ -7,9 +7,6 @@ public record BlockStatementNode(INode[] Body) : INode
 {
     public NodeType NodeType => NodeType.BlockStatement;
 
-    /*
-     * <statement> ::= "return" <expression> ";"
-     */
     public static INode? Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         if (tokens.IsEmpty)

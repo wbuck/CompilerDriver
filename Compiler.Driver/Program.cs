@@ -1,9 +1,8 @@
-﻿
-using System.CommandLine;
-using System.CommandLine.Invocation;
+﻿using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
 using CliWrap;
 using Compiler.Common.Stages;
+using Compiler.Driver;
 using Compiler.Driver.Extensions;
 
 var file = new Argument<string>
@@ -92,17 +91,26 @@ root.SetHandler(async (ctx) =>
             ctx.ExitCode = 0;
             return;
         }
-    
-        var assembly = Generator.Visit(node);        
+
+        if (!Generator.TryGenerate(node, out var program))
+        {
+            ctx.ExitCode = 1;
+            return;
+        }
         if (ctx.GetOption(codegen, false))
         {
             ctx.ExitCode = 0;
             return;
         }
+
+        if (!Emitter.TryEmit(program, out var compiled))
+        {
+            ctx.ExitCode = 0;
+            return;
+        }
         
-        var program = assembly.Build();
         var path = Path.ChangeExtension(source, "s");        
-        await File.WriteAllTextAsync(path, program, token);
+        await File.WriteAllTextAsync(path, compiled, token);
         
         if (ctx.GetOption(asm, false))
         {
@@ -168,16 +176,19 @@ static void WriteError(string message)
     Console.ResetColor();
 }
 
-internal record Result<T>(int Code, T? Value = default)
+namespace Compiler.Driver
 {
-    private const int Success = 0;
+    internal record Result<T>(int Code, T? Value = default)
+    {
+        private const int Success = 0;
     
-    [MemberNotNullWhen(true, nameof(Value))]
-    public bool IsSuccess => Code == Success;
-    public T? Value { get; } = Value;
-    public int Code { get; } = Code;
-    public static implicit operator int(Result<T> result) => result.Code;
-    public static implicit operator bool(Result<T> result) => result.Code == Success;
+        [MemberNotNullWhen(true, nameof(Value))]
+        public bool IsSuccess => Code == Success;
+        public T? Value { get; } = Value;
+        public int Code { get; } = Code;
+        public static implicit operator int(Result<T> result) => result.Code;
+        public static implicit operator bool(Result<T> result) => result.Code == Success;
+    }
 }
 
 

@@ -1,30 +1,30 @@
-using System.Diagnostics;
+using Compiler.Common.Ast;
 using Compiler.Common.Generation;
 using Compiler.Common.Stages;
+using Compiler.Common.Tacky;
+using Compiler.Common.Test.Data.AssemblyData;
+using Compiler.Common.Test.Data.TackyData;
 using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Test;
 
 public class GenerationTests
 {
-    [Fact]
-    public void Test()
+    [Theory]
+    [ClassData(typeof(AssemblyValidData))]
+    public void VisitShouldSuccessfullyConvertInput(string fileContent, Program expected)
     {
-        const string fileContent = """
-            int main(void) 
-            {
-               return 2;
-            }
-            """;
-        
-        var tokens = GetTokens(fileContent);
-        var ast = Parser.Parse(tokens, fileContent.AsMemory());
-        var parsed = Generator.Visit(ast);
-        
-        var program = parsed.Build();
-        Debugger.Break();
+        var node = GetAst(fileContent.AsMemory());
+        Assert.True(Generator.TryGenerate(node, out var program));
+        Assert.Equivalent(expected, program, strict: true);
     }
 
+    private static ProgramNode GetAst(ReadOnlyMemory<char> fileContent)
+    {
+        var tokens = GetTokens(fileContent.Span);
+        return Parser.Parse(tokens, fileContent);
+    }
+    
     private static List<IToken> GetTokens(ReadOnlySpan<char> fileContent)
     {
         Assert.True(Lexer.TryTokenize(fileContent, out var tokens));

@@ -10,15 +10,10 @@ public record ReturnNode(INode? Expression) : INode
     {
         if (!INode.CheckKeywordAndConsume(tokens, "return", out tokens))
             return null;
-
-        var expression = tokens switch
-        {
-            var _ when IntegerConstantNode.Parse(ref tokens, fileContent) is { } c => c,
-            var _ when FloatConstantNode.Parse(ref tokens, fileContent) is { } c => c,            
-            _ => null
-        };
         
-        INode.AssertTypeAndConsume(tokens, TokenType.Semicolon, out tokens, fileContent.Span);
+        var expression = ExpressionHelper.Parse(ref tokens, fileContent);
+        
+        INode.AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
         return new ReturnNode(expression);
     }
 }

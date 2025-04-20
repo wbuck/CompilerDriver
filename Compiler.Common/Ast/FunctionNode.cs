@@ -12,9 +12,6 @@ public record FunctionNode(
 {
     public NodeType NodeType => NodeType.Function;
 
-    /*
-     * <function> ::= "int" <identifier> "(" "void" ")" "{" <statement> "}"
-     */
     public static INode? Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         var shifted = tokens;
@@ -31,13 +28,13 @@ public record FunctionNode(
             ? ArgumentListNode.Parse(ref shifted, fileContent)
             : null) as ArgumentListNode;
         
-        INode.AssertTypeAndConsume(shifted, TokenType.CloseParenthesis, out shifted, fileContent.Span);
-        INode.AssertTypeAndConsume(shifted, TokenType.OpenBrace, out shifted, fileContent.Span);
+        INode.AssertTypeAndConsume(shifted, TokenType.CloseParenthesis, fileContent.Span, out shifted);
+        INode.AssertTypeAndConsume(shifted, TokenType.OpenBrace, fileContent.Span, out shifted);
 
         if (BlockStatementNode.Parse(ref shifted, fileContent) is not { } body)
             throw new FormatException($"Unexpected token: {INode.ReadTokenValue(shifted, fileContent.Span)}");
                 
-        INode.AssertTypeAndConsume(shifted, TokenType.CloseBrace, out shifted, fileContent.Span);
+        INode.AssertTypeAndConsume(shifted, TokenType.CloseBrace, fileContent.Span, out shifted);
 
         tokens = shifted;        
         var name = fileContent.Slice(id.Index, id.Length);

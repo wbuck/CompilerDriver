@@ -1,6 +1,4 @@
-﻿
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Compiler.Common.Tokens;
 
@@ -23,67 +21,73 @@ public static partial class Lexer
             {
                 var offset = range.Start.Value + line.Length - trimmed.Length;
 
-                IToken? token = null;
-                if ((token = Parse<OpenBraceToken>(trimmed, offset)) is not null)
+                IToken? token;
+                if ((token = Parse<OpenBraceToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
                     continue;
                 }                
-                if ((token = Parse<CloseBraceToken>(trimmed, offset)) is not null)
+                if ((token = Parse<CloseBraceToken>(ref trimmed, offset)) is not null)
                 {
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 }                
-                if ((token = Parse<OpenParenthesisToken>(trimmed, offset)) is not null)
+                if ((token = Parse<OpenParenthesisToken>(ref trimmed, offset)) is not null)
                 {
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 }
-                if ((token = Parse<CloseParenthesisToken>(trimmed, offset)) is not null)
+                if ((token = Parse<CloseParenthesisToken>(ref trimmed, offset)) is not null)
                 {                    
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 }
-                if ((token = Parse<CommaToken>(trimmed, offset)) is not null)
+                if ((token = Parse<CommaToken>(ref trimmed, offset)) is not null)
                 {
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 }          
-                if ((token = Parse<IdentifierToken>(trimmed, offset)) is not null)
+                if ((token = Parse<IdentifierToken>(ref trimmed, offset)) is not null)
                 {                    
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 } 
-                if ((token = Parse<SemicolonToken>(trimmed, offset)) is not null)
+                if ((token = Parse<SemicolonToken>(ref trimmed, offset)) is not null)
                 {                    
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 } 
-                if ((token = Parse<SemicolonToken>(trimmed, offset)) is not null)
+                if ((token = Parse<SemicolonToken>(ref trimmed, offset)) is not null)
                 {
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 }  
-                if ((token = Parse<NumericConstantToken>(trimmed, offset)) is not null)
+                if ((token = Parse<NumericConstantToken>(ref trimmed, offset)) is not null)
                 {
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 }  
-                if ((token = Parse<ArithmeticToken>(trimmed, offset)) is not null)
+                if ((token = Parse<ArithmeticToken>(ref trimmed, offset)) is not null)
                 {
-                    tokens.Add(token);
-                    trimmed = trimmed[token.Length..].TrimStart();
+                    tokens.Add(token);                    
                     continue;
                 }  
+                if ((token = Parse<BitwiseComplementToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }  
+                if ((token = Parse<DecrementToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }  
+                if ((token = Parse<NegationToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                
                 
                 var enumerator = NonWhiteSpacePattern.EnumerateMatches(trimmed);
                 if (enumerator.MoveNext())
@@ -91,7 +95,7 @@ public static partial class Lexer
                     var match = enumerator.Current;
                     var unknown = trimmed.Slice(match.Index, match.Length);
                     
-                    Console.Error.WriteLine($"Unexpected token: {unknown}");
+                    PrintError($"Unexpected token: {unknown}");
                     return false;
                 }
             }     
@@ -99,10 +103,21 @@ public static partial class Lexer
         
         tokens.Sort((t1, t2) => t1.Index.CompareTo(t2.Index));
         return true;
-        
-        static IToken? Parse<T>(ReadOnlySpan<char> fileContent, int offset) where T : IToken
-            => T.Parse(fileContent, offset);
-    }
 
+        static IToken? Parse<T>(ref ReadOnlySpan<char> line, int offset) where T : IToken
+        {
+            if (T.Parse(ref line, offset) is not { } token) 
+                return null;
+            
+            line = line.TrimStart();
+            return token;
+        }
+    }
     
+    private static void PrintError(ReadOnlySpan<char> error)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Error.WriteLine(error);
+        Console.ResetColor();
+    }
 }
