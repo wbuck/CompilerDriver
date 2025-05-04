@@ -5,14 +5,14 @@ using Compiler.Common.Tacky;
 
 namespace Compiler.Common.Stages;
 
-public static class Generator
+public static class TackyGenerator
 {
-    public static bool TryGenerate(TackyProgram tacky, [NotNullWhen(true)] out Program? program)
+    public static bool TryGenerate(ProgramNode node, [NotNullWhen(true)] out TackyProgram? program)
     {
         program = null;
         try
         {
-            program = Generate(tacky);
+            program = Generate(node);
             return true;            
         }
         catch (FormatException ex)
@@ -22,8 +22,8 @@ public static class Generator
         }       
     }
 
-    public static Program Generate(TackyProgram program)
-        => Program.Visit(program);
+    public static TackyProgram Generate(ProgramNode program)
+        => TackyProgram.Visit(program);
     
     private static void PrintError(ReadOnlySpan<char> error)
     {

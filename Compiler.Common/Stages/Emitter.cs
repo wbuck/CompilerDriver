@@ -33,21 +33,21 @@ public static class Emitter
 
     private static void AssertType<TExpected>(IInstruction instruction) where TExpected : IInstruction
     {
-        if (instruction is not TExpected expected)
-            throw new FormatException($"Unexpected instruction: {instruction.GetType().Name}");
+        if (instruction is not TExpected)
+            throw new FormatException($"Unexpected instruction: {instruction.Tag.ToStringFast()}");
     }
 
     private static void Emit(Function function, StringBuilder builder)
     {
-        builder.AppendLine($".globl {function.Name}", 2);
-        builder.AppendLine($"{function.Name}:");
-        builder.AppendLine("pushq %rbp", 2);
-        builder.AppendLine("movq %rsp, %rbp", 2);
+        builder.AppendLine($".globl {function.Name}", 2)
+               .AppendLine($"{function.Name}:")
+               .AppendLine("pushq %rbp", 2)
+               .AppendLine("movq %rsp, %rbp", 2);
         
         Emit(function.Instructions, builder, 2);
         
-        builder.AppendLine("movq %rbp, %rsp", 2);
-        builder.AppendLine("popq %rbp", 2);        
+        builder.AppendLine("movq %rbp, %rsp", 2)
+               .AppendLine("popq %rbp", 2);        
 
         AssertType<Ret>(function.Instructions.Last());
         builder.AppendLine("ret", 2);
@@ -67,10 +67,19 @@ public static class Emitter
                 case AllocateStack stack:
                     builder.AppendLine($"subq ${stack.Offset}, %rsp", indent);
                     break;
+                case Binary binary:
+                    builder.AppendLine($"{GetBinaryOperator(binary.Operator)} {GetOperand(binary.Source)}, {GetOperand(binary.Destination)}", indent);
+                    break;
+                case Div div:
+                    builder.AppendLine($"idivl {GetOperand(div.Operand)}", indent);
+                    break;
+                case Cdq:
+                    builder.AppendLine("cdq", indent);
+                    break;
                 case Ret:
                     break;
                 default:
-                    throw new FormatException($"Unexpected instruction: {i.GetType().Name}"); 
+                    throw new FormatException($"Unexpected instruction: {i.Tag.ToStringFast()}"); 
             }   
         });
 
@@ -78,16 +87,26 @@ public static class Emitter
     {
         Neg => "negl",
         Not => "notl",
-        _ => throw new FormatException($"Unexpected operator: {op.GetType().Name}")
+        _ => throw new FormatException($"Unexpected unary operator: {op.Tag.ToStringFast()}")
+    };
+
+    private static string GetBinaryOperator(IBinaryOperator op) => op switch
+    {
+        Add => "addl",
+        Sub => "subl",
+        Mult => "imull",
+        _ => throw new FormatException($"Unexpected binary operator: {op.Tag.ToStringFast()}")  
     };
 
     private static string GetOperand(IOperand operand) => operand switch
     {
         Ax => "%eax",
         R10 => "%r10d",
+        R11 => "%r11d",
+        Dx => "%edx",
         Stack stack => $"-{stack.Offset}(%rbp)",
         Imm<int> integer => $"${integer.Constant}",
-        _ => throw new FormatException($"Unexpected operand: {operand.GetType().Name}")   
+        _ => throw new FormatException($"Unexpected operand: {operand.Tag.ToStringFast()}")   
     };
 
     private static void PrintError(ReadOnlySpan<char> error)

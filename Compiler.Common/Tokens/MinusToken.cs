@@ -1,8 +1,8 @@
 namespace Compiler.Common.Tokens;
 
-public record NegationToken(int Index) : IToken
+public record MinusToken(int Index) : IToken
 {
-    public TokenType Type => TokenType.Negation;
+    public TokenType Type => TokenType.Minus;
     public int Length => 1;
 
     public static IToken? Parse(ref ReadOnlySpan<char> value, int offset)
@@ -11,6 +11,6 @@ public record NegationToken(int Index) : IToken
             return null;
         
         value = value[1..];
-        return new NegationToken(offset);
+        return new MinusToken(offset);
     }
 }

@@ -1,39 +1,55 @@
-using System.Diagnostics;
 using Compiler.Common.Ast;
 using Compiler.Common.Generation;
 using Compiler.Common.Stages;
-using Compiler.Common.Test.Data.AssemblyData;
+using Compiler.Common.Tacky;
 using Compiler.Common.Test.Data.EmitterData;
 using Compiler.Common.Tokens;
+using Xunit.Abstractions;
 
 namespace Compiler.Common.Test;
 
-public class EmitterTests
-{
+public class EmitterTests(ITestOutputHelper output)
+{    
     [Theory]
-    [ClassData(typeof(EmitterValidData))]
-    public void EmitShouldCorrectCompileAst(string fileContent, string[] expected)
+    [ClassData(typeof(ValidBinaryOperationData))]
+    public void EmitBinaryOperationShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
     {
-        var compiled = Emitter.Emit(GetProgram(fileContent.AsMemory()));
-        var actual = compiled
-            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
-            .Select(line => line.Trim())
-            .ToArray();
-        
-        Assert.Equal(expected.Length, actual.Length);
-        
-        foreach (var (expectedLine, actualLine) in expected.Zip(actual))
-            Assert.Equal(expectedLine, actualLine);
+        var compiled = GetCompiled(fileContent.AsMemory());
+        Assert.Equivalent(expected, compiled, strict: true);
     }
 
-    private static Program GetProgram(ReadOnlyMemory<char> fileContent)
-        => Generator.Generate(GetAst(fileContent));
+    [Theory]
+    [ClassData(typeof(ValidUnaryData))]
+    public void EmitUnaryShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    {
+        var compiled = GetCompiled(fileContent.AsMemory());
+        Assert.Equivalent(expected, compiled, strict: true);
+    }
+
+    private List<string> GetCompiled(ReadOnlyMemory<char> fileContent)
+    {
+        var compiled = Emitter.Emit(GetAssembly(fileContent));
+        var result = compiled
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim())
+            .ToList();
+        
+        output.WriteLine("Input:");
+        output.WriteLine(fileContent.ToString());
+        output.WriteLine(string.Empty);
+        output.WriteLine("Actual Result:");
+        result.ForEach(i => output.WriteLine(i.ToString()));
+        return result;
+    }
+    
+    private static Program GetAssembly(ReadOnlyMemory<char> fileContent)
+        => Program.Visit(GetTacky(fileContent));
+    
+    private static TackyProgram GetTacky(ReadOnlyMemory<char> fileContent)
+        => TackyProgram.Visit(GetAst(fileContent));
     
     private static ProgramNode GetAst(ReadOnlyMemory<char> fileContent)
-    {
-        var tokens = GetTokens(fileContent.Span);
-        return Parser.Parse(tokens, fileContent);
-    }
+        => Parser.Parse(GetTokens(fileContent.Span), fileContent);
     
     private static List<IToken> GetTokens(ReadOnlySpan<char> fileContent)
     {

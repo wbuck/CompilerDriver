@@ -1,0 +1,26 @@
+using Compiler.Common.Tokens;
+
+namespace Compiler.Common.Test.Data.TokenData;
+
+public class SingleCharacterValidTokenData : TheoryData<string, Type, TokenType>
+{
+    public SingleCharacterValidTokenData()
+    {                                        
+        Add(GetValue(TokenType.OpenParenthesis), typeof(OpenParenthesisToken), TokenType.OpenParenthesis);
+        Add(GetValue(TokenType.CloseParenthesis), typeof(CloseParenthesisToken), TokenType.CloseParenthesis);
+        Add(GetValue(TokenType.OpenBrace), typeof(OpenBraceToken), TokenType.OpenBrace);
+        Add(GetValue(TokenType.CloseBrace), typeof(CloseBraceToken), TokenType.CloseBrace);
+        Add(GetValue(TokenType.Comma), typeof(CommaToken), TokenType.Comma);
+        Add(GetValue(TokenType.Semicolon), typeof(SemicolonToken), TokenType.Semicolon);
+        Add(GetValue(TokenType.BitwiseComplement), typeof(BitwiseComplementToken), TokenType.BitwiseComplement);
+        Add(GetValue(TokenType.Decrement), typeof(DecrementToken), TokenType.Decrement);
+        Add(GetValue(TokenType.Plus), typeof(PlusToken), TokenType.Plus);
+        Add(GetValue(TokenType.Minus), typeof(MinusToken), TokenType.Minus);
+        Add(GetValue(TokenType.Asterisk), typeof(AsteriskToken), TokenType.Asterisk);
+        Add(GetValue(TokenType.ForwardSlash), typeof(ForwardSlashToken), TokenType.ForwardSlash);
+        Add(GetValue(TokenType.Percent), typeof(PercentToken), TokenType.Percent);
+    }
+    
+    private static string GetValue(TokenType type)
+        => type.ToStringFast(true);
+}

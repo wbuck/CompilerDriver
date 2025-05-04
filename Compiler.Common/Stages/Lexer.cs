@@ -67,11 +67,6 @@ public static partial class Lexer
                     tokens.Add(token);                    
                     continue;
                 }  
-                if ((token = Parse<ArithmeticToken>(ref trimmed, offset)) is not null)
-                {
-                    tokens.Add(token);                    
-                    continue;
-                }  
                 if ((token = Parse<BitwiseComplementToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
@@ -82,12 +77,31 @@ public static partial class Lexer
                     tokens.Add(token);                    
                     continue;
                 }  
-                if ((token = Parse<NegationToken>(ref trimmed, offset)) is not null)
+                if ((token = Parse<MinusToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
                     continue;
                 } 
-                
+                if ((token = Parse<PlusToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<AsteriskToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<ForwardSlashToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<PercentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }         
                 
                 var enumerator = NonWhiteSpacePattern.EnumerateMatches(trimmed);
                 if (enumerator.MoveNext())

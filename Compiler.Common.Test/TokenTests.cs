@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using Compiler.Common.Stages;
-using Compiler.Common.Test.Data;
+﻿using System.Reflection;
 using Compiler.Common.Test.Data.TokenData;
 using Compiler.Common.Tokens;
 
@@ -10,6 +8,19 @@ namespace Compiler.Common.Test;
 
 public class TokenTests
 {
+    private static readonly MethodInfo ParseValidMethod = typeof(TokenTests)
+        .GetMethod(nameof(ParseValid), BindingFlags.NonPublic | BindingFlags.Static)!;
+    
+    
+    [Theory]
+    [ClassData(typeof(SingleCharacterValidTokenData))]
+    public void ParseSingleCharacterTokenShouldSuccessfullyReturnParsedToken(
+        string input, Type tokenType, TokenType expectedType)
+    {
+        ParseValidMethod.MakeGenericMethod(tokenType)
+            .Invoke(null, [input, input, expectedType]);
+    }
+    
     [Theory]
     [ClassData(typeof(IdentifierTokenTestData))]
     public void ParseIdentifierTokenWithValidInputsShouldSuccessfullyReturnParsedToken(int offset, string input, TokenType expectedType, string expectedValue)
@@ -56,42 +67,6 @@ public class TokenTests
         Assert.Equal(offset, token.Index);
         Assert.Equal(expectedValue.Length, token.Length);
     }
-    
-    [Fact]
-    public void ParseCloseBraceTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<CloseBraceToken>("}", "}", TokenType.CloseBrace);
-    
-    [Fact]
-    public void ParseCloseParenthesisTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<CloseParenthesisToken>(")", ")", TokenType.CloseParenthesis);
-    
-    [Fact]
-    public void ParseCommaTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<CommaToken>(",", ",", TokenType.Comma);
-    
-    [Fact]
-    public void ParseOpenParenthesisTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<OpenParenthesisToken>("(", "(", TokenType.OpenParenthesis);
-    
-    [Fact]
-    public void ParseOpenBraceTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<OpenBraceToken>("{", "{", TokenType.OpenBrace);
-    
-    [Fact]
-    public void ParseSemicolonTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<SemicolonToken>(";", ";", TokenType.Semicolon);
-    
-    [Fact]
-    public void ParseBitwiseComplementTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<BitwiseComplementToken>("~", "~", TokenType.BitwiseComplement);
-    
-    [Fact]
-    public void ParseDecrementTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<DecrementToken>("--", "--", TokenType.Decrement);
-    
-    [Fact]
-    public void ParseMinusTokenWithWithValidInputsShouldSuccessfullyReturnParsedToken()
-        => ParseValid<NegationToken>("-", "-", TokenType.Negation);   
     
     [Theory]
     [InlineData("@")]
@@ -203,7 +178,7 @@ public class TokenTests
     public void ParseMinusTokenWithUnrecognizedInputShouldReturnNull(string input)
     {
         var line = input.AsSpan();
-        var token = NegationToken.Parse(ref line, 0);
+        var token = MinusToken.Parse(ref line, 0);
         Assert.Null(token);
     }
     
@@ -218,9 +193,54 @@ public class TokenTests
         Assert.Null(token);
     }
     
-    private static void ParseValid<TToken>(ReadOnlySpan<char> input, ReadOnlySpan<char> expectedValue, TokenType expectedType) where TToken: IToken
+    [Theory]
+    [InlineData("'")]
+    [InlineData("=")]
+    [InlineData("_")]
+    public void ParsePlusTokenWithUnrecognizedInputShouldReturnNull(string input)
     {
-        var copy = input;
+        var line = input.AsSpan();
+        var token = PlusToken.Parse(ref line, 0);
+        Assert.Null(token);
+    }
+    
+    [Theory]
+    [InlineData("'")]
+    [InlineData("=")]
+    [InlineData("_")]
+    public void ParseAsteriskTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var line = input.AsSpan();
+        var token = AsteriskToken.Parse(ref line, 0);
+        Assert.Null(token);
+    }
+    
+    [Theory]
+    [InlineData("'")]
+    [InlineData("=")]
+    [InlineData("_")]
+    public void ParsePercentTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var line = input.AsSpan();
+        var token = PercentToken.Parse(ref line, 0);
+        Assert.Null(token);
+    }
+    
+    [Theory]
+    [InlineData("'")]
+    [InlineData("=")]
+    [InlineData("_")]
+    public void ParseForwardSlashTokenWithUnrecognizedInputShouldReturnNull(string input)
+    {
+        var line = input.AsSpan();
+        var token = ForwardSlashToken.Parse(ref line, 0);
+        Assert.Null(token);
+    }
+    
+    private static void ParseValid<TToken>(string input, string expectedValue, TokenType expectedType) 
+        where TToken: IToken
+    {
+        var copy = input.AsSpan();
         var token = TToken.Parse(ref copy, 0);
         
         Assert.NotNull(token);

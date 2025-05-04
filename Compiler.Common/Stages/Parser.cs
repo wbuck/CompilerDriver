@@ -25,7 +25,7 @@ public static class Parser
     public static ProgramNode Parse(in List<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         var input = CollectionsMarshal.AsSpan(tokens);
-        return ProgramNode.Parse(ref input, fileContent)!;                 
+        return ProgramNode.Parse(ref input, fileContent);                 
     }
 
     private static void PrintError(ReadOnlySpan<char> error)

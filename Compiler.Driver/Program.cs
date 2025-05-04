@@ -34,6 +34,12 @@ var parse = new Option<bool>
     "Run the lexer and parser but stop before assembly generation"
 );
 
+var tacky = new Option<bool>
+(
+    name: "--tacky",
+    description: "Run the lexer, parser, and tacky generator but stop before code generation"   
+);
+
 var codegen = new Option<bool>
 (
     "--codegen",
@@ -50,6 +56,7 @@ var root = new RootCommand("Compiler Driver");
 root.AddArgument(file);
 root.AddOption(lex);
 root.AddOption(parse);
+root.AddOption(tacky);
 root.AddOption(codegen);
 root.AddOption(output);
 
@@ -91,18 +98,29 @@ root.SetHandler(async (ctx) =>
             ctx.ExitCode = 0;
             return;
         }
-
-        if (!Generator.TryGenerate(node, out var program))
+        if (!TackyGenerator.TryGenerate(node, out var tackyProgram))
         {
             ctx.ExitCode = 1;
             return;
         }
-        if (ctx.GetOption(codegen, false))
+        if (ctx.GetOption(tacky, false))
         {
             ctx.ExitCode = 0;
             return;
         }
 
+        if (!Generator.TryGenerate(tackyProgram, out var program))
+        {
+            ctx.ExitCode = 1;
+            return;
+        }
+
+        if (ctx.GetOption(codegen, false))
+        {
+            ctx.ExitCode = 0;
+            return;
+        }
+        
         if (!Emitter.TryEmit(program, out var compiled))
         {
             ctx.ExitCode = 0;

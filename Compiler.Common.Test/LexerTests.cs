@@ -19,7 +19,7 @@ public class LexerTests
 
         return;
         
-        void Validate(IToken token, TokenType expectedType,  ReadOnlySpan<char> expectedValue)
+        void Validate(IToken token, TokenType expectedType, ReadOnlySpan<char> expectedValue)
         {
             Assert.Equal(expectedValue, GetSection(input, token));
             Assert.Equal(expectedType, token.Type);

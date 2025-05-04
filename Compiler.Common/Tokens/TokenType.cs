@@ -25,24 +25,15 @@ public enum TokenType
     BitwiseComplement,
     [Display(Name = "--")]
     Decrement,
-    [Display(Name = "++")]
-    Increment,
     [Display(Name = "+")]
     Plus,
     [Display(Name = "-")]
-    Negation,
+    Minus,
     [Display(Name = "*")]   
-    Multiply,
+    Asterisk,
     [Display(Name = "/")]  
-    Divide,
-    [Display(Name = "=")] 
-    Equal,
-    [Display(Name = "!")]
-    Not,
-    [Display(Name = "<")]
-    LessThan,
-    [Display(Name = ">")]
-    GreaterThan,
+    ForwardSlash,
     [Display(Name = "%")]
-    Modulo
+    Percent,
+    Unknown
 }
