@@ -2,26 +2,34 @@ using Compiler.Common.Stages;
 using Compiler.Common.Test.Data;
 using Compiler.Common.Test.Data.TokenData;
 using Compiler.Common.Tokens;
+using Xunit.Abstractions;
 
 namespace Compiler.Common.Test;
 
-public class LexerTests
+public class LexerTests(ITestOutputHelper output)
 {
     [Theory]
     [ClassData(typeof(LexerParseData))]
-    public void LexerShouldSuccessfullyTokenizeInput(string input, List<ExpectedToken> expectedTokens)
+    public void LexerShouldSuccessfullyTokenizeInput(string fileContent, List<ExpectedToken> expected)
+        => Validate(fileContent, expected, GetResult(fileContent));
+    
+    [Theory]
+    [ClassData(typeof(BitwiseOperatorData))]
+    public void ShouldSuccessfullyHandleBitwiseOperatorData(string fileContent, List<ExpectedToken> expected)
+        => Validate(fileContent, expected, GetResult(fileContent)); 
+    
+    private static void Validate(string fileContent, List<ExpectedToken> expected, List<IToken> actual)
     {
-        Assert.True(Lexer.TryTokenize(input, out var tokens));
-        Assert.Equal(expectedTokens.Count, tokens.Count);
-
-        foreach (var (token, (type, value)) in tokens.Zip(expectedTokens))
-            Validate(token, type, value);
-
-        return;
+        Assert.Equal(expected.Count, actual.Count);
         
-        void Validate(IToken token, TokenType expectedType, ReadOnlySpan<char> expectedValue)
+        foreach (var (token, (type, value)) in actual.Zip(expected))
+            ValidateToken(token, type, value);
+        
+        return;
+
+        void ValidateToken(IToken token, TokenType expectedType, ReadOnlySpan<char> expectedValue)
         {
-            Assert.Equal(expectedValue, GetSection(input, token));
+            Assert.Equal(expectedValue, GetSection(fileContent, token));
             Assert.Equal(expectedType, token.Type);
             
             if (token is KeywordToken keywordToken)
@@ -31,4 +39,15 @@ public class LexerTests
     
     private static ReadOnlySpan<char> GetSection(string input, IToken token) 
         => input.AsSpan(token.Index, token.Length);
+    
+    private List<IToken> GetResult(string fileContent)
+    {
+        Assert.True(Lexer.TryTokenize(fileContent, out var tokens));
+        output.WriteLine("Input:");
+        output.WriteLine(fileContent);
+        output.WriteLine(string.Empty);
+        output.WriteLine("Actual Result:");
+        tokens.ForEach(i => output.WriteLine(i.ToString()));
+        return tokens;
+    }
 }

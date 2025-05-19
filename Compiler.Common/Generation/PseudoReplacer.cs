@@ -25,14 +25,20 @@ internal class PseudoReplacer
                 Unary unary => ReplaceUnary(unary),
                 Binary binary => ReplaceBinary(binary),
                 Div div => ReplaceDiv(div),
+                Bitwise bitwise => ReplaceBitwise(bitwise),
                 Ret ret => ret,
                 Cdq cdq => cdq,
                 AllocateStack allocate => allocate,
-                _ => throw new FormatException($"Unknown instruction type {instructions[i].GetType().Name}")
+                _ => throw new FormatException($"Unknown instruction type {instructions[i].Tag.ToStringFast()}")
             };
         }
         return instructions;
     }
+    
+    private Bitwise ReplaceBitwise(Bitwise bitwise)
+        => IsPseudo(bitwise.Source) || IsPseudo(bitwise.Destination)
+            ? bitwise with { Source = ReplaceOperand(bitwise.Source), Destination = ReplaceOperand(bitwise.Destination) }
+            : bitwise;
 
     private Mov ReplaceMov(Mov mov)
         => IsPseudo(mov.Source) || IsPseudo(mov.Destination)

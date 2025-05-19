@@ -1,10 +1,10 @@
 using Compiler.Common.Ast;
 
-namespace Compiler.Common.Test.Data.NodeData;
+namespace Compiler.Common.Test.Data.Ast;
 
-public class ValidBinaryOperationData : TheoryData<string, ProgramNode>
+public class BinaryOperatorData : DataBase
 { 
-    public ValidBinaryOperationData()
+    public BinaryOperatorData()
     {        
         Add
         (
@@ -288,11 +288,4 @@ public class ValidBinaryOperationData : TheoryData<string, ProgramNode>
             )
         ); 
     }
-    
-    private static ConstantNode<int> Constant(int value) =>
-        new(value);
-    
-    private static ProgramNode GetExpected(IExpressionNode expression) =>
-        new(new FunctionNode("main", "int", new ReturnNode(expression)));
-
 }

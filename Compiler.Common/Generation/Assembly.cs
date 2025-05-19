@@ -19,6 +19,8 @@ public enum AssemblyTag
     R10,
     R11,
     Dx,
+    Cx,
+    Cl,
     Imm,
     Pseudo,
     Stack,
@@ -26,6 +28,12 @@ public enum AssemblyTag
     AllocateStack,
     Binary,
     Unary,
+    Bitwise,
+    And,
+    Or,
+    Xor,
+    LeftShift,
+    RightShift,
     Program,
     Function
 }
@@ -61,6 +69,18 @@ public sealed record Dx : IReg
     public static Dx Register { get; } = new();
     private Dx() { }
     public AssemblyTag Tag => AssemblyTag.Dx;
+}
+public sealed record Cl : IReg
+{
+    public static Cl Register { get; } = new();
+    private Cl() { }
+    public AssemblyTag Tag => AssemblyTag.Cl;
+}
+public sealed record Cx : IReg
+{
+    public static Cx Register { get; } = new();
+    private Cx() { }
+    public AssemblyTag Tag => AssemblyTag.Cx;
 }
 
 public record Imm<T>(T Constant) : IOperand where T: INumber<T>
@@ -124,10 +144,47 @@ public record Binary(IBinaryOperator Operator, IOperand Source, IOperand Destina
 {
     public AssemblyTag Tag => AssemblyTag.Binary; 
 }
+public record Bitwise(IBitwiseOperator Operator, IOperand Source, IOperand Destination) : IInstruction
+{
+    public AssemblyTag Tag => AssemblyTag.Bitwise; 
+}
 
 public record Div(IOperand Operand) : IInstruction
 {
     public AssemblyTag Tag => AssemblyTag.Div;
+}
+
+public interface IBitwiseOperator : IAssembly;
+
+public record BitwiseAnd : IBitwiseOperator
+{
+    public static BitwiseAnd Operator { get; } = new();
+    private BitwiseAnd() { }
+    public AssemblyTag Tag => AssemblyTag.And;
+}
+public record BitwiseOr : IBitwiseOperator
+{
+    public static BitwiseOr Operator { get; } = new();
+    private BitwiseOr() { }
+    public AssemblyTag Tag => AssemblyTag.Or;
+}
+public record BitwiseXor : IBitwiseOperator
+{
+    public static BitwiseXor Operator { get; } = new();
+    private BitwiseXor() { }
+    public AssemblyTag Tag => AssemblyTag.Xor;
+}
+public record BitwiseLeftShift : IBitwiseOperator
+{
+    public static BitwiseLeftShift Operator { get; } = new();
+    private BitwiseLeftShift() { }
+    public AssemblyTag Tag => AssemblyTag.LeftShift;
+}
+public record BitwiseRightShift : IBitwiseOperator
+{
+    public static BitwiseRightShift Operator { get; } = new();
+    private BitwiseRightShift() { }
+    public AssemblyTag Tag => AssemblyTag.RightShift;
 }
 
 public interface IBinaryOperator : IAssembly;
@@ -176,9 +233,18 @@ public record Program(Function Function): IAssembly
             TackyUnary unary => VisitUnary(unary),
             TackyReturn ret => VisitReturn(ret),
             TackyBinary binary => VisitBinary(binary),
-            _ => throw new FormatException($"Unknown instruction type {i.GetType().Name}")
+            TackyBitwise bitwise => VisitBitwise(bitwise),
+            _ => throw new FormatException($"Unknown instruction type {i.Tag.ToStringFast()}")
         }).ToList();
 
+    private static IEnumerable<IInstruction> VisitBitwise(TackyBitwise bitwise)
+    {
+        var dest = VisitValue(bitwise.Destination);
+        return [
+            new Mov(VisitValue(bitwise.Lhs), dest),
+            new Bitwise(GetBitwiseOperator(bitwise.Operator), VisitValue(bitwise.Rhs), dest)
+        ];
+    }
     private static IEnumerable<IInstruction> VisitBinary(TackyBinary binary)
     {
         if (binary.Operator is TackyDivision or TackyRemainder)
@@ -215,19 +281,30 @@ public record Program(Function Function): IAssembly
             TackyConstant<int> integer => new Imm<int>(integer.Value),
             TackyConstant<double> floating => new Imm<double>(floating.Value),
             TackyVariable variable => new Pseudo(variable.Identifier, variable.StackOffset),
-            _ => throw new FormatException($"Unknown operand type {value.GetType().Name}")
+            _ => throw new FormatException($"Unknown operand type {value.Tag.ToStringFast()}")
         };
     
     private static List<IInstruction> VisitReturn(TackyReturn @return)
         => [new Mov(VisitValue(@return.Value), Ax.Register), Ret.Instruction];
 
+    private static IBitwiseOperator GetBitwiseOperator(ITackyBitwiseOperator bitwise)
+        => bitwise switch
+        {
+            TackyAnd => BitwiseAnd.Operator,
+            TackyOr => BitwiseOr.Operator,
+            TackyXor => BitwiseXor.Operator,
+            TackyLeftShift => BitwiseLeftShift.Operator,
+            TackyRightShift => BitwiseRightShift.Operator,
+            _ => throw new FormatException($"Unknown bitwise operator type {bitwise.Tag.ToStringFast()}")
+        };
+    
     private static IBinaryOperator GetBinaryOperator(ITackyBinaryOperator binary)
         => binary switch
         {
             TackyAddition => Add.Operator,
             TackySubtraction => Sub.Operator,
             TackyMultiplication => Mult.Operator,            
-            _ => throw new FormatException($"Unknown binary operator type {binary.GetType().Name}")
+            _ => throw new FormatException($"Unknown binary operator type {binary.Tag.ToStringFast()}")
         };
     
     private static IUnaryOperator GetUnaryOperator(ITackyUnaryOperator unary)
@@ -235,7 +312,7 @@ public record Program(Function Function): IAssembly
         {
             TackyNegate => Neg.Operator,
             TackyComplement => Not.Operator,
-            _ => throw new FormatException($"Unknown unary operator type {unary.GetType().Name}")
+            _ => throw new FormatException($"Unknown unary operator type {unary.Tag.ToStringFast()}")
         };
 
 

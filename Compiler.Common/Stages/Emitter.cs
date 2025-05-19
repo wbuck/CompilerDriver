@@ -1,9 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using System.Text;
 using Compiler.Common.Extensions;
 using Compiler.Common.Generation;
-using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Stages;
 
@@ -76,6 +74,9 @@ public static class Emitter
                 case Cdq:
                     builder.AppendLine("cdq", indent);
                     break;
+                case Bitwise bitwise:
+                    builder.AppendLine($"{GetBitwiseOperator(bitwise.Operator)} {GetOperand(bitwise.Source)}, {GetOperand(bitwise.Destination)}", indent);
+                    break;
                 case Ret:
                     break;
                 default:
@@ -88,6 +89,16 @@ public static class Emitter
         Neg => "negl",
         Not => "notl",
         _ => throw new FormatException($"Unexpected unary operator: {op.Tag.ToStringFast()}")
+    };
+
+    private static string GetBitwiseOperator(IBitwiseOperator op) => op switch
+    {
+        BitwiseAnd => "andl",
+        BitwiseOr => "orl",
+        BitwiseXor => "xorl",
+        BitwiseLeftShift => "sall",
+        BitwiseRightShift => "sarl",
+        _ => throw new FormatException($"Unexpected bitwise operator: {op.Tag.ToStringFast()}")
     };
 
     private static string GetBinaryOperator(IBinaryOperator op) => op switch
@@ -104,6 +115,8 @@ public static class Emitter
         R10 => "%r10d",
         R11 => "%r11d",
         Dx => "%edx",
+        Cx => "%ecx",
+        Cl => "%cl",
         Stack stack => $"-{stack.Offset}(%rbp)",
         Imm<int> integer => $"${integer.Constant}",
         _ => throw new FormatException($"Unexpected operand: {operand.Tag.ToStringFast()}")   

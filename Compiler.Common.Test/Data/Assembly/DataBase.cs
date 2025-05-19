@@ -1,6 +1,6 @@
 using Compiler.Common.Generation;
 
-namespace Compiler.Common.Test.Data.AssemblyData;
+namespace Compiler.Common.Test.Data.Assembly;
 
 public class DataBase : TheoryData<string, Program>
 {

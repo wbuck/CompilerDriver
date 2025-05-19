@@ -1,10 +1,28 @@
 
-namespace Compiler.Common.Test.Data.NodeData;
+namespace Compiler.Common.Test.Data.Ast;
 
 public class InvalidParseData : TheoryData<string, string>
 {
     public InvalidParseData()
     {
+        Add("""
+            int main(void) {
+                return 1 | | 2;
+            }
+            """, 
+            "Expected expression but found '|'");
+        Add("""
+            int main(void) {
+                return 1 + (2;
+            }
+            """, 
+            "Expected ')' but found ';'");
+        Add("""
+            int main(void) {
+                return 1 * / 2;
+            }
+            """, 
+            "Expected expression but found '/'");
         Add("""
             int main(void) {
                 return 2*2
@@ -37,22 +55,10 @@ public class InvalidParseData : TheoryData<string, string>
             "Expected ')' but found ';'");
         Add("""
             int main(void) {
-                return 1 + (2;)
-            }
-            """, 
-            "Expected ')' but found ';'");
-        Add("""
-            int main(void) {
                 return 2 (- 3);
             }
             """, 
             "Expected ';' but found '('");
-        Add("""
-            int main(void) {
-                return 1 + (2;
-            }
-            """, 
-            "Expected ')' but found ';'");
         Add("""
             int main(void) {
                 return 1 * / 2;

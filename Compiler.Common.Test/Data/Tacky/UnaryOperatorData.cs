@@ -1,10 +1,10 @@
 using Compiler.Common.Tacky;
 
-namespace Compiler.Common.Test.Data.TackyData;
+namespace Compiler.Common.Test.Data.Tacky;
 
-public class ValidUnaryData : DataBase
+public class UnaryOperatorData : DataBase
 {
-    public ValidUnaryData()
+    public UnaryOperatorData()
     {
         Add
         (

@@ -1,8 +1,8 @@
-namespace Compiler.Common.Test.Data.EmitterData;
+namespace Compiler.Common.Test.Data.Emitter;
 
-public class ValidBinaryOperationData : DataBase
+public class BinaryOperatorData : DataBase
 {
-    public ValidBinaryOperationData()
+    public BinaryOperatorData()
     {
         Add
         (
@@ -48,7 +48,7 @@ public class ValidBinaryOperationData : DataBase
             }
             """,
             Emit([
-                "subq $16, %rsp",
+                "subq $20, %rsp",
                 "movl $3, %eax",
                 "cdq",
                 "movl $2, %r10d",
@@ -65,10 +65,10 @@ public class ValidBinaryOperationData : DataBase
                 "movl %r10d, -16(%rbp)",
                 "addl $3, -16(%rbp)",
                 "movl -8(%rbp), %r10d",
-                "movl %r10d, -12(%rbp)",
+                "movl %r10d, -20(%rbp)",
                 "movl -16(%rbp), %r10d",
-                "addl %r10d, -12(%rbp)",
-                "movl -12(%rbp), %eax"
+                "addl %r10d, -20(%rbp)",
+                "movl -20(%rbp), %eax"
             ])
         );
         Add
@@ -80,7 +80,7 @@ public class ValidBinaryOperationData : DataBase
             }
             """,
             Emit([
-                "subq $16, %rsp",
+                "subq $20, %rsp",
                 "movl $5, -4(%rbp)",
                 "movl -4(%rbp), %r11d",
                 "imull $4, %r11d",
@@ -97,10 +97,10 @@ public class ValidBinaryOperationData : DataBase
                 "idivl -12(%rbp)",
                 "movl %edx, -16(%rbp)",
                 "movl -8(%rbp), %r10d",
-                "movl %r10d, -12(%rbp)",
+                "movl %r10d, -20(%rbp)",
                 "movl -16(%rbp), %r10d",
-                "subl %r10d, -12(%rbp)",
-                "movl -12(%rbp), %eax"
+                "subl %r10d, -20(%rbp)",
+                "movl -20(%rbp), %eax"
             ])
         );
         Add

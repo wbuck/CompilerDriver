@@ -1,11 +1,10 @@
-using System.Reflection.Metadata;
 using Compiler.Common.Generation;
 
-namespace Compiler.Common.Test.Data.AssemblyData;
+namespace Compiler.Common.Test.Data.Assembly;
 
-public class ValidUnaryData : DataBase
+public class UnaryOperatorData : DataBase
 {
-    public ValidUnaryData()
+    public UnaryOperatorData()
     {
         Add
         (

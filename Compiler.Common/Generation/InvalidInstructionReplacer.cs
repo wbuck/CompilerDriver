@@ -27,14 +27,22 @@ internal static class InvalidInstructionReplacer
                     updated.Add(new Mov(constant, R10.Register));
                     updated.Add(new Div(R10.Register));
                     break;
-                case Binary { Operator: Add or Sub, Source: Stack lhs, Destination: Stack rhs } addOrSub:
-                    updated.Add(new Mov(lhs, R10.Register));
-                    updated.Add(new Binary(addOrSub.Operator, R10.Register, rhs));
+                case Binary { Operator: Add or Sub, Source: Stack source, Destination: Stack dest } addOrSub:
+                    updated.Add(new Mov(source, R10.Register));
+                    updated.Add(new Binary(addOrSub.Operator, R10.Register, dest));
                     break;
-                case Binary { Operator: Mult, Destination: Stack rhs } mult:
-                    updated.Add(new Mov(rhs, R11.Register));
-                    updated.Add(new Binary(mult.Operator, mult.Source, R11.Register));
+                case Binary { Operator: Mult, Destination: Stack dest } mult:
+                    updated.Add(new Mov(dest, R11.Register));
+                    updated.Add(mult with { Destination = R11.Register });
                     updated.Add(new Mov(R11.Register, mult.Destination));
+                    break;
+                case Bitwise { Operator: BitwiseAnd or BitwiseOr or BitwiseXor, Source: Stack source, Destination: Stack dest } andOrXor:
+                    updated.Add(new Mov(source, R10.Register));
+                    updated.Add(new Bitwise(andOrXor.Operator, R10.Register, dest));
+                    break;
+                case Bitwise { Operator: BitwiseLeftShift or BitwiseRightShift, Source: Stack source } shift:
+                    updated.Add(new Mov(source, Cx.Register));
+                    updated.Add(shift with { Source = Cl.Register });
                     break;
                 default:
                     updated.Add(instruction);

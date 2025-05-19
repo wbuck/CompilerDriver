@@ -19,6 +19,8 @@ public class SingleCharacterValidTokenData : TheoryData<string, Type, TokenType>
         Add(GetValue(TokenType.Asterisk), typeof(AsteriskToken), TokenType.Asterisk);
         Add(GetValue(TokenType.ForwardSlash), typeof(ForwardSlashToken), TokenType.ForwardSlash);
         Add(GetValue(TokenType.Percent), typeof(PercentToken), TokenType.Percent);
+        Add(GetValue(TokenType.BitwiseAnd), typeof(BitwiseAndToken), TokenType.BitwiseAnd);
+        Add(GetValue(TokenType.BitwiseOr), typeof(BitwiseOrToken), TokenType.BitwiseOr);
     }
     
     private static string GetValue(TokenType type)

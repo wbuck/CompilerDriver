@@ -1,6 +1,6 @@
 using Compiler.Common.Tacky;
 
-namespace Compiler.Common.Test.Data.TackyData;
+namespace Compiler.Common.Test.Data.Tacky;
 
 public class DataBase : TheoryData<string, TackyProgram>
 {

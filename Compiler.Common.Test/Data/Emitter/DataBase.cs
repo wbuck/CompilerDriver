@@ -1,4 +1,4 @@
-namespace Compiler.Common.Test.Data.EmitterData;
+namespace Compiler.Common.Test.Data.Emitter;
 
 public class DataBase : TheoryData<string, string[]>
 {

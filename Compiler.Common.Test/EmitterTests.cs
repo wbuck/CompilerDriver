@@ -2,7 +2,7 @@ using Compiler.Common.Ast;
 using Compiler.Common.Generation;
 using Compiler.Common.Stages;
 using Compiler.Common.Tacky;
-using Compiler.Common.Test.Data.EmitterData;
+using Compiler.Common.Test.Data.Emitter;
 using Compiler.Common.Tokens;
 using Xunit.Abstractions;
 
@@ -11,21 +11,29 @@ namespace Compiler.Common.Test;
 public class EmitterTests(ITestOutputHelper output)
 {    
     [Theory]
-    [ClassData(typeof(ValidBinaryOperationData))]
-    public void EmitBinaryOperationShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    [ClassData(typeof(BinaryOperatorData))]
+    public void EmitBinaryOperatorShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
     {
         var compiled = GetCompiled(fileContent.AsMemory());
         Assert.Equivalent(expected, compiled, strict: true);
     }
 
     [Theory]
-    [ClassData(typeof(ValidUnaryData))]
-    public void EmitUnaryShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    [ClassData(typeof(UnaryOperatorData))]
+    public void EmitUnaryOperatorShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
     {
         var compiled = GetCompiled(fileContent.AsMemory());
         Assert.Equivalent(expected, compiled, strict: true);
     }
 
+    [Theory]
+    [ClassData(typeof(BitwiseOperatorData))]
+    public void EmitBitwiseOperatorShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    {
+        var compiled = GetCompiled(fileContent.AsMemory());
+        Assert.Equivalent(expected, compiled, strict: true);
+    }
+    
     private List<string> GetCompiled(ReadOnlyMemory<char> fileContent)
     {
         var compiled = Emitter.Emit(GetAssembly(fileContent));

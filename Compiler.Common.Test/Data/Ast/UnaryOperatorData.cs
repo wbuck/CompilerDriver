@@ -1,10 +1,10 @@
 using Compiler.Common.Ast;
 
-namespace Compiler.Common.Test.Data.NodeData;
+namespace Compiler.Common.Test.Data.Ast;
 
-public class ValidUnaryData : TheoryData<string, ProgramNode>
+public class UnaryOperatorData : DataBase
 {
-    public ValidUnaryData()
+    public UnaryOperatorData()
     {
         Add
         (
@@ -72,17 +72,4 @@ public class ValidUnaryData : TheoryData<string, ProgramNode>
             GetExpected(Complement(Negate(Constant(2147483647))))
         );
     }
-    
-    private static UnaryNode Complement(IExpressionNode expression)
-        => new(ComplementNode.Operator, expression);
-
-    private static UnaryNode Negate(IExpressionNode expression)
-        => new(NegateNode.Operator, expression);
-    
-    private static ConstantNode<int> Constant(int value) =>
-        new(value);
-    
-    private static ProgramNode GetExpected(IExpressionNode expression) =>
-        new(new FunctionNode("main", "int", new ReturnNode(expression)));
-
 }

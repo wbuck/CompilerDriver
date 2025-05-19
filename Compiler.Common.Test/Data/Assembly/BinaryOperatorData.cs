@@ -1,10 +1,10 @@
 using Compiler.Common.Generation;
 
-namespace Compiler.Common.Test.Data.AssemblyData;
+namespace Compiler.Common.Test.Data.Assembly;
 
-public class ValidBinaryOperationData : DataBase
+public class BinaryOperatorData : DataBase
 {
-    public ValidBinaryOperationData()
+    public BinaryOperatorData()
     {        
         Add
         (
@@ -52,7 +52,7 @@ public class ValidBinaryOperationData : DataBase
             }
             """,
             Create([
-                AllocateStack(16),
+                AllocateStack(20),
                 new Mov(Imm(3), Ax.Register),
                 Cdq.Instruction,
                 new Mov(Imm(2), R10.Register),
@@ -69,10 +69,10 @@ public class ValidBinaryOperationData : DataBase
                 new Mov(R10.Register, Stack(16)),
                 new Binary(Generation.Add.Operator, Imm(3), Stack(16)),
                 new Mov(Stack(8), R10.Register),
-                new Mov(R10.Register, Stack(12)),
+                new Mov(R10.Register, Stack(20)),
                 new Mov(Stack(16), R10.Register),
-                new Binary(Generation.Add.Operator, R10.Register, Stack(12)),
-                new Mov(Stack(12), Ax.Register),
+                new Binary(Generation.Add.Operator, R10.Register, Stack(20)),
+                new Mov(Stack(20), Ax.Register),
                 Ret.Instruction
             ])
         );
@@ -85,7 +85,7 @@ public class ValidBinaryOperationData : DataBase
             }
             """,
             Create([
-                AllocateStack(16),
+                AllocateStack(20),
                 new Mov(Imm(5), Stack(4)),
                 new Mov(Stack(4), R11.Register),
                 new Binary(Mult.Operator, Imm(4), R11.Register),
@@ -102,10 +102,10 @@ public class ValidBinaryOperationData : DataBase
                 new Div(Stack(12)),
                 new Mov(Dx.Register, Stack(16)),
                 new Mov(Stack(8), R10.Register),
-                new Mov(R10.Register, Stack(12)),
+                new Mov(R10.Register, Stack(20)),
                 new Mov(Stack(16), R10.Register),
-                new Binary(Sub.Operator, R10.Register, Stack(12)),
-                new Mov(Stack(12), Ax.Register),
+                new Binary(Sub.Operator, R10.Register, Stack(20)),
+                new Mov(Stack(20), Ax.Register),
                 Ret.Instruction
             ])
         );

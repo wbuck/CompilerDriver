@@ -1,4 +1,3 @@
-using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Compiler.Common.Ast;
@@ -22,7 +21,13 @@ public enum TackyTag
     Division,
     Remainder,
     Function,
-    Program
+    Program,
+    Bitwise,
+    And,
+    Or,
+    Xor,
+    LeftShift,
+    RightShift,
 }
 
 public interface ITackyTag
@@ -31,30 +36,34 @@ public interface ITackyTag
 }
 
 public interface ITackyInstruction : ITackyTag;
-public record TackyReturn(ITackyValue Value) : ITackyInstruction
+public sealed record TackyReturn(ITackyValue Value) : ITackyInstruction
 {
     public TackyTag Tag => TackyTag.Return;
 }
 
-public record TackyUnary(ITackyUnaryOperator Operator, ITackyValue Source, ITackyValue Destination) 
+public sealed record TackyUnary(ITackyUnaryOperator Operator, ITackyValue Source, ITackyValue Destination) 
     : ITackyInstruction
 {
     public TackyTag Tag  => TackyTag.Unary;
 }
-
-public record TackyBinary(ITackyBinaryOperator Operator, ITackyValue Lhs, ITackyValue Rhs, ITackyValue Destination)
+public sealed record TackyBinary(ITackyBinaryOperator Operator, ITackyValue Lhs, ITackyValue Rhs, ITackyValue Destination)
     : ITackyInstruction
 {
     public TackyTag Tag => TackyTag.Binary;
 }
+public sealed record TackyBitwise(ITackyBitwiseOperator Operator, ITackyValue Lhs, ITackyValue Rhs, ITackyValue Destination)
+    : ITackyInstruction
+{
+    public TackyTag Tag => TackyTag.Bitwise;
+}
 
 public interface ITackyValue : ITackyTag;
-public record TackyConstant<T>(T Value) : ITackyValue where T : INumber<T>
+public sealed record TackyConstant<T>(T Value) : ITackyValue where T : INumber<T>
 {
     public TackyTag Tag => TackyTag.Constant;
 }
 
-public record TackyVariable : ITackyValue
+public sealed record TackyVariable : ITackyValue
 {
     private readonly int _varCount;
     public TackyVariable(int varCount)
@@ -70,145 +79,151 @@ public record TackyVariable : ITackyValue
 }
 
 public interface ITackyUnaryOperator : ITackyTag;
-public record TackyComplement: ITackyUnaryOperator
+public sealed record TackyComplement: ITackyUnaryOperator
 {
     public static TackyComplement Operator { get; } = new();
     private TackyComplement() { }
     public TackyTag Tag => TackyTag.Complement;
 }
-public record TackyNegate: ITackyUnaryOperator
+public sealed record TackyNegate: ITackyUnaryOperator
 {
     public static TackyNegate Operator { get; } = new();
     private TackyNegate() { }
     public TackyTag Tag => TackyTag.Negate;
 }
 
+public interface ITackyBitwiseOperator : ITackyTag;
+public sealed record TackyAnd : ITackyBitwiseOperator
+{
+    public static TackyAnd Operator { get; } = new();
+    private TackyAnd() { }
+    public TackyTag Tag => TackyTag.And;
+}
+public sealed record TackyOr : ITackyBitwiseOperator
+{
+    public static TackyOr Operator { get; } = new();
+    private TackyOr() { }
+    public TackyTag Tag => TackyTag.Or;
+}
+public sealed record TackyXor : ITackyBitwiseOperator
+{
+    public static TackyXor Operator { get; } = new();
+    private TackyXor() { }
+    public TackyTag Tag => TackyTag.Xor;
+}
+public sealed record TackyLeftShift : ITackyBitwiseOperator
+{
+    public static TackyLeftShift Operator { get; } = new();
+    private TackyLeftShift() { }
+    public TackyTag Tag => TackyTag.LeftShift;
+}
+public sealed record TackyRightShift : ITackyBitwiseOperator
+{
+    public static TackyRightShift Operator { get; } = new();
+    private TackyRightShift() { }
+    public TackyTag Tag => TackyTag.RightShift;
+}
+
 public interface ITackyBinaryOperator  : ITackyTag;
-public record TackyAddition : ITackyBinaryOperator
+public sealed record TackyAddition : ITackyBinaryOperator
 {
     public static TackyAddition Operator { get; } = new();
     private TackyAddition() { }
     public TackyTag Tag  => TackyTag.Addition;
 }
 
-public record TackySubtraction : ITackyBinaryOperator
+public sealed record TackySubtraction : ITackyBinaryOperator
 {
     public static TackySubtraction Operator { get; } = new();
     private TackySubtraction() { }
     public TackyTag Tag   => TackyTag.Subtraction;
 }
-public record TackyMultiplication : ITackyBinaryOperator
+public sealed record TackyMultiplication : ITackyBinaryOperator
 {
     public static TackyMultiplication Operator { get; } = new();
     private TackyMultiplication() { }
     public TackyTag Tag => TackyTag.Multiplication;
 }
-public record TackyDivision : ITackyBinaryOperator
+public sealed record TackyDivision : ITackyBinaryOperator
 {
     public static TackyDivision Operator { get; } = new();
     private TackyDivision() { }
     public TackyTag Tag => TackyTag.Division;
 }
-public record TackyRemainder : ITackyBinaryOperator
+public sealed record TackyRemainder : ITackyBinaryOperator
 {
     public static TackyRemainder Operator { get; } = new();
     private TackyRemainder() { }
     public TackyTag Tag => TackyTag.Remainder;
 }
 
-public record TackyFunction(string Name, List<ITackyInstruction> Instructions) : ITackyTag
+public sealed record TackyFunction(string Name, List<ITackyInstruction> Instructions) : ITackyTag
 {
     public TackyTag Tag => TackyTag.Function;
 }
 
-public record TackyProgram(TackyFunction Function) : ITackyTag
+public sealed record TackyProgram(TackyFunction Function) : ITackyTag
 {
     public TackyTag Tag => TackyTag.Program;
     
     public static TackyProgram Visit(ProgramNode program)
         => new(VisitFunction(program.Function));
 
-    private static TackyFunction VisitFunction(FunctionNode function)
-        => new(function.Name, VisitStatement(function.Body));
+    private static TackyFunction VisitFunction(FunctionNode function) =>
+        new(function.Name, VisitStatement(function.Body, new VariableFactory()));
 
-    private static List<ITackyInstruction> VisitStatement(IStatementNode statement)
+    private static List<ITackyInstruction> VisitStatement(IStatementNode statement, VariableFactory factory)
         => statement switch
         {
-            ReturnNode @return => VisitReturn(@return),
+            ReturnNode @return => VisitReturn(@return, factory),
             _ => throw new FormatException($"Unknown statement type {statement.Tag.ToStringFast()}")
         };    
 
-    private static List<ITackyInstruction> VisitReturn(ReturnNode @return)
+    private static List<ITackyInstruction> VisitReturn(ReturnNode @return, VariableFactory factory)
     {        
         List<ITackyInstruction> instructions = [];
-        instructions.Add(new TackyReturn(VisitExpression(@return.Expression, instructions)));
+        instructions.Add(new TackyReturn(VisitExpression(@return.Expression, instructions, factory)));
         return instructions;
     }
     
-    private static ITackyValue VisitExpression(IExpressionNode expression, in List<ITackyInstruction> instructions)
+    private static ITackyValue VisitExpression(IExpressionNode expression, in List<ITackyInstruction> instructions, VariableFactory factory)
         => expression switch
         {
             IConstantNode constant => VisitConstant(constant),
-            UnaryNode unary => VisitUnary(unary, instructions),
-            BinaryNode binary => VisitBinary(binary, instructions),
+            UnaryNode unary => VisitUnary(unary, instructions, factory),
+            BinaryNode binary => VisitBinary(binary, instructions, factory),
+            BitwiseNode bitwise => VisitBitwise(bitwise, instructions, factory),
             _ => throw new FormatException($"Unknown expression type: {expression.Tag.ToStringFast()}")
         };
 
-    private static TackyVariable? GetLastUsedVariable(in List<ITackyInstruction> instructions)
-        => instructions.LastOrDefault() switch
-        {
-            TackyBinary binary => binary.Destination,
-            TackyUnary unary => unary.Destination,
-            _ => null
-        } as TackyVariable;
-    
-
-    private static TackyVariable VisitBinary(BinaryNode binary, in List<ITackyInstruction> instructions)
+    private static TackyVariable VisitBitwise(BitwiseNode bitwise, in List<ITackyInstruction> instructions, VariableFactory factory)
     {
-        var lhs = VisitExpression(binary.Lhs, instructions);
-        var rhs = VisitExpression(binary.Rhs, instructions);
+        var lhs = VisitExpression(bitwise.Lhs, instructions, factory);
+        var rhs = VisitExpression(bitwise.Rhs, instructions, factory);
+        var dest = factory.GetNextVariable();
         
-        TackyVariable dest;
-        if (binary is { Lhs: IConstantNode, Rhs: IConstantNode })
-        {
-            dest = GetLastUsedVariable(instructions)?.Next() ?? new TackyVariable(1);
-            instructions.Add(new TackyBinary(GetOperator(binary), lhs, rhs, dest));
-            return dest;
-        }
-
-        dest = GetNextDest(lhs, rhs);        
-        instructions.Add(new TackyBinary(GetOperator(binary), lhs, rhs, dest));
+        instructions.Add(new TackyBitwise(GetOperator(bitwise), lhs, rhs, dest));
         return dest;
-        
-        static TackyVariable GetNextDest(ITackyValue lhs, ITackyValue rhs) => (lhs, rhs) switch
-        {
-            (TackyVariable v, _) => v.Next(),
-            (_, TackyVariable v) => v.Next(),
-            _ => throw new FormatException($"Expected variable but found {lhs.Tag.ToStringFast()} and {rhs.Tag.ToStringFast()}")    
-        };
+      
     }
     
-    private static TackyVariable VisitUnary(UnaryNode unary, List<ITackyInstruction> instructions)
+    private static TackyVariable VisitBinary(BinaryNode binary, in List<ITackyInstruction> instructions, VariableFactory factory)
     {
-        var source = VisitExpression(unary.Expression, instructions);
+        var lhs = VisitExpression(binary.Lhs, instructions, factory);
+        var rhs = VisitExpression(binary.Rhs, instructions, factory);    
+        var dest = factory.GetNextVariable();
         
-        TackyVariable dest;
-        if (unary.Expression is IConstantNode)
-        {
-            dest = new TackyVariable(1);
-            instructions.Add(new TackyUnary(GetOperator(unary),source, dest));
-            return dest;
-        }
-
-        dest = GetNextDest(source);
+        instructions.Add(new TackyBinary(GetOperator(binary), lhs, rhs, dest));
+        return dest;
+    }
+    
+    private static TackyVariable VisitUnary(UnaryNode unary, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        var source = VisitExpression(unary.Expression, instructions, factory);   
+        var dest = factory.GetNextVariable();
+        
         instructions.Add(new TackyUnary(GetOperator(unary), source, dest));
         return dest;
-        
-        static TackyVariable GetNextDest(ITackyValue source) => source switch
-        {
-            TackyVariable v => v.Next(),
-            _ => throw new FormatException($"Expected variable but found {source.Tag.ToStringFast()}")    
-        };
     }
     
     private static ITackyUnaryOperator GetOperator(UnaryNode unary)
@@ -227,7 +242,18 @@ public record TackyProgram(TackyFunction Function) : ITackyTag
             MultiplicationNode => TackyMultiplication.Operator,
             DivisionNode => TackyDivision.Operator,
             RemainderNode => TackyRemainder.Operator,
-            _ => throw new FormatException($"Unknown unary operator: {binary.Operator.Tag.ToStringFast()}")
+            _ => throw new FormatException($"Unknown binary operator: {binary.Operator.Tag.ToStringFast()}")
+        };
+    
+    private static ITackyBitwiseOperator GetOperator(BitwiseNode bitwise)
+        => bitwise.Operator switch
+        {
+            BitwiseAndNode => TackyAnd.Operator,
+            BitwiseOrNode => TackyOr.Operator,
+            BitwiseXorNode => TackyXor.Operator,
+            BitwiseLeftShiftNode => TackyLeftShift.Operator,
+            BitwiseRightShiftNode => TackyRightShift.Operator,
+            _ => throw new FormatException($"Unknown bitwise operator: {bitwise.Operator.Tag.ToStringFast()}")
         };
 
     private static ITackyValue VisitConstant(IConstantNode constant)

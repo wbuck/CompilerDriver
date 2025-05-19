@@ -1,8 +1,8 @@
-namespace Compiler.Common.Test.Data.EmitterData;
+namespace Compiler.Common.Test.Data.Emitter;
 
-public class ValidUnaryData : DataBase
+public class UnaryOperatorData : DataBase
 {
-    public ValidUnaryData()
+    public UnaryOperatorData()
     {
         Add
         (

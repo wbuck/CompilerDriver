@@ -101,7 +101,33 @@ public static partial class Lexer
                 {
                     tokens.Add(token);                    
                     continue;
-                }         
+                }
+                // TODO: Logical operators must come before bitwise operators.
+                if ((token = Parse<BitwiseAndToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<BitwiseOrToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }  
+                if ((token = Parse<BitwiseXorToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }  
+                if ((token = Parse<LeftShiftToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }  
+                if ((token = Parse<RightShiftToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }  
                 
                 var enumerator = NonWhiteSpacePattern.EnumerateMatches(trimmed);
                 if (enumerator.MoveNext())

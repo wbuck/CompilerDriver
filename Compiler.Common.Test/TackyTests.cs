@@ -1,27 +1,55 @@
-using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Compiler.Common.Ast;
 using Compiler.Common.Stages;
 using Compiler.Common.Tacky;
-using Compiler.Common.Test.Data;
-using Compiler.Common.Test.Data.NodeData;
-using Compiler.Common.Test.Data.TackyData;
+using Compiler.Common.Test.Data.Tacky;
 using Compiler.Common.Tokens;
-using ValidBinaryOperationData = Compiler.Common.Test.Data.TackyData.ValidBinaryOperationData;
-using ValidUnaryData = Compiler.Common.Test.Data.TackyData.ValidUnaryData;
+using Xunit.Abstractions;
+using static Compiler.Common.Test.Data.Tacky.TackyTypeResolver;
 
 namespace Compiler.Common.Test;
 
-public class TackyTests
+public class TackyTests(ITestOutputHelper output)
 {
-    [Theory]
-    [ClassData(typeof(ValidUnaryData))]
-    public void ParsingUnaryShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
-        => Assert.Equivalent(expected, TackyProgram.Visit(GetAst(fileContent.AsMemory())), true);
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() },
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+            .WithAddedModifier(AddPolymorphicTypeInfo<ITackyInstruction>)
+            .WithAddedModifier(AddPolymorphicTypeInfo<ITackyValue>)
+            .WithAddedModifier(AddPolymorphicTypeInfo<ITackyUnaryOperator>)
+            .WithAddedModifier(AddPolymorphicTypeInfo<ITackyBinaryOperator>)
+            .WithAddedModifier(AddPolymorphicTypeInfo<ITackyBitwiseOperator>)
+    };
     
     [Theory]
-    [ClassData(typeof(ValidBinaryOperationData))]
-    public void ParsingBinaryOperationShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
-        => Assert.Equivalent(expected, TackyProgram.Visit(GetAst(fileContent.AsMemory())), true);
+    [ClassData(typeof(UnaryOperatorData))]
+    public void ParsingUnaryShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(BinaryOperatorData))]
+    public void ParsingBinaryOperatorShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(BitwiseOperatorData))]
+    public void ParsingBitwiseOperatorShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
+
+    private TackyProgram GetResult(string fileContent)
+    {
+        var actual = TackyProgram.Visit(GetAst(fileContent.AsMemory()));
+        output.WriteLine("Input:");
+        output.WriteLine(fileContent);
+        output.WriteLine(string.Empty);
+        output.WriteLine("Actual Result:");
+        output.WriteLine(JsonSerializer.Serialize(actual, Options)); 
+        return actual;
+    }
     
     private static ProgramNode GetAst(ReadOnlyMemory<char> fileContent)
         => Parser.Parse(GetTokens(fileContent.Span), fileContent);

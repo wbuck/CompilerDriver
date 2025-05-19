@@ -2,7 +2,7 @@ using Compiler.Common.Ast;
 using Compiler.Common.Generation;
 using Compiler.Common.Stages;
 using Compiler.Common.Tacky;
-using Compiler.Common.Test.Data.AssemblyData;
+using Compiler.Common.Test.Data.Assembly;
 using Compiler.Common.Tokens;
 using Xunit.Abstractions;
 
@@ -12,20 +12,25 @@ public class AssemblyTests(ITestOutputHelper output)
 {
     
     [Theory]
-    [ClassData(typeof(ValidUnaryData))]
+    [ClassData(typeof(UnaryOperatorData))]
     public void VisitUnaryOperationsShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
-        => Assert.Equivalent(expected, GetResult(fileContent.AsMemory()), strict: true);
+        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
 
     [Theory]
-    [ClassData(typeof(ValidBinaryOperationData))]
+    [ClassData(typeof(BinaryOperatorData))]
     public void VisitBinaryOperationsShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
-        => Assert.Equivalent(expected, GetResult(fileContent.AsMemory()), strict: true);
+        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(BitwiseOperatorData))]
+    public void VisitBitwiseOperationsShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
 
-    private Program GetResult(ReadOnlyMemory<char> fileContent)
+    private Program GetResult(string fileContent)
     {
-        var result = Program.Visit(GetTacky(fileContent));
+        var result = Program.Visit(GetTacky(fileContent.AsMemory()));
         output.WriteLine("Input:");
-        output.WriteLine(fileContent.ToString());
+        output.WriteLine(fileContent);
         output.WriteLine(string.Empty);
         output.WriteLine("Actual Result:");
         result.Function.Instructions.ForEach(i => output.WriteLine(i.ToString()));

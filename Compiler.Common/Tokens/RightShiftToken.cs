@@ -2,12 +2,12 @@ using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
 
-public sealed partial record DecrementToken(int Index) : IToken
+public sealed partial record RightShiftToken(int Index) : IToken
 {
-    public TokenType Type => TokenType.Decrement;
+    public TokenType Type => TokenType.RightShift;
     public int Length => 2;
     
-    [GeneratedRegex("--", RegexOptions.Multiline)]
+    [GeneratedRegex(">>", RegexOptions.Multiline)]
     private static partial Regex Pattern { get; }
     
     public static IToken? Parse(ref ReadOnlySpan<char> value, int offset)
@@ -18,6 +18,6 @@ public sealed partial record DecrementToken(int Index) : IToken
         
         var match = enumerator.Current;
         value = value[match.Length..];
-        return new DecrementToken(match.Index + offset);       
+        return new RightShiftToken(match.Index + offset);       
     }
 }

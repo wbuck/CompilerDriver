@@ -4,8 +4,6 @@ using Compiler.Common.Tokens;
 
 namespace Compiler.Common.Test;
 
-
-
 public class TokenTests
 {
     private static readonly MethodInfo ParseValidMethod = typeof(TokenTests)

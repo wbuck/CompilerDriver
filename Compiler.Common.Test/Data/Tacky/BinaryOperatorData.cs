@@ -1,10 +1,10 @@
 using Compiler.Common.Tacky;
 
-namespace Compiler.Common.Test.Data.TackyData;
+namespace Compiler.Common.Test.Data.Tacky;
 
-public class ValidBinaryOperationData : DataBase
+public class BinaryOperatorData : DataBase
 {
-    public ValidBinaryOperationData()
+    public BinaryOperatorData()
     {
         Add
         (
@@ -44,8 +44,8 @@ public class ValidBinaryOperationData : DataBase
                 new TackyBinary(TackyDivision.Operator, Variable(1), Constant(2), Variable(2)),
                 new TackyBinary(TackyAddition.Operator, Constant(2), Constant(1), Variable(3)),
                 new TackyBinary(TackyRemainder.Operator, Constant(3), Variable(3), Variable(4)),
-                new TackyBinary(TackySubtraction.Operator, Variable(2), Variable(4), Variable(3)),
-                new TackyReturn(Variable(3))
+                new TackyBinary(TackySubtraction.Operator, Variable(2), Variable(4), Variable(5)),
+                new TackyReturn(Variable(5))
             ])
         );
         Add
@@ -60,8 +60,8 @@ public class ValidBinaryOperationData : DataBase
                 new TackyBinary(TackyMultiplication.Operator, Variable(1), Constant(4), Variable(2)),
                 new TackyBinary(TackySubtraction.Operator, Constant(5), Constant(4), Variable(3)),
                 new TackyBinary(TackyAddition.Operator, Variable(3), Constant(3), Variable(4)),
-                new TackyBinary(TackyAddition.Operator, Variable(2), Variable(4), Variable(3)),
-                new TackyReturn(Variable(3))
+                new TackyBinary(TackyAddition.Operator, Variable(2), Variable(4), Variable(5)),
+                new TackyReturn(Variable(5))
             ])
         );
         Add

@@ -14,15 +14,21 @@ public enum AstNodeTag
     Function,
     Return,
     Constant,
-    Unary,
-    Binary,
+    Unary,     
     Negate,
     Complement,
+    Binary,
     Addition,
     Subtraction,
     Multiplication,
     Division,
-    Remainder
+    Remainder,
+    Bitwise,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    LeftShift,
+    RightShift
 }
 
 public interface IAstNodeTag
@@ -53,21 +59,55 @@ public record UnaryNode(IUnaryOperatorNode Operator, IExpressionNode Expression)
 {
     public AstNodeTag Tag => AstNodeTag.Unary;
 }
-
 public record BinaryNode(IBinaryOperatorNode Operator, IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
 {
     public AstNodeTag Tag => AstNodeTag.Binary;
 }
+public record BitwiseNode(IBitwiseOperatorNode Operator, IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
+{
+    public AstNodeTag Tag => AstNodeTag.Bitwise;
+}
+
+public interface IBitwiseOperatorNode : IAstNodeTag;
+public sealed record BitwiseAndNode : IBitwiseOperatorNode
+{
+    public static BitwiseAndNode Operator { get; } = new();
+    private BitwiseAndNode() { }
+    public AstNodeTag Tag => AstNodeTag.BitwiseAnd;
+}
+public sealed record BitwiseOrNode : IBitwiseOperatorNode
+{
+    public static BitwiseOrNode Operator { get; } = new();
+    private BitwiseOrNode() { }
+    public AstNodeTag Tag => AstNodeTag.BitwiseOr;
+}
+public sealed record BitwiseXorNode : IBitwiseOperatorNode
+{
+    public static BitwiseXorNode Operator { get; } = new();
+    private BitwiseXorNode() { }
+    public AstNodeTag Tag => AstNodeTag.BitwiseOr;
+}
+public sealed record BitwiseLeftShiftNode : IBitwiseOperatorNode
+{
+    public static BitwiseLeftShiftNode Operator { get; } = new();
+    private BitwiseLeftShiftNode() { }
+    public AstNodeTag Tag => AstNodeTag.LeftShift;
+}
+public sealed record BitwiseRightShiftNode : IBitwiseOperatorNode
+{
+    public static BitwiseRightShiftNode Operator { get; } = new();
+    private BitwiseRightShiftNode() { }
+    public AstNodeTag Tag => AstNodeTag.RightShift;
+}
+
 
 public interface IUnaryOperatorNode : IAstNodeTag;
-
 public record NegateNode : IUnaryOperatorNode
 {
     public static NegateNode Operator { get; } = new();
     private NegateNode() { }
     public AstNodeTag Tag => AstNodeTag.Negate;
 }
-
 public record ComplementNode : IUnaryOperatorNode
 {
     public static ComplementNode Operator { get; } = new();
@@ -76,7 +116,6 @@ public record ComplementNode : IUnaryOperatorNode
 }
 
 public interface IBinaryOperatorNode : IAstNodeTag;
-
 public record AdditionNode : IBinaryOperatorNode
 {
     public static AdditionNode Operator { get; } = new();
@@ -112,9 +151,14 @@ public record RemainderNode : IBinaryOperatorNode
 public record ProgramNode(FunctionNode Function) : IAstNodeTag
 {
     private static readonly FrozenDictionary<TokenType, int> Precedence = new Dictionary<TokenType, int>
-    {
+    {    
+        [TokenType.BitwiseOr] = 25,
+        [TokenType.BitwiseXor] = 30,
+        [TokenType.BitwiseAnd] = 35,
+        [TokenType.LeftShift] = 40,
+        [TokenType.RightShift] = 40,
         [TokenType.Plus] = 45,
-        [TokenType.Minus] = 45,
+        [TokenType.Minus] = 45,        
         [TokenType.Asterisk] = 50,
         [TokenType.ForwardSlash] = 50,
         [TokenType.Percent] = 50
@@ -190,23 +234,34 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent, int precedence = 0)
     {
         var lhs = ParseFactor(ref tokens, fileContent);
-        while (PeekBinaryOperator(ref tokens, out var type) && Precedence[type] >= precedence)
+        while (PeekOperator(ref tokens, out var type) && Precedence[type] >= precedence)
         {
             if (lhs is null)
                 throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
-            
-            if (ParseBinaryOperator(ref tokens, fileContent) is not { } op)
-                throw new FormatException($"Expected binary operator but found '{ReadTokenValue(tokens, fileContent.Span)}'");
-            
-            if (ParseExpression(ref tokens, fileContent, Precedence[type] + 1) is not { } rhs)
-                throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");                        
 
-            lhs = new BinaryNode(op, lhs, rhs);
+            if (ParseBinaryOperator(ref tokens, fileContent) is { } binary)
+            {
+                if (ParseExpression(ref tokens, fileContent, Precedence[type] + 1) is not { } rhs)
+                    throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+
+                lhs = new BinaryNode(binary, lhs, rhs);
+                continue;
+            }
+            if (ParseBitwiseOperator(ref tokens, fileContent) is { } bitwise)
+            {
+                if (ParseExpression(ref tokens, fileContent, Precedence[type] + 1) is not { } rhs)
+                    throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+
+                lhs = new BitwiseNode(bitwise, lhs, rhs);
+                continue;
+            }
+            
+            throw new FormatException($"Expected binary or bitwise operator but found '{ReadTokenValue(tokens, fileContent.Span)}'");
         }
         return lhs;
     }
 
-    private static bool PeekBinaryOperator(ref Span<IToken> tokens, out TokenType type)
+    private static bool PeekOperator(ref Span<IToken> tokens, out TokenType type)
     {
         type = TokenType.Unknown;        
         if (CheckType(tokens, TokenType.Plus))
@@ -219,24 +274,46 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             type = TokenType.ForwardSlash;
         if (CheckType(tokens, TokenType.Percent))
             type = TokenType.Percent;
+        if (CheckType(tokens, TokenType.BitwiseAnd))
+            type = TokenType.BitwiseAnd;
+        if (CheckType(tokens, TokenType.BitwiseOr))
+            type = TokenType.BitwiseOr;
+        if (CheckType(tokens, TokenType.BitwiseXor))
+            type = TokenType.BitwiseXor;
+        if (CheckType(tokens, TokenType.LeftShift))
+            type = TokenType.LeftShift;
+        if (CheckType(tokens, TokenType.RightShift))
+            type = TokenType.RightShift;
         
         return type != TokenType.Unknown;
+    }
+
+    private static IBitwiseOperatorNode? ParseBitwiseOperator(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (CheckTypeAndConsume(tokens, TokenType.BitwiseAnd, out tokens))
+            return BitwiseAndNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.BitwiseOr, out tokens))
+            return BitwiseOrNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.BitwiseXor, out tokens))
+            return BitwiseXorNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.LeftShift, out tokens))
+            return BitwiseLeftShiftNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.RightShift, out tokens))
+            return BitwiseRightShiftNode.Operator;
+        
+        return null;
     }
     
     private static IBinaryOperatorNode? ParseBinaryOperator(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         if (CheckTypeAndConsume(tokens, TokenType.Plus, out tokens))
             return AdditionNode.Operator;
-
         if (CheckTypeAndConsume(tokens, TokenType.Minus, out tokens))
             return SubtractionNode.Operator;
-
         if (CheckTypeAndConsume(tokens, TokenType.Asterisk, out tokens))
             return MultiplicationNode.Operator;
-
         if (CheckTypeAndConsume(tokens, TokenType.ForwardSlash, out tokens))
             return DivisionNode.Operator;
-
         if (CheckTypeAndConsume(tokens, TokenType.Percent, out tokens))
             return RemainderNode.Operator;
         

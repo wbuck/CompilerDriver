@@ -35,5 +35,15 @@ public enum TokenType
     ForwardSlash,
     [Display(Name = "%")]
     Percent,
+    [Display(Name = "&")]
+    BitwiseAnd,
+    [Display(Name = "|")]
+    BitwiseOr,
+    [Display(Name = "^")]
+    BitwiseXor,
+    [Display(Name = "<<")]
+    LeftShift,
+    [Display(Name = ">>")]
+    RightShift,
     Unknown
 }
