@@ -13,7 +13,7 @@ public class UnaryOperatorData : DataBase
                 return 42;
             }
             """,
-            Create([new TackyReturn(Constant(42))])
+            GetExpected([new TackyReturn(Const(42))])
         );
         Add
         (
@@ -22,9 +22,9 @@ public class UnaryOperatorData : DataBase
                 return -42;
             }
             """,
-            Create([
-                new TackyUnary(TackyNegate.Operator, Constant(42), Variable(1)),
-                new TackyReturn(Variable(1))
+            GetExpected([
+                new TackyUnary(TackyNegate.Operator, Const(42), Var(1)),
+                new TackyReturn(Var(1))
             ])
         );
         Add
@@ -34,9 +34,9 @@ public class UnaryOperatorData : DataBase
                 return ~42;
             }
             """,
-            Create([
-                new TackyUnary(TackyComplement.Operator, Constant(42), Variable(1)),
-                new TackyReturn(Variable(1))
+            GetExpected([
+                new TackyUnary(TackyComplement.Operator, Const(42), Var(1)),
+                new TackyReturn(Var(1))
             ])
         );
         Add
@@ -46,10 +46,10 @@ public class UnaryOperatorData : DataBase
                 return ~-42;
             }
             """,
-            Create([
-                new TackyUnary(TackyNegate.Operator, Constant(42), Variable(1)),
-                new TackyUnary(TackyComplement.Operator, Variable(1), Variable(2)),
-                new TackyReturn(Variable(2)),
+            GetExpected([
+                new TackyUnary(TackyNegate.Operator, Const(42), Var(1)),
+                new TackyUnary(TackyComplement.Operator, Var(1), Var(2)),
+                new TackyReturn(Var(2)),
             ])
         );
         Add
@@ -59,10 +59,10 @@ public class UnaryOperatorData : DataBase
                 return -(-42);
             }
             """,
-            Create([
-                new TackyUnary(TackyNegate.Operator, Constant(42), Variable(1)),
-                new TackyUnary(TackyNegate.Operator, Variable(1), Variable(2)),
-                new TackyReturn(Variable(2))
+            GetExpected([
+                new TackyUnary(TackyNegate.Operator, Const(42), Var(1)),
+                new TackyUnary(TackyNegate.Operator, Var(1), Var(2)),
+                new TackyReturn(Var(2))
             ])
         );
     }

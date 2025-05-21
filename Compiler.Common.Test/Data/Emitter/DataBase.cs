@@ -2,7 +2,7 @@ namespace Compiler.Common.Test.Data.Emitter;
 
 public class DataBase : TheoryData<string, string[]>
 {
-    protected static string[] Emit(string[] instructions)
+    protected static string[] GetExpected(string[] instructions)
         => [
             ".globl main",
             "main:",

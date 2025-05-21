@@ -1,6 +1,8 @@
+using System.Runtime.InteropServices;
+
 namespace Compiler.Common.Tacky;
 
-public class VariableFactory
+public sealed class VariableFactory
 {
     private TackyVariable? _variable;
 
@@ -8,10 +10,12 @@ public class VariableFactory
     {
         if (_variable is null)
         {
-            _variable = new TackyVariable(1);
+            _variable = new TackyVariable("tmp.1", 1, 1 * Marshal.SizeOf<int>());
             return _variable;
         }
-        _variable = _variable.Next();
+        
+        var next = _variable.VariableCount + 1;
+        _variable = new TackyVariable($"tmp.{next}", next, next * Marshal.SizeOf<int>());
         return _variable;
     }
 }

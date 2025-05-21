@@ -11,7 +11,7 @@ public class BitwiseOperatorData : DataBase
                 return 3 & 5;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $3, -4(%rbp)",
                 "andl $5, -4(%rbp)",
@@ -25,7 +25,7 @@ public class BitwiseOperatorData : DataBase
                 return 1 | 2;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $1, -4(%rbp)",
                 "orl $2, -4(%rbp)",
@@ -39,7 +39,7 @@ public class BitwiseOperatorData : DataBase
                 return 80 >> 2 | 1 ^ 5 & 7 << 1;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $20, %rsp",
                 "movl $80, -4(%rbp)",
                 "sarl $2, -4(%rbp)",
@@ -65,7 +65,7 @@ public class BitwiseOperatorData : DataBase
                 return 33 >> 2 << 1;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $33, -4(%rbp)",
                 "sarl $2, -4(%rbp)",
@@ -82,7 +82,7 @@ public class BitwiseOperatorData : DataBase
                 return 33 << 4 >> 2;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $33, -4(%rbp)",
                 "sall $4, -4(%rbp)",
@@ -99,7 +99,7 @@ public class BitwiseOperatorData : DataBase
                 return 40 << 4 + 12 >> 1;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $12, %rsp",
                 "movl $4, -4(%rbp)",
                 "addl $12, -4(%rbp)",
@@ -119,7 +119,7 @@ public class BitwiseOperatorData : DataBase
                 return 35 << 2;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $35, -4(%rbp)",
                 "sall $2, -4(%rbp)",
@@ -133,7 +133,7 @@ public class BitwiseOperatorData : DataBase
                 return -5 >> 30;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $5, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -150,7 +150,7 @@ public class BitwiseOperatorData : DataBase
                 return 1000 >> 4;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $1000, -4(%rbp)",
                 "sarl $4, -4(%rbp)",
@@ -164,7 +164,7 @@ public class BitwiseOperatorData : DataBase
                 return (4 << (2 * 2)) + (100 >> (1 + 2));
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $20, %rsp",
                 "movl $2, -4(%rbp)",
                 "movl -4(%rbp), %r11d",
@@ -192,7 +192,7 @@ public class BitwiseOperatorData : DataBase
                 return 7 ^ 1;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $7, -4(%rbp)",
                 "xorl $1, -4(%rbp)",

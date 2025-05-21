@@ -23,7 +23,7 @@ public static class TackyGenerator
     }
 
     public static TackyProgram Generate(ProgramNode program)
-        => TackyProgram.Visit(program);
+        => new TackyVisitor().Visit(program);
     
     private static void PrintError(ReadOnlySpan<char> error)
     {

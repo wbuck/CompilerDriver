@@ -45,6 +45,11 @@ public class ParserTests(ITestOutputHelper output)
     [ClassData(typeof(UnaryOperatorData))]
     public void ParsingUnaryShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent));
+    
+    [Theory]
+    [ClassData(typeof(LogicalAndRelationalData))]
+    public void ParsingLogicalAndRelationalOperatorsShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent));
 
     private static void InvalidCheck(string fileContent, string message)
     {        

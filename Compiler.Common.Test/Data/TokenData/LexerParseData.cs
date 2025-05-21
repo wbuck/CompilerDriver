@@ -101,7 +101,7 @@ public class LexerParseData : TheoryData<string, List<ExpectedToken>>
                 new (TokenType.CloseParenthesis, ")"),
                 new (TokenType.OpenBrace, "{"),
                 new(TokenType.Keyword, "return"),
-                new(TokenType.BitwiseComplement, "~"),
+                new(TokenType.Complement, "~"),
                 new(TokenType.Minus, "-"),
                 new(TokenType.NumericConstant, "2147483647"),
                 new(TokenType.Semicolon, ";"),

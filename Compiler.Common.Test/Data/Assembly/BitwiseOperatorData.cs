@@ -13,7 +13,7 @@ public class BitwiseOperatorData : DataBase
                 return 3 & 5;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(3), Stack(4)),
                 new Bitwise(BitwiseAnd.Operator, Imm(5), Stack(4)),
@@ -28,7 +28,7 @@ public class BitwiseOperatorData : DataBase
                 return 1 | 2;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(1), Stack(4)),
                 new Bitwise(BitwiseOr.Operator, Imm(2), Stack(4)),
@@ -43,7 +43,7 @@ public class BitwiseOperatorData : DataBase
                 return 80 >> 2 | 1 ^ 5 & 7 << 1;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(20),
                 new Mov(Imm(80), Stack(4)),
                 new Bitwise(BitwiseRightShift.Operator, Imm(2), Stack(4)),
@@ -70,7 +70,7 @@ public class BitwiseOperatorData : DataBase
                 return 33 >> 2 << 1;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(33), Stack(4)),
                 new Bitwise(BitwiseRightShift.Operator, Imm(2), Stack(4)),
@@ -88,7 +88,7 @@ public class BitwiseOperatorData : DataBase
                 return 33 << 4 >> 2;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(33), Stack(4)),
                 new Bitwise(BitwiseLeftShift.Operator, Imm(4), Stack(4)),
@@ -106,13 +106,13 @@ public class BitwiseOperatorData : DataBase
                 return 40 << 4 + 12 >> 1;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(12),
                 new Mov(Imm(4), Stack(4)),
                 new Binary(Generation.Add.Operator, Imm(12), Stack(4)),
                 new Mov(Imm(40), Stack(8)),
                 new Mov(Stack(4), Cx.Register),
-                new Bitwise(BitwiseLeftShift.Operator, Cl.Register, Stack(8)),
+                new Bitwise(BitwiseLeftShift.Operator, Cx.Register, Stack(8)),
                 new Mov(Stack(8), R10.Register),
                 new Mov(R10.Register, Stack(12)),
                 new Bitwise(BitwiseRightShift.Operator, Imm(1), Stack(12)),
@@ -127,7 +127,7 @@ public class BitwiseOperatorData : DataBase
                 return 35 << 2;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(35), Stack(4)),
                 new Bitwise(BitwiseLeftShift.Operator, Imm(2), Stack(4)),
@@ -142,7 +142,7 @@ public class BitwiseOperatorData : DataBase
                 return -5 >> 30;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(5), Stack(4)),
                 new Unary(Neg.Operator, Stack(4)),
@@ -160,7 +160,7 @@ public class BitwiseOperatorData : DataBase
                 return 1000 >> 4;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(1000), Stack(4)),
                 new Bitwise(BitwiseRightShift.Operator, Imm(4), Stack(4)),
@@ -175,7 +175,7 @@ public class BitwiseOperatorData : DataBase
                 return (4 << (2 * 2)) + (100 >> (1 + 2));
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(20),
                 new Mov(Imm(2), Stack(4)),
                 new Mov(Stack(4), R11.Register),
@@ -183,12 +183,12 @@ public class BitwiseOperatorData : DataBase
                 new Mov(R11.Register, Stack(4)),
                 new Mov(Imm(4), Stack(8)),
                 new Mov(Stack(4), Cx.Register),
-                new Bitwise(BitwiseLeftShift.Operator, Cl.Register, Stack(8)),
+                new Bitwise(BitwiseLeftShift.Operator, Cx.Register, Stack(8)),
                 new Mov(Imm(1), Stack(12)),
                 new Binary(Generation.Add.Operator, Imm(2), Stack(12)),
                 new Mov(Imm(100), Stack(16)),
                 new Mov(Stack(12), Cx.Register),
-                new Bitwise(BitwiseRightShift.Operator, Cl.Register, Stack(16)),
+                new Bitwise(BitwiseRightShift.Operator, Cx.Register, Stack(16)),
                 new Mov(Stack(8), R10.Register),
                 new Mov(R10.Register, Stack(20)),
                 new Mov(Stack(16), R10.Register),
@@ -204,7 +204,7 @@ public class BitwiseOperatorData : DataBase
                 return 7 ^ 1;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(7), Stack(4)),
                 new Bitwise(BitwiseXor.Operator, Imm(1), Stack(4)),

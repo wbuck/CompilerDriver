@@ -6,6 +6,44 @@ public class InvalidParseData : TheoryData<string, string>
     public InvalidParseData()
     {
         Add("""
+            int main(void)
+            {
+                return !10
+            }
+            """, 
+            "Expected ';' but found '}'");
+        Add("""
+            int main(void) {
+                return 1 || 2
+            }
+            """, 
+            "Expected ';' but found '}'");
+        Add("""
+            int main(void) {
+                return 2 && ~;
+            }
+            """, 
+            "Expected expression but found ';'");
+        Add("""
+            int main(void) {
+                return 1 < > 3;
+            }
+            """, 
+            "Expected expression but found '>'");
+        Add("""
+            int main(void) {
+                return <= 2;
+            }
+            """, 
+            "Expected expression but found '<='");
+        Add("""
+            int main(void)
+            {
+                10 <= !;
+            }
+            """, 
+            "Expected 'return' but found '10'");
+        Add("""
             int main(void) {
                 return 1 | | 2;
             }

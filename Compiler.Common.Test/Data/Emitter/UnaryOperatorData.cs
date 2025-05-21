@@ -11,7 +11,7 @@ public class UnaryOperatorData : DataBase
                 return ~-2147483647;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $2147483647, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -28,7 +28,7 @@ public class UnaryOperatorData : DataBase
                 return ~0;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $0, -4(%rbp)",
                 "notl -4(%rbp)",
@@ -42,7 +42,7 @@ public class UnaryOperatorData : DataBase
                 return ~12;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $12, -4(%rbp)",
                 "notl -4(%rbp)",
@@ -56,7 +56,7 @@ public class UnaryOperatorData : DataBase
                 return -0;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $0, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -70,7 +70,7 @@ public class UnaryOperatorData : DataBase
                 return -5;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $5, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -84,7 +84,7 @@ public class UnaryOperatorData : DataBase
                 return -2147483647;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $2147483647, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -98,7 +98,7 @@ public class UnaryOperatorData : DataBase
                 return -~0;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $0, -4(%rbp)",
                 "notl -4(%rbp)",
@@ -115,7 +115,7 @@ public class UnaryOperatorData : DataBase
                 return ~-3;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $3, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -132,7 +132,7 @@ public class UnaryOperatorData : DataBase
                 return ~(2);
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $2, -4(%rbp)",
                 "notl -4(%rbp)",
@@ -146,7 +146,7 @@ public class UnaryOperatorData : DataBase
                 return -(-4);
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $4, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -163,7 +163,7 @@ public class UnaryOperatorData : DataBase
                 return (-2);
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $2, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -178,7 +178,7 @@ public class UnaryOperatorData : DataBase
                 return -((((10))));
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $10, -4(%rbp)",
                 "negl -4(%rbp)",

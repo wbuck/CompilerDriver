@@ -11,7 +11,7 @@ public class BinaryOperatorData : DataBase
                 return 1 + 2;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $1, -4(%rbp)",
                 "addl $2, -4(%rbp)",
@@ -25,7 +25,7 @@ public class BinaryOperatorData : DataBase
                 return 6 / 3 / 2;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $6, %eax",
                 "cdq",
@@ -47,7 +47,7 @@ public class BinaryOperatorData : DataBase
                 return (3 / 2 * 4) + (5 - 4 + 3);
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $20, %rsp",
                 "movl $3, %eax",
                 "cdq",
@@ -79,7 +79,7 @@ public class BinaryOperatorData : DataBase
                     3 % (2 + 1);
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $20, %rsp",
                 "movl $5, -4(%rbp)",
                 "movl -4(%rbp), %r11d",
@@ -110,7 +110,7 @@ public class BinaryOperatorData : DataBase
                 return 1 - 2 - 3;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $1, -4(%rbp)",
                 "subl $2, -4(%rbp)",
@@ -127,7 +127,7 @@ public class BinaryOperatorData : DataBase
                 return (-12) / 5;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $12, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -146,7 +146,7 @@ public class BinaryOperatorData : DataBase
                 return 4 / 2;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $4, %eax",
                 "cdq",
@@ -163,7 +163,7 @@ public class BinaryOperatorData : DataBase
                 return 4 % 2;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $4, %eax",
                 "cdq",
@@ -180,7 +180,7 @@ public class BinaryOperatorData : DataBase
                 return 2 * 3;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $2, -4(%rbp)",
                 "movl -4(%rbp), %r11d",
@@ -196,7 +196,7 @@ public class BinaryOperatorData : DataBase
                 return 2 * (3 + 4);
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $3, -4(%rbp)",
                 "addl $4, -4(%rbp)",
@@ -214,7 +214,7 @@ public class BinaryOperatorData : DataBase
                 return 2 + 3 * 4;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $3, -4(%rbp)",
                 "movl -4(%rbp), %r11d",
@@ -233,7 +233,7 @@ public class BinaryOperatorData : DataBase
                 return 2- -1;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $1, -4(%rbp)",
                 "negl -4(%rbp)",
@@ -250,7 +250,7 @@ public class BinaryOperatorData : DataBase
                 return 1 - 2;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $4, %rsp",
                 "movl $1, -4(%rbp)",
                 "subl $2, -4(%rbp)",
@@ -264,7 +264,7 @@ public class BinaryOperatorData : DataBase
                 return ~2 + 3;
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $2, -4(%rbp)",
                 "notl -4(%rbp)",
@@ -281,7 +281,7 @@ public class BinaryOperatorData : DataBase
                 return ~(1 + 1);
             }
             """,
-            Emit([
+            GetExpected([
                 "subq $8, %rsp",
                 "movl $1, -4(%rbp)",
                 "addl $1, -4(%rbp)",

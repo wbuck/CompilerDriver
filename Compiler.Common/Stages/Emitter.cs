@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Compiler.Common.Extensions;
 using Compiler.Common.Generation;
+using Compiler.Common.Tacky;
 
 namespace Compiler.Common.Stages;
 
@@ -74,8 +75,26 @@ public static class Emitter
                 case Cdq:
                     builder.AppendLine("cdq", indent);
                     break;
+                case Bitwise { Operator: BitwiseLeftShift or BitwiseRightShift, Source: Cx } bitwise:
+                    builder.AppendLine($"{GetBitwiseOperator(bitwise.Operator)} {GetOperandAlias(bitwise.Source)}, {GetOperand(bitwise.Destination)}", indent);
+                    break;
                 case Bitwise bitwise:
                     builder.AppendLine($"{GetBitwiseOperator(bitwise.Operator)} {GetOperand(bitwise.Source)}, {GetOperand(bitwise.Destination)}", indent);
+                    break;
+                case Cmp cmp:
+                    builder.AppendLine($"cmpl {GetOperand(cmp.Lhs)}, {GetOperand(cmp.Rhs)}", indent);
+                    break;
+                case Jmp jmp:
+                    builder.AppendLine($"jmp {jmp.Target}", indent);
+                    break;
+                case JmpConditional jmp:
+                    builder.AppendLine($"j{GetCode(jmp.Code)} {jmp.Target}", indent);
+                    break;
+                case SetConditional set:
+                    builder.AppendLine($"set{GetCode(set.Code)} {GetOperandAlias(set.Operand)}", indent);
+                    break;
+                case Label label:
+                    builder.AppendLine($"{label.Identifier}:");
                     break;
                 case Ret:
                     break;
@@ -83,6 +102,9 @@ public static class Emitter
                     throw new FormatException($"Unexpected instruction: {i.Tag.ToStringFast()}"); 
             }   
         });
+
+    private static string GetCode(IConditionCode code) => 
+        code.Tag.ToStringFast(true);
 
     private static string GetUnaryOperator(IUnaryOperator op) => op switch
     {
@@ -109,6 +131,16 @@ public static class Emitter
         _ => throw new FormatException($"Unexpected binary operator: {op.Tag.ToStringFast()}")  
     };
 
+    private static string GetOperandAlias(IOperand operand) => operand switch
+    {
+        Ax => "%al",
+        R10 => "%r10b",
+        R11 => "%r11b",
+        Dx => "%dl",
+        Cx => "%cl",
+        _ => GetOperand(operand)
+    };
+
     private static string GetOperand(IOperand operand) => operand switch
     {
         Ax => "%eax",
@@ -116,7 +148,6 @@ public static class Emitter
         R11 => "%r11d",
         Dx => "%edx",
         Cx => "%ecx",
-        Cl => "%cl",
         Stack stack => $"-{stack.Offset}(%rbp)",
         Imm<int> integer => $"${integer.Constant}",
         _ => throw new FormatException($"Unexpected operand: {operand.Tag.ToStringFast()}")   

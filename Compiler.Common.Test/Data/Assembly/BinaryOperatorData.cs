@@ -13,7 +13,7 @@ public class BinaryOperatorData : DataBase
                 return 1 + 2;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(1), Stack(4)),
                 new Binary(Generation.Add.Operator, Imm(2), Stack(4)),
@@ -28,7 +28,7 @@ public class BinaryOperatorData : DataBase
                 return 6 / 3 / 2;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(6), Ax.Register),
                 Cdq.Instruction,
@@ -51,7 +51,7 @@ public class BinaryOperatorData : DataBase
                 return (3 / 2 * 4) + (5 - 4 + 3);
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(20),
                 new Mov(Imm(3), Ax.Register),
                 Cdq.Instruction,
@@ -84,7 +84,7 @@ public class BinaryOperatorData : DataBase
                     3 % (2 + 1);
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(20),
                 new Mov(Imm(5), Stack(4)),
                 new Mov(Stack(4), R11.Register),
@@ -116,7 +116,7 @@ public class BinaryOperatorData : DataBase
                 return 1 - 2 - 3;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(1), Stack(4)),
                 new Binary(Sub.Operator, Imm(2), Stack(4)),
@@ -134,7 +134,7 @@ public class BinaryOperatorData : DataBase
                 return (-12) / 5;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(12), Stack(4)),
                 new Unary(Neg.Operator, Stack(4)),
@@ -154,7 +154,7 @@ public class BinaryOperatorData : DataBase
                 return 4 / 2;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(4), Ax.Register),
                 Cdq.Instruction,
@@ -172,7 +172,7 @@ public class BinaryOperatorData : DataBase
                 return 4 % 2;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(4), Ax.Register),
                 Cdq.Instruction,
@@ -190,7 +190,7 @@ public class BinaryOperatorData : DataBase
                 return 2 * 3;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(2), Stack(4)),
                 new Mov(Stack(4), R11.Register),
@@ -207,7 +207,7 @@ public class BinaryOperatorData : DataBase
                 return 2 * (3 + 4);
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(3), Stack(4)),
                 new Binary(Generation.Add.Operator, Imm(4), Stack(4)),
@@ -226,7 +226,7 @@ public class BinaryOperatorData : DataBase
                 return 2 + 3 * 4;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(3), Stack(4)),
                 new Mov(Stack(4), R11.Register),
@@ -246,7 +246,7 @@ public class BinaryOperatorData : DataBase
                 return 2- -1;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(1), Stack(4)),
                 new Unary(Neg.Operator, Stack(4)),
@@ -264,7 +264,7 @@ public class BinaryOperatorData : DataBase
                 return 1 - 2;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(4),
                 new Mov(Imm(1), Stack(4)),
                 new Binary(Sub.Operator, Imm(2), Stack(4)),
@@ -279,7 +279,7 @@ public class BinaryOperatorData : DataBase
                 return ~2 + 3;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(2), Stack(4)),
                 new Unary(Not.Operator, Stack(4)),
@@ -297,7 +297,7 @@ public class BinaryOperatorData : DataBase
                 return ~(1 + 1);
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(1), Stack(4)),
                 new Binary(Generation.Add.Operator, Imm(1), Stack(4)),

@@ -39,10 +39,15 @@ public class TackyTests(ITestOutputHelper output)
     [ClassData(typeof(BitwiseOperatorData))]
     public void ParsingBitwiseOperatorShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(LogicalAndRelationalData))]
+    public void ParsingLogicalAndRelationalOperatorsShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
 
     private TackyProgram GetResult(string fileContent)
     {
-        var actual = TackyProgram.Visit(GetAst(fileContent.AsMemory()));
+        var actual = new TackyVisitor().Visit(GetAst(fileContent.AsMemory()));
         output.WriteLine("Input:");
         output.WriteLine(fileContent);
         output.WriteLine(string.Empty);

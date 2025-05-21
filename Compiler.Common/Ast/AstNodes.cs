@@ -28,7 +28,16 @@ public enum AstNodeTag
     BitwiseOr,
     BitwiseXor,
     LeftShift,
-    RightShift
+    RightShift,
+    Not,
+    LogicalAnd,
+    LogicalOr,
+    Equal,
+    NotEqual,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual
 }
 
 public interface IAstNodeTag
@@ -102,66 +111,128 @@ public sealed record BitwiseRightShiftNode : IBitwiseOperatorNode
 
 
 public interface IUnaryOperatorNode : IAstNodeTag;
-public record NegateNode : IUnaryOperatorNode
+public sealed record NegateNode : IUnaryOperatorNode
 {
     public static NegateNode Operator { get; } = new();
     private NegateNode() { }
     public AstNodeTag Tag => AstNodeTag.Negate;
 }
-public record ComplementNode : IUnaryOperatorNode
+public sealed record ComplementNode : IUnaryOperatorNode
 {
     public static ComplementNode Operator { get; } = new();
     private ComplementNode() { }
     public AstNodeTag Tag => AstNodeTag.Complement;
 }
+public sealed record NotNode : IUnaryOperatorNode
+{
+    public static NotNode Operator { get; } = new();
+    private NotNode() { }
+    public AstNodeTag Tag => AstNodeTag.Not;
+}
 
 public interface IBinaryOperatorNode : IAstNodeTag;
-public record AdditionNode : IBinaryOperatorNode
+public sealed record AdditionNode : IBinaryOperatorNode
 {
     public static AdditionNode Operator { get; } = new();
     private AdditionNode() { }
     public AstNodeTag Tag => AstNodeTag.Addition;
 }
-public record SubtractionNode : IBinaryOperatorNode
+public sealed record SubtractionNode : IBinaryOperatorNode
 {
     public static SubtractionNode Operator { get; } = new();
     private SubtractionNode() { }
     public AstNodeTag Tag => AstNodeTag.Subtraction;
 }
-public record MultiplicationNode : IBinaryOperatorNode
+public sealed record MultiplicationNode : IBinaryOperatorNode
 {
     public static MultiplicationNode Operator { get; } = new();
     private MultiplicationNode() { }
     public AstNodeTag Tag => AstNodeTag.Multiplication;
 }
-public record DivisionNode : IBinaryOperatorNode
+public sealed record DivisionNode : IBinaryOperatorNode
 {
     public static DivisionNode Operator { get; } = new();
     private DivisionNode() { }
     public AstNodeTag Tag => AstNodeTag.Division;
 }
-public record RemainderNode : IBinaryOperatorNode
+public sealed record RemainderNode : IBinaryOperatorNode
 {
     public static RemainderNode Operator { get; } = new();
     private RemainderNode() { }
     public AstNodeTag Tag => AstNodeTag.Remainder;
+}
+public sealed record LogicalAndNode : IBinaryOperatorNode
+{
+    public static LogicalAndNode Operator { get; } = new();
+    private LogicalAndNode() { }
+    public AstNodeTag Tag => AstNodeTag.LogicalAnd;
+}
+public sealed record LogicalOrNode : IBinaryOperatorNode
+{
+    public static LogicalOrNode Operator { get; } = new();
+    private LogicalOrNode() { }
+    public AstNodeTag Tag => AstNodeTag.LogicalOr;
+}
+public sealed record EqualNode : IBinaryOperatorNode
+{
+    public static EqualNode Operator { get; } = new();
+    private EqualNode() { }
+    public AstNodeTag Tag => AstNodeTag.Equal;
+}
+public sealed record NotEqualNode : IBinaryOperatorNode
+{
+    public static NotEqualNode Operator { get; } = new();
+    private NotEqualNode() { }
+    public AstNodeTag Tag => AstNodeTag.NotEqual;
+}
+public sealed record LessThanNode : IBinaryOperatorNode
+{
+    public static LessThanNode Operator { get; } = new();
+    private LessThanNode() { }
+    public AstNodeTag Tag => AstNodeTag.LessThan;
+}
+public sealed record LessThanOrEqualNode : IBinaryOperatorNode
+{
+    public static LessThanOrEqualNode Operator { get; } = new();
+    private LessThanOrEqualNode() { }
+    public AstNodeTag Tag => AstNodeTag.LessThanOrEqual;
+}
+public sealed record GreaterThanNode : IBinaryOperatorNode
+{
+    public static GreaterThanNode Operator { get; } = new();
+    private GreaterThanNode() { }
+    public AstNodeTag Tag => AstNodeTag.GreaterThan;
+}
+public sealed record GreaterThanOrEqualNode : IBinaryOperatorNode
+{
+    public static GreaterThanOrEqualNode Operator { get; } = new();
+    private GreaterThanOrEqualNode() { }
+    public AstNodeTag Tag => AstNodeTag.GreaterThanOrEqual;
 }
 
 
 public record ProgramNode(FunctionNode Function) : IAstNodeTag
 {
     private static readonly FrozenDictionary<TokenType, int> Precedence = new Dictionary<TokenType, int>
-    {    
-        [TokenType.BitwiseOr] = 25,
-        [TokenType.BitwiseXor] = 30,
-        [TokenType.BitwiseAnd] = 35,
-        [TokenType.LeftShift] = 40,
-        [TokenType.RightShift] = 40,
-        [TokenType.Plus] = 45,
-        [TokenType.Minus] = 45,        
-        [TokenType.Asterisk] = 50,
-        [TokenType.ForwardSlash] = 50,
-        [TokenType.Percent] = 50
+    {         
+        [TokenType.Asterisk] = 40,
+        [TokenType.ForwardSlash] = 40,
+        [TokenType.Percent] = 40,
+        [TokenType.Plus] = 35,
+        [TokenType.Minus] = 35,
+        [TokenType.LeftShift] = 30,
+        [TokenType.RightShift] = 30,
+        [TokenType.GreaterThanOrEqual] = 25,
+        [TokenType.LessThanOrEqual] = 25,
+        [TokenType.LessThan] = 25,
+        [TokenType.GreaterThan] = 25,
+        [TokenType.Equal] = 20,
+        [TokenType.NotEqual] = 20,
+        [TokenType.BitwiseAnd] = 15,
+        [TokenType.BitwiseXor] = 14,
+        [TokenType.BitwiseOr] = 13,
+        [TokenType.LogicalAnd] = 12,
+        [TokenType.LogicalOr] = 11
     }.ToFrozenDictionary();
     
     public AstNodeTag Tag => AstNodeTag.Program;
@@ -234,12 +305,12 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent, int precedence = 0)
     {
         var lhs = ParseFactor(ref tokens, fileContent);
-        while (PeekOperator(ref tokens, out var type) && Precedence[type] >= precedence)
+        while (PeekBitwiseOrBinaryOperator(ref tokens, out var type) && Precedence[type] >= precedence)
         {
             if (lhs is null)
                 throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
 
-            if (ParseBinaryOperator(ref tokens, fileContent) is { } binary)
+            if (ParseBinaryOperator(ref tokens) is { } binary)
             {
                 if (ParseExpression(ref tokens, fileContent, Precedence[type] + 1) is not { } rhs)
                     throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
@@ -247,7 +318,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
                 lhs = new BinaryNode(binary, lhs, rhs);
                 continue;
             }
-            if (ParseBitwiseOperator(ref tokens, fileContent) is { } bitwise)
+            if (ParseBitwiseOperator(ref tokens) is { } bitwise)
             {
                 if (ParseExpression(ref tokens, fileContent, Precedence[type] + 1) is not { } rhs)
                     throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
@@ -261,7 +332,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         return lhs;
     }
 
-    private static bool PeekOperator(ref Span<IToken> tokens, out TokenType type)
+    private static bool PeekBitwiseOrBinaryOperator(ref Span<IToken> tokens, out TokenType type)
     {
         type = TokenType.Unknown;        
         if (CheckType(tokens, TokenType.Plus))
@@ -284,41 +355,25 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             type = TokenType.LeftShift;
         if (CheckType(tokens, TokenType.RightShift))
             type = TokenType.RightShift;
+        if (CheckType(tokens, TokenType.LogicalAnd))
+            type = TokenType.LogicalAnd;
+        if (CheckType(tokens, TokenType.LogicalOr))
+            type = TokenType.LogicalOr;
+        if (CheckType(tokens, TokenType.Equal))
+            type = TokenType.Equal;
+        if (CheckType(tokens, TokenType.NotEqual))
+            type = TokenType.NotEqual;
+        if (CheckType(tokens, TokenType.LessThan))
+            type = TokenType.LessThan;
+        if (CheckType(tokens, TokenType.LessThanOrEqual))
+            type = TokenType.LessThanOrEqual;
+        if (CheckType(tokens, TokenType.GreaterThan))
+            type = TokenType.GreaterThan;
+        if (CheckType(tokens, TokenType.GreaterThanOrEqual))
+            type = TokenType.GreaterThanOrEqual;
         
         return type != TokenType.Unknown;
-    }
-
-    private static IBitwiseOperatorNode? ParseBitwiseOperator(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
-    {
-        if (CheckTypeAndConsume(tokens, TokenType.BitwiseAnd, out tokens))
-            return BitwiseAndNode.Operator;
-        if (CheckTypeAndConsume(tokens, TokenType.BitwiseOr, out tokens))
-            return BitwiseOrNode.Operator;
-        if (CheckTypeAndConsume(tokens, TokenType.BitwiseXor, out tokens))
-            return BitwiseXorNode.Operator;
-        if (CheckTypeAndConsume(tokens, TokenType.LeftShift, out tokens))
-            return BitwiseLeftShiftNode.Operator;
-        if (CheckTypeAndConsume(tokens, TokenType.RightShift, out tokens))
-            return BitwiseRightShiftNode.Operator;
-        
-        return null;
-    }
-    
-    private static IBinaryOperatorNode? ParseBinaryOperator(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
-    {
-        if (CheckTypeAndConsume(tokens, TokenType.Plus, out tokens))
-            return AdditionNode.Operator;
-        if (CheckTypeAndConsume(tokens, TokenType.Minus, out tokens))
-            return SubtractionNode.Operator;
-        if (CheckTypeAndConsume(tokens, TokenType.Asterisk, out tokens))
-            return MultiplicationNode.Operator;
-        if (CheckTypeAndConsume(tokens, TokenType.ForwardSlash, out tokens))
-            return DivisionNode.Operator;
-        if (CheckTypeAndConsume(tokens, TokenType.Percent, out tokens))
-            return RemainderNode.Operator;
-        
-        return null;
-    }
+    }    
     
     private static IExpressionNode? ParseFactor(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
@@ -347,32 +402,14 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
 
     private static UnaryNode? ParseUnary(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
-        if (ParseNegate(ref tokens) is { } negate)
-            return ParseUnaryInternal(negate, ref tokens, fileContent);;
-
-        if (ParseComplement(ref tokens) is { } complement)
-            return ParseUnaryInternal(complement, ref tokens, fileContent);
-
-        return null;
-
-        static UnaryNode ParseUnaryInternal(IUnaryOperatorNode op, ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
-        {
-            if (ParseFactor(ref tokens, fileContent) is not { } factor)
-                throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        if (ParseUnaryOperator(ref tokens) is not { } op) 
+            return null;
+        
+        if (ParseFactor(ref tokens, fileContent) is not { } factor)
+            throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
             
-            return new UnaryNode(op, factor);
-        }
+        return new UnaryNode(op, factor);
     }
-    
-    private static NegateNode? ParseNegate(ref Span<IToken> tokens)
-        => CheckTypeAndConsume(tokens, TokenType.Minus, out tokens)
-            ? NegateNode.Operator
-            : null;
-    
-    private static ComplementNode? ParseComplement(ref Span<IToken> tokens)
-        => CheckTypeAndConsume(tokens, TokenType.BitwiseComplement, out tokens)
-            ? ComplementNode.Operator
-            : null;
 
     private static ConstantNode<T>? ParseConstant<T>(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent) 
         where T : INumber<T>
@@ -389,7 +426,67 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             return null;
         
         AssertShift(tokens, out tokens);
-        return new(number);
+        return new ConstantNode<T>(number);
+    }
+    
+    private static IBitwiseOperatorNode? ParseBitwiseOperator(ref Span<IToken> tokens)
+    {
+        if (CheckTypeAndConsume(tokens, TokenType.BitwiseAnd, out tokens))
+            return BitwiseAndNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.BitwiseOr, out tokens))
+            return BitwiseOrNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.BitwiseXor, out tokens))
+            return BitwiseXorNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.LeftShift, out tokens))
+            return BitwiseLeftShiftNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.RightShift, out tokens))
+            return BitwiseRightShiftNode.Operator;
+        
+        return null;
+    }
+    
+    private static IBinaryOperatorNode? ParseBinaryOperator(ref Span<IToken> tokens)
+    {
+        if (CheckTypeAndConsume(tokens, TokenType.Plus, out tokens))
+            return AdditionNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.Minus, out tokens))
+            return SubtractionNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.Asterisk, out tokens))
+            return MultiplicationNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.ForwardSlash, out tokens))
+            return DivisionNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.Percent, out tokens))
+            return RemainderNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.LogicalAnd, out tokens))
+            return LogicalAndNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.LogicalOr, out tokens))
+            return LogicalOrNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.Equal, out tokens))
+            return EqualNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.NotEqual, out tokens))
+            return NotEqualNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.LessThan, out tokens))
+            return LessThanNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.LessThanOrEqual, out tokens))
+            return LessThanOrEqualNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.GreaterThan, out tokens))
+            return GreaterThanNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.GreaterThanOrEqual, out tokens))
+            return GreaterThanOrEqualNode.Operator;
+        
+        return null;
+    }
+    
+    private static IUnaryOperatorNode? ParseUnaryOperator(ref Span<IToken> tokens)
+    {
+        if (CheckTypeAndConsume(tokens, TokenType.Minus, out tokens))
+            return NegateNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.Complement, out tokens))
+            return ComplementNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.Not, out tokens))
+            return NotNode.Operator;
+        
+        return null;
     }
     
     [Pure]

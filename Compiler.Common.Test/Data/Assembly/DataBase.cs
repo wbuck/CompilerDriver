@@ -4,11 +4,15 @@ namespace Compiler.Common.Test.Data.Assembly;
 
 public class DataBase : TheoryData<string, Program>
 {
-    protected static Program Create(List<IInstruction> instructions) =>
+    protected static Program GetExpected(List<IInstruction> instructions) =>
         new(new Function("main", instructions));
     
     protected static Imm<int> Imm(int value) =>
         new(value);
+
+    protected static Imm<int> Zero { get; } = Imm(0);
+    
+    protected static Imm<int> One { get; } = Imm(1);
     
     protected static Stack Stack(int value) =>
         new(value);

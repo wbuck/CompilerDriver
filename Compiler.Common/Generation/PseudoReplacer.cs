@@ -26,6 +26,11 @@ internal class PseudoReplacer
                 Binary binary => ReplaceBinary(binary),
                 Div div => ReplaceDiv(div),
                 Bitwise bitwise => ReplaceBitwise(bitwise),
+                Cmp cmp => ReplaceCmp(cmp),
+                SetConditional set => ReplaceSetCc(set),
+                Jmp jmp => jmp,
+                JmpConditional jmp => jmp,
+                Label label => label,
                 Ret ret => ret,
                 Cdq cdq => cdq,
                 AllocateStack allocate => allocate,
@@ -34,6 +39,16 @@ internal class PseudoReplacer
         }
         return instructions;
     }
+    
+    private SetConditional ReplaceSetCc(SetConditional setConditional)
+        => IsPseudo(setConditional.Operand)
+            ? setConditional with { Operand = ReplaceOperand(setConditional.Operand) }
+            : setConditional;
+
+    private Cmp ReplaceCmp(Cmp cmp)
+        => IsPseudo(cmp.Rhs) || IsPseudo(cmp.Lhs)
+            ? new Cmp(ReplaceOperand(cmp.Lhs), ReplaceOperand(cmp.Rhs))
+            : cmp;
     
     private Bitwise ReplaceBitwise(Bitwise bitwise)
         => IsPseudo(bitwise.Source) || IsPseudo(bitwise.Destination)

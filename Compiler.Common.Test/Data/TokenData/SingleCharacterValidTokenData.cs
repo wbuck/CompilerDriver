@@ -12,7 +12,7 @@ public class SingleCharacterValidTokenData : TheoryData<string, Type, TokenType>
         Add(GetValue(TokenType.CloseBrace), typeof(CloseBraceToken), TokenType.CloseBrace);
         Add(GetValue(TokenType.Comma), typeof(CommaToken), TokenType.Comma);
         Add(GetValue(TokenType.Semicolon), typeof(SemicolonToken), TokenType.Semicolon);
-        Add(GetValue(TokenType.BitwiseComplement), typeof(BitwiseComplementToken), TokenType.BitwiseComplement);
+        Add(GetValue(TokenType.Complement), typeof(BitwiseComplementToken), TokenType.Complement);
         Add(GetValue(TokenType.Decrement), typeof(DecrementToken), TokenType.Decrement);
         Add(GetValue(TokenType.Plus), typeof(PlusToken), TokenType.Plus);
         Add(GetValue(TokenType.Minus), typeof(MinusToken), TokenType.Minus);

@@ -57,11 +57,6 @@ public static partial class Lexer
                     tokens.Add(token);                    
                     continue;
                 } 
-                if ((token = Parse<SemicolonToken>(ref trimmed, offset)) is not null)
-                {
-                    tokens.Add(token);                    
-                    continue;
-                }  
                 if ((token = Parse<NumericConstantToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
@@ -102,7 +97,36 @@ public static partial class Lexer
                     tokens.Add(token);                    
                     continue;
                 }
-                // TODO: Logical operators must come before bitwise operators.
+                if ((token = Parse<LogicalAndToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<LogicalOrToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<EqualToToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<NotEqualToToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<GreaterThanOrEqualToToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<LessThanOrEqualToToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }                
                 if ((token = Parse<BitwiseAndToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
@@ -127,7 +151,22 @@ public static partial class Lexer
                 {
                     tokens.Add(token);                    
                     continue;
-                }  
+                } 
+                if ((token = Parse<LessThanToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<GreaterThanToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<NotToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
                 
                 var enumerator = NonWhiteSpacePattern.EnumerateMatches(trimmed);
                 if (enumerator.MoveNext())

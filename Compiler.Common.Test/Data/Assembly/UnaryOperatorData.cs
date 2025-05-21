@@ -13,7 +13,7 @@ public class UnaryOperatorData : DataBase
                 return 42;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(0),
                 new Mov(Imm(42), Ax.Register),
                 Ret.Instruction
@@ -26,7 +26,7 @@ public class UnaryOperatorData : DataBase
                 return -42;
             }
             """,
-            Create([
+            GetExpected([
                     AllocateStack(4),
                     new Mov(Imm(42), Stack(4)),
                     new Unary(Neg.Operator, Stack(4)),
@@ -41,7 +41,7 @@ public class UnaryOperatorData : DataBase
                 return ~-42;
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(42), Stack(4)),
                 new Unary(Neg.Operator, Stack(4)),
@@ -59,7 +59,7 @@ public class UnaryOperatorData : DataBase
                 return -(-42);
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(8),
                 new Mov(Imm(42), Stack(4)),
                 new Unary(Neg.Operator, Stack(4)),
@@ -77,7 +77,7 @@ public class UnaryOperatorData : DataBase
                 return ~-(-42);
             }
             """,
-            Create([
+            GetExpected([
                 AllocateStack(12),
                 new Mov(Imm(42), Stack(4)),
                 new Unary(Neg.Operator, Stack(4)),

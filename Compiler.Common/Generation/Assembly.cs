@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using Compiler.Common.Tacky;
 using NetEscapades.EnumGenerators;
@@ -20,7 +21,6 @@ public enum AssemblyTag
     R11,
     Dx,
     Cx,
-    Cl,
     Imm,
     Pseudo,
     Stack,
@@ -35,7 +35,24 @@ public enum AssemblyTag
     LeftShift,
     RightShift,
     Program,
-    Function
+    Function,
+    [Display(Name = "e")]
+    Equal,
+    [Display(Name = "ne")]
+    NotEqual,
+    [Display(Name = "l")]
+    LessThan,
+    [Display(Name = "le")]
+    LessThanOrEqual,
+    [Display(Name = "g")]
+    GreaterThan,
+    [Display(Name = "ge")]
+    GreaterThanOrEqual,
+    Cmp,
+    Jmp,
+    JmpConditional,
+    SetConditional,
+    Label
 }
 
 public interface IAssembly
@@ -43,7 +60,10 @@ public interface IAssembly
     AssemblyTag Tag { get; }
 }
 
-public interface IOperand : IAssembly;
+public interface IOperand : IAssembly
+{
+    static Imm<int> Zero { get; } = new(0);
+}
 
 public interface IReg : IOperand;
 public sealed record Ax : IReg
@@ -70,12 +90,6 @@ public sealed record Dx : IReg
     private Dx() { }
     public AssemblyTag Tag => AssemblyTag.Dx;
 }
-public sealed record Cl : IReg
-{
-    public static Cl Register { get; } = new();
-    private Cl() { }
-    public AssemblyTag Tag => AssemblyTag.Cl;
-}
 public sealed record Cx : IReg
 {
     public static Cx Register { get; } = new();
@@ -83,29 +97,30 @@ public sealed record Cx : IReg
     public AssemblyTag Tag => AssemblyTag.Cx;
 }
 
-public record Imm<T>(T Constant) : IOperand where T: INumber<T>
+public interface IConstant : IOperand;
+public sealed record Imm<T>(T Constant) : IConstant where T: INumber<T>
 {
     public AssemblyTag Tag => AssemblyTag.Imm;
 }
 
-public record Pseudo(string Identifier, int StackOffset): IOperand
+public sealed record Pseudo(string Identifier, int StackOffset): IOperand
 {
     public AssemblyTag Tag => AssemblyTag.Pseudo;
 }
 
-public record Stack(int Offset) : IOperand
+public sealed record Stack(int Offset) : IOperand
 {
     public AssemblyTag Tag => AssemblyTag.Stack;
 }
 
 public interface IUnaryOperator : IAssembly;
-public record Neg : IUnaryOperator
+public sealed record Neg : IUnaryOperator
 {
     public static Neg Operator { get; } = new();
     private Neg() { }
     public AssemblyTag Tag => AssemblyTag.Neg;
 }
-public record Not : IUnaryOperator
+public sealed record Not : IUnaryOperator
 {
     public static Not Operator { get; } = new();
     private Not() { }
@@ -113,74 +128,92 @@ public record Not : IUnaryOperator
 }
 
 public interface IInstruction : IAssembly;
-public record Mov(IOperand Source, IOperand Destination) : IInstruction
+public sealed record Mov(IOperand Source, IOperand Destination) : IInstruction
 {
     public AssemblyTag Tag => AssemblyTag.Mov;   
 }
 
-public record Unary(IUnaryOperator Operator, IOperand Operand) : IInstruction
+public sealed record Unary(IUnaryOperator Operator, IOperand Operand) : IInstruction
 {
     public AssemblyTag Tag => AssemblyTag.Unary;  
 }
 
-public record AllocateStack(int Offset) : IInstruction
+public sealed record AllocateStack(int Offset) : IInstruction
 {
     public AssemblyTag Tag => AssemblyTag.AllocateStack; 
 }
 
-public record Ret : IInstruction
+public sealed record Ret : IInstruction
 {
     public static Ret Instruction { get; } = new();
     private Ret() { }
     public AssemblyTag Tag => AssemblyTag.Ret;
 }
-public record Cdq : IInstruction
+public sealed record Cdq : IInstruction
 {
     public static Cdq Instruction { get; } = new();
     private Cdq() { }
     public AssemblyTag Tag => AssemblyTag.Cdq;   
 }
-public record Binary(IBinaryOperator Operator, IOperand Source, IOperand Destination) : IInstruction
+public sealed record Binary(IBinaryOperator Operator, IOperand Source, IOperand Destination) : IInstruction
 {
     public AssemblyTag Tag => AssemblyTag.Binary; 
 }
-public record Bitwise(IBitwiseOperator Operator, IOperand Source, IOperand Destination) : IInstruction
+public sealed record Bitwise(IBitwiseOperator Operator, IOperand Source, IOperand Destination) : IInstruction
 {
     public AssemblyTag Tag => AssemblyTag.Bitwise; 
 }
-
-public record Div(IOperand Operand) : IInstruction
+public sealed record Div(IOperand Operand) : IInstruction
 {
     public AssemblyTag Tag => AssemblyTag.Div;
 }
+public sealed record Cmp(IOperand Lhs, IOperand Rhs) : IInstruction
+{
+    public AssemblyTag Tag => AssemblyTag.Cmp;
+}
+public sealed record Jmp(string Target) : IInstruction
+{
+    public AssemblyTag Tag => AssemblyTag.Jmp;
+}
+public sealed record JmpConditional(IConditionCode Code, string Target) : IInstruction
+{
+    public AssemblyTag Tag => AssemblyTag.JmpConditional;
+}
+public sealed record SetConditional(IConditionCode Code, IOperand Operand) : IInstruction
+{
+    public AssemblyTag Tag => AssemblyTag.SetConditional;
+}
+public sealed record Label(string Identifier) : IInstruction
+{
+    public AssemblyTag Tag => AssemblyTag.Label;
+}
 
 public interface IBitwiseOperator : IAssembly;
-
-public record BitwiseAnd : IBitwiseOperator
+public sealed record BitwiseAnd : IBitwiseOperator
 {
     public static BitwiseAnd Operator { get; } = new();
     private BitwiseAnd() { }
     public AssemblyTag Tag => AssemblyTag.And;
 }
-public record BitwiseOr : IBitwiseOperator
+public sealed record BitwiseOr : IBitwiseOperator
 {
     public static BitwiseOr Operator { get; } = new();
     private BitwiseOr() { }
     public AssemblyTag Tag => AssemblyTag.Or;
 }
-public record BitwiseXor : IBitwiseOperator
+public sealed record BitwiseXor : IBitwiseOperator
 {
     public static BitwiseXor Operator { get; } = new();
     private BitwiseXor() { }
     public AssemblyTag Tag => AssemblyTag.Xor;
 }
-public record BitwiseLeftShift : IBitwiseOperator
+public sealed record BitwiseLeftShift : IBitwiseOperator
 {
     public static BitwiseLeftShift Operator { get; } = new();
     private BitwiseLeftShift() { }
     public AssemblyTag Tag => AssemblyTag.LeftShift;
 }
-public record BitwiseRightShift : IBitwiseOperator
+public sealed record BitwiseRightShift : IBitwiseOperator
 {
     public static BitwiseRightShift Operator { get; } = new();
     private BitwiseRightShift() { }
@@ -188,26 +221,64 @@ public record BitwiseRightShift : IBitwiseOperator
 }
 
 public interface IBinaryOperator : IAssembly;
-public record Add : IBinaryOperator
+public sealed record Add : IBinaryOperator
 {
     public static Add Operator { get; } = new();
     private Add() { }
     public AssemblyTag Tag => AssemblyTag.Add;  
 }
-public record Sub : IBinaryOperator
+public sealed record Sub : IBinaryOperator
 {
     public static Sub Operator { get; } = new();
     private Sub() { }
     public AssemblyTag Tag => AssemblyTag.Sub;
 }
-public record Mult : IBinaryOperator
+public sealed record Mult : IBinaryOperator
 {
     public static Mult Operator { get; } = new();
     private Mult() { }
     public AssemblyTag Tag => AssemblyTag.Mult;
 }
 
-public record Function(string Name, List<IInstruction> Instructions): IAssembly
+public interface IConditionCode : IAssembly;
+public sealed record Equal : IConditionCode
+{
+    public static Equal Code { get; } = new();
+    private Equal() { }
+    public AssemblyTag Tag => AssemblyTag.Equal;
+}
+public sealed record NotEqual : IConditionCode
+{
+    public static NotEqual Code { get; } = new();
+    private NotEqual() { }
+    public AssemblyTag Tag => AssemblyTag.NotEqual;
+}
+public sealed record GreaterThan : IConditionCode
+{
+    public static GreaterThan Code { get; } = new();
+    private GreaterThan() { }
+    public AssemblyTag Tag => AssemblyTag.GreaterThan;
+}
+public sealed record GreaterThanOrEqual : IConditionCode
+{
+    public static GreaterThanOrEqual Code { get; } = new();
+    private GreaterThanOrEqual() { }
+    public AssemblyTag Tag => AssemblyTag.GreaterThanOrEqual;
+}
+public sealed record LessThan : IConditionCode
+{
+    public static LessThan Code { get; } = new();
+    private LessThan() { }
+    public AssemblyTag Tag => AssemblyTag.LessThan;
+}
+public sealed record LessThanOrEqual : IConditionCode
+{
+    public static LessThanOrEqual Code { get; } = new();
+    private LessThanOrEqual() { }
+    public AssemblyTag Tag => AssemblyTag.LessThanOrEqual;
+}
+
+public sealed record Function(string Name, List<IInstruction> Instructions): IAssembly
 {
     public AssemblyTag Tag => AssemblyTag.Function;   
 }
@@ -234,8 +305,34 @@ public record Program(Function Function): IAssembly
             TackyReturn ret => VisitReturn(ret),
             TackyBinary binary => VisitBinary(binary),
             TackyBitwise bitwise => VisitBitwise(bitwise),
+            TackyJump jump => VisitJump(jump),
+            TackyJumpIfZero jumpIfZero => VisitJumpIfZero(jumpIfZero),
+            TackyJumpIfNotZero jumpIfNotZero => VisitJumpIfNotZero(jumpIfNotZero),
+            TackyCopy copy => VisitCopy(copy),
+            TackyLabel label => VisitLabel(label),
             _ => throw new FormatException($"Unknown instruction type {i.Tag.ToStringFast()}")
         }).ToList();
+    
+    private static List<IInstruction> VisitLabel(TackyLabel label)
+        => [new Label(label.Identifier)];
+    
+    private static List<IInstruction> VisitCopy(TackyCopy copy) 
+        => [new Mov(VisitValue(copy.Source), VisitValue(copy.Destination))];
+    
+    private static List<IInstruction> VisitJumpIfNotZero(TackyJumpIfNotZero jump)
+        => [
+            new Cmp(IOperand.Zero, VisitValue(jump.Condition)),
+            new JmpConditional(NotEqual.Code, jump.Target)
+        ];
+
+    private static List<IInstruction> VisitJumpIfZero(TackyJumpIfZero jump)
+        => [
+            new Cmp(IOperand.Zero, VisitValue(jump.Condition)),
+            new JmpConditional(Equal.Code, jump.Target)
+        ];
+    
+    private static List<IInstruction> VisitJump(TackyJump jump) 
+        => [new Jmp(jump.Target)];
 
     private static IEnumerable<IInstruction> VisitBitwise(TackyBitwise bitwise)
     {
@@ -247,34 +344,94 @@ public record Program(Function Function): IAssembly
     }
     private static IEnumerable<IInstruction> VisitBinary(TackyBinary binary)
     {
-        if (binary.Operator is TackyDivision or TackyRemainder)
+        return binary switch
         {
-            return [
-                new Mov(VisitValue(binary.Lhs), Ax.Register),
-                Cdq.Instruction,
-                new Div(VisitValue(binary.Rhs)),
-                new Mov(GetDivResultRegister(binary.Operator), VisitValue(binary.Destination))
-            ];
+            { Operator: TackyDivision or TackyRemainder } => GetDivOrRemainderInstructions(binary),
+            _ when IsRelational(binary.Operator) => GetRelationalInstructions(binary), 
+            _ => GetArithmeticInstructions(binary)
+        };
 
-            static IReg GetDivResultRegister(ITackyBinaryOperator binary) =>
-                binary is TackyDivision 
-                    ? Ax.Register 
-                    : Dx.Register;
+        static IEnumerable<IInstruction> GetRelationalInstructions(TackyBinary binary)
+        {
+            var dest = VisitValue(binary.Destination);
+            return [
+                new Cmp(VisitValue(binary.Lhs), VisitValue(binary.Rhs)),
+                new Mov(IOperand.Zero, dest),
+                new SetConditional(GetConditionCode(binary.Operator), dest),
+            ];
+        }
+        
+        static IEnumerable<IInstruction> GetDivOrRemainderInstructions(TackyBinary binary) =>
+        [
+            new Mov(VisitValue(binary.Lhs), Ax.Register),
+            Cdq.Instruction,
+            new Div(VisitValue(binary.Rhs)),
+            new Mov(GetDivResultRegister(binary.Operator), VisitValue(binary.Destination))
+        ];
+
+        static IEnumerable<IInstruction> GetArithmeticInstructions(TackyBinary binary)
+        {
+            var dest = VisitValue(binary.Destination);
+            return [
+                new Mov(VisitValue(binary.Lhs), dest),
+                new Binary(GetBinaryOperator(binary.Operator), VisitValue(binary.Rhs), dest)
+            ];
+        }
+        
+        static bool IsRelational(ITackyBinaryOperator binary) =>
+            binary is TackyLessThan 
+                or TackyLessThanOrEqual 
+                or TackyGreaterThan 
+                or TackyGreaterThanOrEqual 
+                or TackyEqual 
+                or TackyNotEqual;
+        
+        static IReg GetDivResultRegister(ITackyBinaryOperator binary) =>
+            binary is TackyDivision 
+                ? Ax.Register 
+                : Dx.Register;
+    }
+
+    private static IConditionCode GetConditionCode(ITackyBinaryOperator op)
+        => op switch
+        {
+            TackyEqual => Equal.Code,
+            TackyNotEqual => NotEqual.Code,
+            TackyLessThan => LessThan.Code,
+            TackyLessThanOrEqual => LessThanOrEqual.Code,
+            TackyGreaterThan => GreaterThan.Code,
+            TackyGreaterThanOrEqual => GreaterThanOrEqual.Code,
+            _ => throw new FormatException($"Unknown condition code type {op.Tag.ToStringFast()}")
+        };
+
+    private static IEnumerable<IInstruction> VisitUnary(TackyUnary unary)
+    {
+        return unary switch
+        {
+            { Operator: TackyNot } => GetNotInstructions(unary),
+            _ => GetOtherInstructions(unary)
+        };
+
+        static IEnumerable<IInstruction> GetNotInstructions(TackyUnary unary)
+        {
+            var dest = VisitValue(unary.Destination);
+            return [
+                new Cmp(IOperand.Zero, VisitValue(unary.Source)),
+                new Mov(IOperand.Zero, dest),
+                new SetConditional(Equal.Code, dest),
+            ];
         }
 
-        var dest = VisitValue(binary.Destination);
-        return [
-            new Mov(VisitValue(binary.Lhs), dest),
-            new Binary(GetBinaryOperator(binary.Operator), VisitValue(binary.Rhs), dest)
-        ];
+        static IEnumerable<IInstruction> GetOtherInstructions(TackyUnary unary)
+        {
+            var dest = VisitValue(unary.Destination);
+            return [
+                new Mov(VisitValue(unary.Source), dest),
+                new Unary(GetUnaryOperator(unary.Operator), dest)
+            ];  
+        }            
     }
-    
-    private static IEnumerable<IInstruction> VisitUnary(TackyUnary unary)
-        => [
-            new Mov(VisitValue(unary.Source), VisitValue(unary.Destination)),
-            new Unary(GetUnaryOperator(unary.Operator), VisitValue(unary.Destination))
-        ];
-    
+
     private static IOperand VisitValue(ITackyValue value)
         => value switch
         {
@@ -290,9 +447,9 @@ public record Program(Function Function): IAssembly
     private static IBitwiseOperator GetBitwiseOperator(ITackyBitwiseOperator bitwise)
         => bitwise switch
         {
-            TackyAnd => BitwiseAnd.Operator,
-            TackyOr => BitwiseOr.Operator,
-            TackyXor => BitwiseXor.Operator,
+            TackyBitwiseAnd => BitwiseAnd.Operator,
+            TackyBitwiseOr => BitwiseOr.Operator,
+            TackyBitwiseXor => BitwiseXor.Operator,
             TackyLeftShift => BitwiseLeftShift.Operator,
             TackyRightShift => BitwiseRightShift.Operator,
             _ => throw new FormatException($"Unknown bitwise operator type {bitwise.Tag.ToStringFast()}")
@@ -311,10 +468,9 @@ public record Program(Function Function): IAssembly
         => unary switch
         {
             TackyNegate => Neg.Operator,
-            TackyComplement => Not.Operator,
+            TackyComplement => Not.Operator,            
             _ => throw new FormatException($"Unknown unary operator type {unary.Tag.ToStringFast()}")
         };
-
-
+    
     public AssemblyTag Tag => AssemblyTag.Program;
 }

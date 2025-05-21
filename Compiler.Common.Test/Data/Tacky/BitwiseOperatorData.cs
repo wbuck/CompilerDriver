@@ -13,9 +13,9 @@ public class BitwiseOperatorData : DataBase
                 return 3 & 5;
             }
             """,
-            Create([
-                new TackyBitwise(TackyAnd.Operator, Constant(3), Constant(5), Variable(1)),
-                new TackyReturn(Variable(1))
+            GetExpected([
+                new TackyBitwise(TackyBitwiseAnd.Operator, Const(3), Const(5), Var(1)),
+                new TackyReturn(Var(1))
             ])
         );
         Add
@@ -25,9 +25,9 @@ public class BitwiseOperatorData : DataBase
                 return 1 | 2;
             }
             """,
-            Create([
-                new TackyBitwise(TackyOr.Operator, Constant(1), Constant(2), Variable(1)),
-                new TackyReturn(Variable(1))
+            GetExpected([
+                new TackyBitwise(TackyBitwiseOr.Operator, Const(1), Const(2), Var(1)),
+                new TackyReturn(Var(1))
             ])
         );
         Add
@@ -37,13 +37,13 @@ public class BitwiseOperatorData : DataBase
                 return 80 >> 2 | 1 ^ 5 & 7 << 1;
             }
             """,
-            Create([
-                new TackyBitwise(TackyRightShift.Operator, Constant(80), Constant(2), Variable(1)),
-                new TackyBitwise(TackyLeftShift.Operator, Constant(7), Constant(1), Variable(2)),
-                new TackyBitwise(TackyAnd.Operator, Constant(5), Variable(2), Variable(3)),
-                new TackyBitwise(TackyXor.Operator, Constant(1), Variable(3), Variable(4)),
-                new TackyBitwise(TackyOr.Operator, Variable(1), Variable(4), Variable(5)),
-                new TackyReturn(Variable(5))
+            GetExpected([
+                new TackyBitwise(TackyRightShift.Operator, Const(80), Const(2), Var(1)),
+                new TackyBitwise(TackyLeftShift.Operator, Const(7), Const(1), Var(2)),
+                new TackyBitwise(TackyBitwiseAnd.Operator, Const(5), Var(2), Var(3)),
+                new TackyBitwise(TackyBitwiseXor.Operator, Const(1), Var(3), Var(4)),
+                new TackyBitwise(TackyBitwiseOr.Operator, Var(1), Var(4), Var(5)),
+                new TackyReturn(Var(5))
             ])
         );
         Add
@@ -53,10 +53,10 @@ public class BitwiseOperatorData : DataBase
                 return 33 >> 2 << 1;
             }
             """,
-            Create([
-                new TackyBitwise(TackyRightShift.Operator, Constant(33), Constant(2), Variable(1)),
-                new TackyBitwise(TackyLeftShift.Operator, Variable(1), Constant(1), Variable(2)),
-                new TackyReturn(Variable(2))
+            GetExpected([
+                new TackyBitwise(TackyRightShift.Operator, Const(33), Const(2), Var(1)),
+                new TackyBitwise(TackyLeftShift.Operator, Var(1), Const(1), Var(2)),
+                new TackyReturn(Var(2))
             ])
         );
         Add
@@ -66,10 +66,10 @@ public class BitwiseOperatorData : DataBase
                 return 33 << 4 >> 2;
             }
             """,
-            Create([
-                new TackyBitwise(TackyLeftShift.Operator, Constant(33), Constant(4), Variable(1)),
-                new TackyBitwise(TackyRightShift.Operator, Variable(1), Constant(2), Variable(2)),
-                new TackyReturn(Variable(2))
+            GetExpected([
+                new TackyBitwise(TackyLeftShift.Operator, Const(33), Const(4), Var(1)),
+                new TackyBitwise(TackyRightShift.Operator, Var(1), Const(2), Var(2)),
+                new TackyReturn(Var(2))
             ])
         );
         Add
@@ -79,11 +79,11 @@ public class BitwiseOperatorData : DataBase
                 return 40 << 4 + 12 >> 1;
             }
             """,
-            Create([
-                new TackyBinary(TackyAddition.Operator, Constant(4), Constant(12), Variable(1)),
-                new TackyBitwise(TackyLeftShift.Operator, Constant(40), Variable(1), Variable(2)),
-                new TackyBitwise(TackyRightShift.Operator, Variable(2), Constant(1), Variable(3)),
-                new TackyReturn(Variable(3))
+            GetExpected([
+                new TackyBinary(TackyAddition.Operator, Const(4), Const(12), Var(1)),
+                new TackyBitwise(TackyLeftShift.Operator, Const(40), Var(1), Var(2)),
+                new TackyBitwise(TackyRightShift.Operator, Var(2), Const(1), Var(3)),
+                new TackyReturn(Var(3))
             ])
         );
         Add
@@ -93,9 +93,9 @@ public class BitwiseOperatorData : DataBase
                 return 35 << 2;
             }
             """,
-            Create([                
-                new TackyBitwise(TackyLeftShift.Operator, Constant(35), Constant(2), Variable(1)),                
-                new TackyReturn(Variable(1))
+            GetExpected([                
+                new TackyBitwise(TackyLeftShift.Operator, Const(35), Const(2), Var(1)),                
+                new TackyReturn(Var(1))
             ])
         );
         Add
@@ -105,10 +105,10 @@ public class BitwiseOperatorData : DataBase
                 return -5 >> 30;
             }
             """,
-            Create([         
-                new TackyUnary(TackyNegate.Operator, Constant(5), Variable(1)),
-                new TackyBitwise(TackyRightShift.Operator, Variable(1), Constant(30), Variable(2)),                
-                new TackyReturn(Variable(2))
+            GetExpected([         
+                new TackyUnary(TackyNegate.Operator, Const(5), Var(1)),
+                new TackyBitwise(TackyRightShift.Operator, Var(1), Const(30), Var(2)),                
+                new TackyReturn(Var(2))
             ])
         );
         Add
@@ -118,9 +118,9 @@ public class BitwiseOperatorData : DataBase
                 return 1000 >> 4;
             }
             """,
-            Create([                         
-                new TackyBitwise(TackyRightShift.Operator, Constant(1000), Constant(4), Variable(1)),                
-                new TackyReturn(Variable(1))
+            GetExpected([                         
+                new TackyBitwise(TackyRightShift.Operator, Const(1000), Const(4), Var(1)),                
+                new TackyReturn(Var(1))
             ])
         );
         Add
@@ -130,13 +130,13 @@ public class BitwiseOperatorData : DataBase
                 return (4 << (2 * 2)) + (100 >> (1 + 2));
             }
             """,
-            Create([                         
-                new TackyBinary(TackyMultiplication.Operator, Constant(2), Constant(2), Variable(1)),
-                new TackyBitwise(TackyLeftShift.Operator, Constant(4), Variable(1), Variable(2)),
-                new TackyBinary(TackyAddition.Operator, Constant(1), Constant(2), Variable(3)),
-                new TackyBitwise(TackyRightShift.Operator, Constant(100), Variable(3), Variable(4)),
-                new TackyBinary(TackyAddition.Operator, Variable(2), Variable(4), Variable(5)),
-                new TackyReturn(Variable(5))
+            GetExpected([                         
+                new TackyBinary(TackyMultiplication.Operator, Const(2), Const(2), Var(1)),
+                new TackyBitwise(TackyLeftShift.Operator, Const(4), Var(1), Var(2)),
+                new TackyBinary(TackyAddition.Operator, Const(1), Const(2), Var(3)),
+                new TackyBitwise(TackyRightShift.Operator, Const(100), Var(3), Var(4)),
+                new TackyBinary(TackyAddition.Operator, Var(2), Var(4), Var(5)),
+                new TackyReturn(Var(5))
             ])
         );
         Add
@@ -146,9 +146,9 @@ public class BitwiseOperatorData : DataBase
                 return 7 ^ 1;
             }
             """,
-            Create([                         
-                new TackyBitwise(TackyXor.Operator, Constant(7), Constant(1), Variable(1)),                
-                new TackyReturn(Variable(1))
+            GetExpected([                         
+                new TackyBitwise(TackyBitwiseXor.Operator, Const(7), Const(1), Var(1)),                
+                new TackyReturn(Var(1))
             ])
         );
     }

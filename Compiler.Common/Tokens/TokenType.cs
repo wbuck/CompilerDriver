@@ -22,7 +22,7 @@ public enum TokenType
     Semicolon,
     NumericConstant,
     [Display(Name = "~")]
-    BitwiseComplement,
+    Complement,
     [Display(Name = "--")]
     Decrement,
     [Display(Name = "+")]
@@ -45,5 +45,23 @@ public enum TokenType
     LeftShift,
     [Display(Name = ">>")]
     RightShift,
+    [Display(Name = "!")]
+    Not,
+    [Display(Name = "&&")]
+    LogicalAnd,
+    [Display(Name = "||")]
+    LogicalOr,
+    [Display(Name = "==")]
+    Equal,
+    [Display(Name = "!=")]
+    NotEqual, 
+    [Display(Name = "<")]
+    LessThan,
+    [Display(Name = "<=")]
+    LessThanOrEqual,
+    [Display(Name = ">")]
+    GreaterThan,
+    [Display(Name = ">=")]
+    GreaterThanOrEqual,
     Unknown
 }

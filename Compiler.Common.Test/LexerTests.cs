@@ -15,7 +15,12 @@ public class LexerTests(ITestOutputHelper output)
     
     [Theory]
     [ClassData(typeof(BitwiseOperatorData))]
-    public void ShouldSuccessfullyHandleBitwiseOperatorData(string fileContent, List<ExpectedToken> expected)
+    public void ShouldSuccessfullyHandleBitwiseOperatorsData(string fileContent, List<ExpectedToken> expected)
+        => Validate(fileContent, expected, GetResult(fileContent)); 
+    
+    [Theory]
+    [ClassData(typeof(LogicalAndRelationalData))]
+    public void ShouldSuccessfullyHandleLogicalAndRelationalOperatorsData(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent)); 
     
     private static void Validate(string fileContent, List<ExpectedToken> expected, List<IToken> actual)
