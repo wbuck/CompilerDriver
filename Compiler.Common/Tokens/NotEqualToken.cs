@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
 
-public sealed partial record NotEqualToToken(int Index) : IToken
+public sealed partial record NotEqualToken(int Index) : IToken
 {
     public TokenType Type => TokenType.NotEqual;
     public int Length => 2;
@@ -18,6 +18,6 @@ public sealed partial record NotEqualToToken(int Index) : IToken
         
         var match = enumerator.Current;
         value = value[match.Length..];
-        return new NotEqualToToken(match.Index + offset);       
+        return new NotEqualToken(match.Index + offset);       
     }
 }

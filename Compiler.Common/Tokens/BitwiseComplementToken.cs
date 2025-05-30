@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record BitwiseComplementToken(int Index) : IToken
+public sealed  record BitwiseComplementToken(int Index) : IToken
 {
     public TokenType Type => TokenType.Complement;
     public int Length => 1;

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Compiler.Common.Ast;
@@ -103,7 +104,7 @@ public sealed record TackyConstant<T>(T Value) : ITackyValue where T : INumber<T
     public TackyTag Tag => TackyTag.Constant;    
 }
 
-public sealed record TackyVariable(string Identifier, int VariableCount, int StackOffset) : ITackyValue
+public sealed record TackyVariable(string Identifier) : ITackyValue
 {
     public TackyTag Tag => TackyTag.Variable;
 }
@@ -245,32 +246,96 @@ public class TackyVisitor
     public TackyProgram Visit(ProgramNode program)
         => new(VisitFunction(program.Function));
 
-    private TackyFunction VisitFunction(FunctionNode function) =>
-        new(function.Name, VisitStatement(function.Body, new VariableFactory()));
-
-    private List<ITackyInstruction> VisitStatement(IStatementNode statement, VariableFactory factory)
-        => statement switch
-        {
-            ReturnNode @return => VisitReturn(@return, factory),
-            _ => throw new FormatException($"Unknown statement type {statement.Tag.ToStringFast()}")
-        };    
-
-    private List<ITackyInstruction> VisitReturn(ReturnNode @return, VariableFactory factory)
-    {        
+    private TackyFunction VisitFunction(FunctionNode function)
+    {
         List<ITackyInstruction> instructions = [];
+        VariableFactory factory = new();
+        foreach (var item in function.Body)
+        {
+            switch (item)
+            {
+                case DeclarationNode node:
+                    VisitDeclaration(node, instructions, factory);
+                    break;
+                case IStatementNode statement:
+                    VisitStatement(statement, instructions, factory);
+                    break;
+                default:
+                    throw new UnreachableException($"Unknown block item type: {item.Tag.ToStringFast()}");
+            }
+        }
+        
+        instructions.Add(new TackyReturn(new TackyConstant<int>(0)));
+        return new TackyFunction(function.Name, instructions);
+    }
+
+    private List<ITackyInstruction> VisitDeclaration(
+        DeclarationNode declaration, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        if (declaration is not { Initializer: { } rhs }) 
+            return instructions;
+        
+        var lhs = new VariableNode(declaration.Identifier);
+        VisitAssignment(lhs, rhs, instructions, factory);
+        return instructions;
+    }
+
+    private List<ITackyInstruction> VisitStatement(
+        IStatementNode statement, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        switch (statement)
+        {
+            case ReturnNode ret:
+                return VisitReturn(ret, instructions, factory);
+            case ExpressionNode expr:
+                // We don't care about the result of the expression statement
+                // in this case.
+                _ = VisitExpression(expr.Expression, instructions, factory);
+                return instructions;
+            case NullNode:
+                return instructions;
+            default:
+                throw new UnreachableException($"Unknown statement type: {statement.Tag.ToStringFast()}");
+        }
+    } 
+
+    private List<ITackyInstruction> VisitReturn(ReturnNode @return, List<ITackyInstruction> instructions, VariableFactory factory)
+    {        
         instructions.Add(new TackyReturn(VisitExpression(@return.Expression, instructions, factory)));
         return instructions;
     }
     
-    private ITackyValue VisitExpression(IExpressionNode expression, in List<ITackyInstruction> instructions, VariableFactory factory)
+    private ITackyValue VisitExpression(
+        IExpressionNode expression, in List<ITackyInstruction> instructions, VariableFactory factory)
         => expression switch
         {
             IConstantNode constant => VisitConstant(constant),
             UnaryNode unary => VisitUnary(unary, instructions, factory),            
             BitwiseNode bitwise => VisitBitwise(bitwise, instructions, factory),
             BinaryNode binary => VisitBinary(binary, instructions, factory),
+            VariableNode variable => factory.GetNextVariable(variable.Identifier),
+            AssignmentNode assignment => VisitAssignment(assignment, instructions, factory),
             _ => throw new FormatException($"Unknown expression type: {expression.Tag.ToStringFast()}")
         };
+
+    private TackyVariable VisitAssignment(
+        AssignmentNode assignment, List<ITackyInstruction> instructions, VariableFactory factory)
+            => VisitAssignment(assignment.Lhs, assignment.Rhs, instructions, factory);
+
+    private TackyVariable VisitAssignment(
+        IExpressionNode lhs, IExpressionNode rhs, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        var left = VisitExpression(lhs, instructions, factory);
+        var right = VisitExpression(rhs, instructions, factory);        
+        
+        // This should never happen as the semantic analysis stage should
+        // have handled this already.
+        Debug.Assert(left is TackyVariable, $"Invalid assignment type: {left.Tag.ToStringFast()}");
+        
+        var variable = (TackyVariable)left;
+        instructions.Add(new TackyCopy(right, variable));
+        return variable;
+    }
 
     private TackyVariable VisitBitwise(
         BitwiseNode bitwise, in List<ITackyInstruction> instructions, VariableFactory factory)

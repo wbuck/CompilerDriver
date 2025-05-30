@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record CloseParenthesisToken(int Index) : IToken
+public sealed record CloseParenthesisToken(int Index) : IToken
 {
     public TokenType Type => TokenType.CloseParenthesis;
     public int Length => 1;

@@ -21,6 +21,11 @@ public class LexerTests(ITestOutputHelper output)
     [Theory]
     [ClassData(typeof(LogicalAndRelationalData))]
     public void ShouldSuccessfullyHandleLogicalAndRelationalOperatorsData(string fileContent, List<ExpectedToken> expected)
+        => Validate(fileContent, expected, GetResult(fileContent));
+    
+    [Theory]
+    [ClassData(typeof(LocalVariableData))]
+    public void ShouldSuccessfullyHandleLocalVariableData(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent)); 
     
     private static void Validate(string fileContent, List<ExpectedToken> expected, List<IToken> actual)

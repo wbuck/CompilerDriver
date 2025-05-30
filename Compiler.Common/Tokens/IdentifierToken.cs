@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
 
-public partial record IdentifierToken(int Index, int Length) : IToken
+public sealed partial record IdentifierToken(int Index, int Length) : IToken
 {
     private static readonly HashSet<string> Keywords = [
         "auto", "break", "case", "char", "const", "continue", "default", 

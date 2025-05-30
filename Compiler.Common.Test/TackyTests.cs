@@ -44,10 +44,18 @@ public class TackyTests(ITestOutputHelper output)
     [ClassData(typeof(LogicalAndRelationalData))]
     public void ParsingLogicalAndRelationalOperatorsShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(LocalVariableData))]
+    public void ParsingLocalVariableDataShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
 
     private TackyProgram GetResult(string fileContent)
     {
-        var actual = new TackyVisitor().Visit(GetAst(fileContent.AsMemory()));
+        SemanticValidator validator = new();
+        var ast = validator.Validate(GetAst(fileContent.AsMemory()));
+        
+        var actual = new TackyVisitor().Visit(ast);
         output.WriteLine("Input:");
         output.WriteLine(fileContent);
         output.WriteLine(string.Empty);

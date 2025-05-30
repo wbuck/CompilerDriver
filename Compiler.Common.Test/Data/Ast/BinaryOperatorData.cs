@@ -16,7 +16,9 @@ public class BinaryOperatorData : DataBase
             """,
             GetExpected
             (
-                new UnaryNode(ComplementNode.Operator, new BinaryNode(AdditionNode.Operator, Constant(1), Constant(1)))
+                new UnaryNode(
+                    ComplementNode.Operator, 
+                    new BinaryNode(AdditionNode.Operator, Const(1), Const(1)))
             )
         );
         Add
@@ -32,8 +34,8 @@ public class BinaryOperatorData : DataBase
                 new BinaryNode
                 (
                     AdditionNode.Operator,
-                    new UnaryNode(ComplementNode.Operator, Constant(2)),
-                    Constant(3)
+                    new UnaryNode(ComplementNode.Operator, Const(2)),
+                    Const(3)
                 )
             )
         );
@@ -45,7 +47,7 @@ public class BinaryOperatorData : DataBase
                 return 1 - 2;
             }
             """,
-            GetExpected(new BinaryNode(SubtractionNode.Operator, Constant(1), Constant(2)))
+            GetExpected(new BinaryNode(SubtractionNode.Operator, Const(1), Const(2)))
         );
         Add
         (
@@ -60,8 +62,8 @@ public class BinaryOperatorData : DataBase
                 new BinaryNode
                 (
                     SubtractionNode.Operator,
-                    Constant(2),
-                    new UnaryNode(NegateNode.Operator, Constant(1))
+                    Const(2),
+                    new UnaryNode(NegateNode.Operator, Const(1))
                 )
             )
         );
@@ -78,8 +80,8 @@ public class BinaryOperatorData : DataBase
                 new BinaryNode
                 (
                     AdditionNode.Operator,
-                    Constant(2),
-                    new BinaryNode(MultiplicationNode.Operator, Constant(3), Constant(4))
+                    Const(2),
+                    new BinaryNode(MultiplicationNode.Operator, Const(3), Const(4))
                 )
             )
         );
@@ -96,8 +98,8 @@ public class BinaryOperatorData : DataBase
                 new BinaryNode
                 (
                     MultiplicationNode.Operator, 
-                    Constant(2), 
-                    new BinaryNode(AdditionNode.Operator, Constant(3), Constant(4))
+                    Const(2), 
+                    new BinaryNode(AdditionNode.Operator, Const(3), Const(4))
                 )
             )
         );
@@ -109,7 +111,7 @@ public class BinaryOperatorData : DataBase
                 return 2 * 3;
             }
             """,
-            GetExpected(new BinaryNode(MultiplicationNode.Operator, Constant(2), Constant(3)))
+            GetExpected(new BinaryNode(MultiplicationNode.Operator, Const(2), Const(3)))
         );
         Add
         (
@@ -119,7 +121,7 @@ public class BinaryOperatorData : DataBase
                 return 4 % 2;
             }
             """,
-            GetExpected(new BinaryNode(RemainderNode.Operator, Constant(4), Constant(2)))
+            GetExpected(new BinaryNode(RemainderNode.Operator, Const(4), Const(2)))
         );
         Add
         (
@@ -129,7 +131,7 @@ public class BinaryOperatorData : DataBase
                 return 4 / 2;
             }
             """,
-            GetExpected(new BinaryNode(DivisionNode.Operator, Constant(4), Constant(2)))
+            GetExpected(new BinaryNode(DivisionNode.Operator, Const(4), Const(2)))
         );
         Add
         (
@@ -144,8 +146,8 @@ public class BinaryOperatorData : DataBase
                 new BinaryNode
                 (
                     DivisionNode.Operator,
-                    new UnaryNode(NegateNode.Operator, Constant(12)),
-                    Constant(5)
+                    new UnaryNode(NegateNode.Operator, Const(12)),
+                    Const(5)
                 )
             )
         ); 
@@ -165,10 +167,10 @@ public class BinaryOperatorData : DataBase
                     new BinaryNode
                     (
                         SubtractionNode.Operator,
-                        Constant(1),
-                        Constant(2)
+                        Const(1),
+                        Const(2)
                     ),
-                    Constant(3)
+                    Const(3)
                 )
             )
         );          
@@ -184,8 +186,8 @@ public class BinaryOperatorData : DataBase
                 new BinaryNode
                 (
                     AdditionNode.Operator, 
-                    Constant(1), 
-                    Constant(2)
+                    Const(1), 
+                    Const(2)
                 )
             )
         );
@@ -204,10 +206,10 @@ public class BinaryOperatorData : DataBase
                     new BinaryNode
                     (
                         DivisionNode.Operator,
-                        Constant(6),
-                        Constant(3)
+                        Const(6),
+                        Const(3)
                     ), 
-                    Constant(2)
+                    Const(2)
                 )
             )
         );
@@ -229,10 +231,10 @@ public class BinaryOperatorData : DataBase
                         new BinaryNode
                         (
                             DivisionNode.Operator,
-                            Constant(3),
-                            Constant(2)
+                            Const(3),
+                            Const(2)
                         ),
-                        Constant(4)
+                        Const(4)
                     ),
                     new BinaryNode
                     (
@@ -240,10 +242,10 @@ public class BinaryOperatorData : DataBase
                         new BinaryNode
                         (
                             SubtractionNode.Operator,
-                            Constant(5),
-                            Constant(4)
+                            Const(5),
+                            Const(4)
                         ),
-                        Constant(3)
+                        Const(3)
                     )
                 )
             )
@@ -268,20 +270,20 @@ public class BinaryOperatorData : DataBase
                         new BinaryNode
                         (
                             MultiplicationNode.Operator, 
-                            Constant(5), 
-                            Constant(4)
+                            Const(5), 
+                            Const(4)
                         ),
-                        Constant(2)
+                        Const(2)
                     ),
                     new BinaryNode
                     (
                         RemainderNode.Operator,
-                        Constant(3),
+                        Const(3),
                         new BinaryNode
                         (
                             AdditionNode.Operator,
-                            Constant(2),
-                            Constant(1)
+                            Const(2),
+                            Const(1)
                         )                            
                     )
                 )

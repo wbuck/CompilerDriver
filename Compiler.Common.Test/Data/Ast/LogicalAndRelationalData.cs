@@ -22,21 +22,21 @@ public class LogicalAndRelationalData : DataBase
                     new BinaryNode
                     (
                         LogicalAndNode.Operator,
-                        Constant(10),
-                        Constant(0)
+                        Const(10),
+                        Const(0)
                     ),
                     new BinaryNode
                     (
                         LogicalAndNode.Operator,
-                        Constant(0),
-                        Constant(4)
+                        Const(0),
+                        Const(4)
                     )
                 ),
                 new BinaryNode
                 (
                     LogicalAndNode.Operator,
-                    Constant(0),
-                    Constant(0)
+                    Const(0),
+                    Const(0)
                 )
             ))
         );
@@ -50,12 +50,12 @@ public class LogicalAndRelationalData : DataBase
             GetExpected(new BinaryNode
             (
                 LogicalAndNode.Operator,
-                Constant(0),
+                Const(0),
                 new BinaryNode
                 (
                     DivisionNode.Operator,
-                    Constant(1),
-                    Constant(0)
+                    Const(1),
+                    Const(0)
                 )
             ))
         );
@@ -69,11 +69,11 @@ public class LogicalAndRelationalData : DataBase
             GetExpected(new BinaryNode
             (
                 LogicalAndNode.Operator,
-                Constant(1),
+                Const(1),
                 new UnaryNode
                 (
                     NegateNode.Operator,
-                    Constant(1)
+                    Const(1)
                 )
             ))
         );
@@ -93,12 +93,12 @@ public class LogicalAndRelationalData : DataBase
                     new BinaryNode
                     (
                         GreaterThanOrEqualNode.Operator, 
-                        Constant(5),
-                        Constant(0)
+                        Const(5),
+                        Const(0)
                     ),
-                    Constant(1)
+                    Const(1)
                 ),
-                Constant(0)
+                Const(0)
             ))
         );
         Add
@@ -114,14 +114,14 @@ public class LogicalAndRelationalData : DataBase
                 new BinaryNode
                 (
                     MultiplicationNode.Operator, 
-                    new UnaryNode(ComplementNode.Operator, Constant(2)),
-                    new UnaryNode(NegateNode.Operator, Constant(2))
+                    new UnaryNode(ComplementNode.Operator, Const(2)),
+                    new UnaryNode(NegateNode.Operator, Const(2))
                 ),
                 new BinaryNode
                 (
                     AdditionNode.Operator, 
-                    Constant(1),
-                    Constant(5)
+                    Const(1),
+                    Const(5)
                 )
             ))
         );
@@ -135,8 +135,8 @@ public class LogicalAndRelationalData : DataBase
             GetExpected(new BinaryNode
             (
                 EqualNode.Operator,
-                Constant(1),
-                Constant(2)
+                Const(1),
+                Const(2)
             ))
         );
         Add
@@ -151,10 +151,10 @@ public class LogicalAndRelationalData : DataBase
                 new BinaryNode
                 (
                     EqualNode.Operator,
-                    Constant(3),
-                    Constant(1)
+                    Const(3),
+                    Const(1)
                 ),
-                Constant(2)
+                Const(2)
             ))
         );
         Add
@@ -164,7 +164,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 == 1;
             }
             """,
-            GetExpected(new BinaryNode(EqualNode.Operator, Constant(1), Constant(1)))
+            GetExpected(new BinaryNode(EqualNode.Operator, Const(1), Const(1)))
         );
         Add
         (
@@ -173,7 +173,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 >= 2;
             }
             """,
-            GetExpected(new BinaryNode(GreaterThanOrEqualNode.Operator, Constant(1), Constant(2)))
+            GetExpected(new BinaryNode(GreaterThanOrEqualNode.Operator, Const(1), Const(2)))
         );
         Add
         (
@@ -187,14 +187,14 @@ public class LogicalAndRelationalData : DataBase
                 new BinaryNode
                 (
                     GreaterThanOrEqualNode.Operator,
-                    Constant(1),
-                    Constant(1)
+                    Const(1),
+                    Const(1)
                 ),
                 new BinaryNode
                 (
                     GreaterThanOrEqualNode.Operator,
-                    Constant(1),
-                    new UnaryNode(NegateNode.Operator, Constant(4))
+                    Const(1),
+                    new UnaryNode(NegateNode.Operator, Const(4))
                 )
             ))
         );
@@ -210,14 +210,14 @@ public class LogicalAndRelationalData : DataBase
                 new BinaryNode
                 (
                     GreaterThanNode.Operator,
-                    Constant(1),
-                    Constant(2)
+                    Const(1),
+                    Const(2)
                 ),
                 new BinaryNode
                 (
                     GreaterThanNode.Operator,
-                    Constant(1),
-                    Constant(1)
+                    Const(1),
+                    Const(1)
                 )
             ))
         );
@@ -228,7 +228,7 @@ public class LogicalAndRelationalData : DataBase
                 return 15 > 10;
             }
             """,
-            GetExpected(new BinaryNode(GreaterThanNode.Operator, Constant(15), Constant(10)))
+            GetExpected(new BinaryNode(GreaterThanNode.Operator, Const(15), Const(10)))
         );
         Add
         (
@@ -239,8 +239,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BinaryNode(
                 LessThanOrEqualNode.Operator, 
-                Constant(1), 
-                new UnaryNode(NegateNode.Operator, Constant(1))
+                Const(1), 
+                new UnaryNode(NegateNode.Operator, Const(1))
             ))
         );
         Add
@@ -255,14 +255,14 @@ public class LogicalAndRelationalData : DataBase
                 new BinaryNode
                 (
                     LessThanOrEqualNode.Operator, 
-                    Constant(0),
-                    Constant(2)
+                    Const(0),
+                    Const(2)
                 ),
                 new BinaryNode
                 (
                     LessThanOrEqualNode.Operator, 
-                    Constant(0),
-                    Constant(0)
+                    Const(0),
+                    Const(0)
                 )
             ))
         );
@@ -273,7 +273,7 @@ public class LogicalAndRelationalData : DataBase
                 return 2 < 1;
             }
             """,
-            GetExpected(new BinaryNode(LessThanNode.Operator, Constant(2), Constant(1)))
+            GetExpected(new BinaryNode(LessThanNode.Operator, Const(2), Const(1)))
         );
         Add
         (
@@ -282,7 +282,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 < 2;
             }
             """,
-            GetExpected(new BinaryNode(LessThanNode.Operator, Constant(1), Constant(2)))
+            GetExpected(new BinaryNode(LessThanNode.Operator, Const(1), Const(2)))
         );
         Add
         (
@@ -293,12 +293,12 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BinaryNode(
                 LogicalOrNode.Operator,
-                Constant(0),
+                Const(0),
                 new BinaryNode
                 (
                     LogicalAndNode.Operator,
-                    Constant(0),
-                    new BinaryNode(DivisionNode.Operator, Constant(1), Constant(0))
+                    Const(0),
+                    new BinaryNode(DivisionNode.Operator, Const(1), Const(0))
                 )
             ))
         );
@@ -309,7 +309,7 @@ public class LogicalAndRelationalData : DataBase
                 return 0 != 0;
             }
             """,
-            GetExpected(new BinaryNode(NotEqualNode.Operator, Constant(0), Constant(0)))
+            GetExpected(new BinaryNode(NotEqualNode.Operator, Const(0), Const(0)))
         );
         Add
         (
@@ -320,8 +320,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BinaryNode(
                 NotEqualNode.Operator, 
-                new UnaryNode(NegateNode.Operator, Constant(1)), 
-                new UnaryNode(NegateNode.Operator, Constant(2))
+                new UnaryNode(NegateNode.Operator, Const(1)), 
+                new UnaryNode(NegateNode.Operator, Const(2))
             ))
         );
         Add
@@ -333,7 +333,7 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new UnaryNode(
                 NotNode.Operator, 
-                new UnaryNode(NegateNode.Operator, Constant(3))
+                new UnaryNode(NegateNode.Operator, Const(3))
             ))
         );
         Add
@@ -345,7 +345,7 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new UnaryNode(
                 NotNode.Operator,
-                new BinaryNode(SubtractionNode.Operator, Constant(3), Constant(44))
+                new BinaryNode(SubtractionNode.Operator, Const(3), Const(44))
             ))
         );
         Add
@@ -357,7 +357,7 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new UnaryNode(
                 NotNode.Operator,
-                new BinaryNode(SubtractionNode.Operator, Constant(4), Constant(4))
+                new BinaryNode(SubtractionNode.Operator, Const(4), Const(4))
             ))
         );
         Add
@@ -367,7 +367,7 @@ public class LogicalAndRelationalData : DataBase
                 return !0;
             }
             """,
-            GetExpected(new UnaryNode(NotNode.Operator, Constant(0)))
+            GetExpected(new UnaryNode(NotNode.Operator, Const(0)))
         );
         Add
         (
@@ -376,7 +376,7 @@ public class LogicalAndRelationalData : DataBase
                 return !5;
             }
             """,
-            GetExpected(new UnaryNode(NotNode.Operator, Constant(5)))
+            GetExpected(new UnaryNode(NotNode.Operator, Const(5)))
         );
         Add
         (
@@ -393,8 +393,8 @@ public class LogicalAndRelationalData : DataBase
                     new BinaryNode
                     (
                         LogicalAndNode.Operator,
-                        Constant(0),
-                        Constant(1)
+                        Const(0),
+                        Const(1)
                     )
                 ),
                 new UnaryNode
@@ -403,8 +403,8 @@ public class LogicalAndRelationalData : DataBase
                     new BinaryNode
                     (
                         LogicalOrNode.Operator,
-                        Constant(4),
-                        Constant(3)
+                        Const(4),
+                        Const(3)
                     )
                 )
             ))
@@ -418,12 +418,12 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BinaryNode(
                 LogicalOrNode.Operator, 
-                Constant(1),
+                Const(1),
                 new BinaryNode
                 (
                     DivisionNode.Operator, 
-                    Constant(1),
-                    Constant(0)
+                    Const(1),
+                    Const(0)
                 )
             ))
         );
@@ -442,21 +442,21 @@ public class LogicalAndRelationalData : DataBase
                     new BinaryNode
                     (
                         LogicalOrNode.Operator,
-                        Constant(4),
-                        Constant(0)
+                        Const(4),
+                        Const(0)
                     ),
                     new BinaryNode
                     (
                         LogicalOrNode.Operator,
-                        Constant(0),
-                        Constant(3)
+                        Const(0),
+                        Const(3)
                     )
                 ),
                 new BinaryNode
                 (
                     LogicalOrNode.Operator,
-                    Constant(5),
-                    Constant(5)
+                    Const(5),
+                    Const(5)
                 )
             ))
         );
@@ -472,10 +472,10 @@ public class LogicalAndRelationalData : DataBase
                 new BinaryNode
                 (
                     LogicalOrNode.Operator,
-                    Constant(1),
-                    Constant(0)
+                    Const(1),
+                    Const(0)
                 ),
-                Constant(0)
+                Const(0)
             ))
         );
         Add
@@ -487,8 +487,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BinaryNode(
                 EqualNode.Operator,
-                Constant(2),
-                new BinaryNode(GreaterThanOrEqualNode.Operator, Constant(2), Constant(0))
+                Const(2),
+                new BinaryNode(GreaterThanOrEqualNode.Operator, Const(2), Const(0))
             ))
         );
         Add
@@ -500,8 +500,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BinaryNode(
                 LogicalOrNode.Operator,
-                new BinaryNode(EqualNode.Operator, Constant(2), Constant(2)),
-                Constant(0)
+                new BinaryNode(EqualNode.Operator, Const(2), Const(2)),
+                Const(0)
             ))
         );
         Add
@@ -516,20 +516,20 @@ public class LogicalAndRelationalData : DataBase
                 new BinaryNode
                 (
                     LogicalAndNode.Operator,
-                    new BinaryNode(EqualNode.Operator, Constant(0), Constant(0)),
+                    new BinaryNode(EqualNode.Operator, Const(0), Const(0)),
                     new BinaryNode
                     (
                         EqualNode.Operator,
-                        Constant(3),
+                        Const(3),
                         new BinaryNode
                         (
                             GreaterThanNode.Operator,
-                            new BinaryNode(AdditionNode.Operator, Constant(2), Constant(1)),
-                            Constant(1)
+                            new BinaryNode(AdditionNode.Operator, Const(2), Const(1)),
+                            Const(1)
                         )
                     )
                 ),
-                Constant(1)
+                Const(1)
             ))
         );
         Add
@@ -541,8 +541,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BinaryNode(
                 LogicalOrNode.Operator,
-                Constant(1),
-                new BinaryNode(LogicalAndNode.Operator, Constant(0), Constant(2))
+                Const(1),
+                new BinaryNode(LogicalAndNode.Operator, Const(0), Const(2))
             ))
         );
         Add
@@ -554,8 +554,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BitwiseNode(
                 BitwiseAndNode.Operator,
-                Constant(5),
-                new BinaryNode(EqualNode.Operator, Constant(7), Constant(5))
+                Const(5),
+                new BinaryNode(EqualNode.Operator, Const(7), Const(5))
             ))
         );
         Add
@@ -567,8 +567,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BitwiseNode(
                 BitwiseOrNode.Operator,
-                Constant(5),
-                new BinaryNode(NotEqualNode.Operator, Constant(7), Constant(5))
+                Const(5),
+                new BinaryNode(NotEqualNode.Operator, Const(7), Const(5))
             ))
         );
         Add
@@ -580,8 +580,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BinaryNode(
                 LessThanOrEqualNode.Operator,
-                new BitwiseNode(BitwiseRightShiftNode.Operator, Constant(20), Constant(4)),
-                new BitwiseNode(BitwiseLeftShiftNode.Operator, Constant(3), Constant(1))
+                new BitwiseNode(BitwiseRightShiftNode.Operator, Const(20), Const(4)),
+                new BitwiseNode(BitwiseLeftShiftNode.Operator, Const(3), Const(1))
             ))
         );
         Add
@@ -593,8 +593,8 @@ public class LogicalAndRelationalData : DataBase
             """,
             GetExpected(new BitwiseNode(
                 BitwiseXorNode.Operator, 
-                Constant(5),
-                new BinaryNode(LessThanNode.Operator, Constant(7), Constant(5))
+                Const(5),
+                new BinaryNode(LessThanNode.Operator, Const(7), Const(5))
             ))
         );
     }

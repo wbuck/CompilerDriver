@@ -1,14 +1,12 @@
+using System.Runtime.InteropServices;
+
 namespace Compiler.Common.Generation;
 
 internal class PseudoReplacer
 {
-    private int _offset;
-    public int StackOffset
-    {
-        get => _offset;
-        private set => _offset = Math.Max(_offset, value);
-    }
-    
+    private readonly Dictionary<string, int> _offsets = [];
+    public int StackOffset { get; private set; }
+
     public Program Replace(Program program)
         => new(ReplaceFunction(program.Function));
 
@@ -76,13 +74,19 @@ internal class PseudoReplacer
             : div;
     
     private IOperand ReplaceOperand(IOperand operand)
-        => operand is Pseudo pseudo
-            ? new Stack(SetOffset(pseudo.StackOffset))
-            : operand;
+    {
+        if (operand is not Pseudo pseudo)
+            return operand;
+        
+        if (_offsets.TryGetValue(pseudo.Identifier, out var offset))
+            return new Stack(offset);
+
+        StackOffset += Marshal.SizeOf<int>();
+        _offsets[pseudo.Identifier] = StackOffset;
+        
+        return new Stack(StackOffset);
+    }
     
     private static bool IsPseudo(IOperand operand)
         => operand is Pseudo;
-
-    private int SetOffset(int offset)
-        => StackOffset = offset;
 }

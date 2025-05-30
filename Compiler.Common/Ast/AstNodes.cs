@@ -2,6 +2,8 @@ using System.Collections.Frozen;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Numerics;
+using Compiler.Common.Generation;
+using Compiler.Common.Tacky;
 using Compiler.Common.Tokens;
 using NetEscapades.EnumGenerators;
 
@@ -37,7 +39,12 @@ public enum AstNodeTag
     LessThan,
     LessThanOrEqual,
     GreaterThan,
-    GreaterThanOrEqual
+    GreaterThanOrEqual,
+    Assignment,
+    Variable,
+    Declaration,
+    Expression,
+    Null
 }
 
 public interface IAstNodeTag
@@ -45,36 +52,60 @@ public interface IAstNodeTag
     AstNodeTag Tag { get; }
 }
 
-public record FunctionNode(string Name, string ReturnType, IStatementNode Body) : IAstNodeTag
+public sealed record FunctionNode(string Name, string ReturnType, List<IBlockItem> Body) : IAstNodeTag
 {
     public AstNodeTag Tag => AstNodeTag.Function;
 }
 
-public interface IStatementNode : IAstNodeTag;
-public record ReturnNode(IExpressionNode Expression) : IStatementNode
+public interface IBlockItem : IAstNodeTag;
+
+public interface IDeclarationNode : IBlockItem;
+public sealed record DeclarationNode(string Identifier, IExpressionNode? Initializer = null) : IDeclarationNode
+{
+    public AstNodeTag Tag => AstNodeTag.Declaration;
+}
+
+public interface IStatementNode : IBlockItem;
+public sealed record ReturnNode(IExpressionNode Expression) : IStatementNode
 {
     public AstNodeTag Tag => AstNodeTag.Return;
 }
+public sealed record ExpressionNode(IExpressionNode Expression) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.Expression;
+}
+public sealed record NullNode : IStatementNode
+{
+    public static NullNode Statement { get; } = new();
+    private NullNode() { }
+    public AstNodeTag Tag => AstNodeTag.Null;
+}
 
 public interface IExpressionNode : IAstNodeTag;
-
 public interface IConstantNode : IExpressionNode;
-public record ConstantNode<T>(T Value) : IConstantNode where T : INumber<T>
+public sealed record ConstantNode<T>(T Value) : IConstantNode where T : INumber<T>
 {
     public AstNodeTag Tag => AstNodeTag.Constant;
 }
-
-public record UnaryNode(IUnaryOperatorNode Operator, IExpressionNode Expression) : IExpressionNode
+public sealed record UnaryNode(IUnaryOperatorNode Operator, IExpressionNode Expression) : IExpressionNode
 {
     public AstNodeTag Tag => AstNodeTag.Unary;
 }
-public record BinaryNode(IBinaryOperatorNode Operator, IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
+public sealed record BinaryNode(IBinaryOperatorNode Operator, IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
 {
     public AstNodeTag Tag => AstNodeTag.Binary;
 }
-public record BitwiseNode(IBitwiseOperatorNode Operator, IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
+public sealed record BitwiseNode(IBitwiseOperatorNode Operator, IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
 {
     public AstNodeTag Tag => AstNodeTag.Bitwise;
+}
+public sealed record AssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
+{
+    public AstNodeTag Tag => AstNodeTag.Assignment;
+}
+public sealed record VariableNode(string Identifier) : IExpressionNode
+{
+    public AstNodeTag Tag => AstNodeTag.Variable;
 }
 
 public interface IBitwiseOperatorNode : IAstNodeTag;
@@ -108,7 +139,6 @@ public sealed record BitwiseRightShiftNode : IBitwiseOperatorNode
     private BitwiseRightShiftNode() { }
     public AstNodeTag Tag => AstNodeTag.RightShift;
 }
-
 
 public interface IUnaryOperatorNode : IAstNodeTag;
 public sealed record NegateNode : IUnaryOperatorNode
@@ -232,7 +262,8 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         [TokenType.BitwiseXor] = 14,
         [TokenType.BitwiseOr] = 13,
         [TokenType.LogicalAnd] = 12,
-        [TokenType.LogicalOr] = 11
+        [TokenType.LogicalOr] = 11,
+        [TokenType.Assignment] = 1
     }.ToFrozenDictionary();
     
     public AstNodeTag Tag => AstNodeTag.Program;
@@ -265,28 +296,77 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         AssertKeywordAndConsume(shifted, "void", fileContent.Span, out shifted);  
         AssertTypeAndConsume(shifted, TokenType.CloseParenthesis, fileContent.Span, out shifted);
         AssertTypeAndConsume(shifted, TokenType.OpenBrace, fileContent.Span, out shifted);
-        
-        if (ParseStatement(ref shifted, fileContent) is not { } body)
-            throw new FormatException($"Unexpected token: {ReadTokenValue(shifted, fileContent.Span)}");
-                
+
+        List<IBlockItem> body = [];
+        while (!CheckType(shifted, TokenType.CloseBrace))
+        {
+            if (ParseBlockItem(ref shifted, fileContent) is not { } item)
+                break;
+            
+            body.Add(item);
+        }
+            
+        //throw new FormatException($"Unexpected token: {ReadTokenValue(shifted, fileContent.Span)}");
         AssertTypeAndConsume(shifted, TokenType.CloseBrace, fileContent.Span, out shifted);
         
         tokens = shifted;        
-        var name = fileContent.Slice(id.Index, id.Length);
         var returnType = fileContent.Slice(keyword.Index, keyword.Length);
         
-        return new FunctionNode(name.ToString(), returnType.ToString(), body);
+        return new FunctionNode(GetString(id, fileContent), returnType.ToString(), body);
+    }
+
+    private static IBlockItem? ParseBlockItem(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (tokens.IsEmpty)
+            return null;                
+
+        if (ParseStatement(ref tokens, fileContent) is { } statement)
+            return statement;         
+        
+        if (ParseDeclaration(ref tokens, fileContent) is { } declaration)
+            return declaration;
+
+        return null;
+    }    
+
+    private static DeclarationNode? ParseDeclaration(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckType(tokens, TokenType.Keyword))
+            return null;
+
+        if (!Shift(tokens, out var shifted) || !CheckType(shifted, TokenType.Identifier))
+            return null;
+
+        // TODO: Handle different type other than int.
+        AssertKeywordAndConsume(tokens, "int", fileContent.Span, out tokens);
+        var id = AssertTokenAndConsume<IdentifierToken>(ref tokens, TokenType.Identifier);
+
+        if (GetTokenAndConsume<AssignmentToken>(ref tokens) is not { } keyword)
+        {
+            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+            return new DeclarationNode(GetString(id, fileContent));            
+        }
+        
+        var rhs = ParseExpression(ref tokens, fileContent);
+        AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+        return new DeclarationNode(GetString(id, fileContent), rhs);
     }
 
     private static IStatementNode? ParseStatement(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
-        if (tokens.IsEmpty)
-            return null;
         
-        if (ParseReturn(ref tokens, fileContent) is not { } @return)
-            throw new FormatException($"Expected 'return' but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        if (ParseReturn(ref tokens, fileContent) is { } @return)
+            return @return;
+        if (ParseExpression(ref tokens, fileContent) is { } expression)
+        {
+            var expr = new ExpressionNode(expression);
+            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+            return expr;
+        }
+        if (CheckTypeAndConsume(tokens, TokenType.Semicolon, out tokens))
+            return NullNode.Statement;
 
-        return @return;
+        return null;
     }
 
     private static ReturnNode? ParseReturn(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
@@ -305,14 +385,24 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent, int precedence = 0)
     {
         var lhs = ParseFactor(ref tokens, fileContent);
-        while (PeekBitwiseOrBinaryOperator(ref tokens, out var type) && Precedence[type] >= precedence)
+        while (PeekBitwiseOrBinaryOperator(ref tokens, out var op) && Precedence[op] >= precedence)
         {
             if (lhs is null)
                 throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
-
+            
+            if (op is TokenType.Assignment)
+            {
+                AssertTypeAndConsume(tokens, TokenType.Assignment, fileContent.Span, out tokens);
+                
+                if (ParseExpression(ref tokens, fileContent, Precedence[op]) is not { } rhs)
+                    throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+                
+                lhs = new AssignmentNode(lhs, rhs);
+                continue;           
+            }
             if (ParseBinaryOperator(ref tokens) is { } binary)
             {
-                if (ParseExpression(ref tokens, fileContent, Precedence[type] + 1) is not { } rhs)
+                if (ParseExpression(ref tokens, fileContent, Precedence[op] + 1) is not { } rhs)
                     throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
 
                 lhs = new BinaryNode(binary, lhs, rhs);
@@ -320,7 +410,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             }
             if (ParseBitwiseOperator(ref tokens) is { } bitwise)
             {
-                if (ParseExpression(ref tokens, fileContent, Precedence[type] + 1) is not { } rhs)
+                if (ParseExpression(ref tokens, fileContent, Precedence[op] + 1) is not { } rhs)
                     throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
 
                 lhs = new BitwiseNode(bitwise, lhs, rhs);
@@ -371,6 +461,8 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             type = TokenType.GreaterThan;
         if (CheckType(tokens, TokenType.GreaterThanOrEqual))
             type = TokenType.GreaterThanOrEqual;
+        if (CheckType(tokens, TokenType.Assignment))
+            type = TokenType.Assignment;
         
         return type != TokenType.Unknown;
     }    
@@ -385,9 +477,22 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         
         if (ParseParenthesizedExpression(ref tokens, fileContent) is { } expression)
             return expression;
+        
+        if (ParseVariable(ref tokens, fileContent) is { } variable)
+            return variable;
 
         return null;
     }
+
+    private static VariableNode? ParseVariable(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckType(tokens, TokenType.Identifier))
+            return null;
+        
+        var id = AssertTokenAndConsume<IdentifierToken>(ref tokens, TokenType.Identifier);
+        return new VariableNode(GetString(id, fileContent));
+    }
+    
 
     private static IExpressionNode? ParseParenthesizedExpression(ref Span<IToken> tokens,
         ReadOnlyMemory<char> fileContent)
@@ -488,6 +593,24 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         
         return null;
     }
+
+    [Pure]
+    private static TToken AssertTokenAndConsume<TToken>(ref Span<IToken> tokens, TokenType expected)
+        where TToken : IToken
+    {
+        if (tokens.IsEmpty)
+            throw new FormatException($"Missing expected token {expected.ToStringFast(true)}");
+
+        var token = tokens[0];
+        if (token.Type != expected)
+        {
+            throw new FormatException(
+                $"Expected token {expected.ToStringFast(true)} but found {token.Type.ToStringFast(true)}");            
+        }
+                            
+        tokens = tokens[1..];
+        return (TToken)token;
+    }
     
     [Pure]
     private static TToken? GetTokenAndConsume<TToken>(ref Span<IToken> tokens) 
@@ -587,4 +710,8 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         }        
         shifted = tokens[amount..];
     }
+    
+    [Pure]
+    private static string GetString(IToken token, in ReadOnlyMemory<char> fileContent)
+        => fileContent.Slice(token.Index, token.Length).ToString();
 }

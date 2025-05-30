@@ -6,6 +6,180 @@ public class InvalidParseData : TheoryData<string, string>
     public InvalidParseData()
     {
         Add("""
+            int main(void) {
+                int 10 = return 0;
+            }
+            """, 
+            "Expected '}' but found 'int'");
+        Add("""
+            int main(void) {
+                int a = 2
+                a = a + 4;
+                return a;
+            }
+            """, 
+            "Expected ';' but found 'a'");
+        Add("""
+            int main(void) {
+                return 1 ! = 0;
+            }
+            """, 
+            "Expected ';' but found '!'");
+        Add("""
+            int main(void) {
+                return 1 < = 2;
+            }
+            """, 
+            "Expected expression but found '='");
+        Add("""
+            int main(void) {
+                int a = 0;
+                a + +;
+                return a;
+            }
+            """, 
+            "Expected expression but found '+'");
+        Add("""
+            int main(void) {
+                int a = 0;
+                a - -;
+                return a;
+            }
+            """, 
+            "Expected expression but found ';'");
+        Add("""
+            int main(void) {
+                int a = 10;
+                a =/ 1;
+                return a;
+            }
+            """, 
+            "Expected expression but found '/'");
+        Add("""
+            int main(void) {
+                int 10 = 0;
+                return 10;
+            }
+            """, 
+            "Expected '}' but found 'int'");
+        Add("""
+            int main(void) {
+                ints a = 1;
+                return a;
+            }
+            """, 
+            "Expected ';' but found 'a'");
+        Add("""
+            int main(void) {
+                int foo bar = 3;
+                return bar;
+            }
+            """, 
+            "Expected ';' but found 'bar'");
+        Add("""
+            int main(void) {
+                int return = 4;
+                return return + 1;
+            }
+            """, 
+            "Expected '}' but found 'int'");
+        Add("""
+            int main(void) {
+                int a = 0;
+                a + = 1;
+                return a;
+            }
+            """, 
+            "Expected expression but found '='");
+        Add("""
+            int main(void) {
+                int 10 = return 0;
+            }
+            """, 
+            "Expected '}' but found 'int'");
+        Add("""
+            int main(void) {
+                int a = 2
+                a = a + 4;
+                return a;
+            }
+            """, 
+            "Expected ';' but found 'a'");
+        Add("""
+            int main(void) {
+                return 1 ! = 0;
+            }
+            """, 
+            "Expected ';' but found '!'");
+        Add("""
+            int main(void)
+            {
+                return 1 < = 2;
+            }
+            """, 
+            "Expected expression but found '='");
+        Add("""
+            int main(void) {
+                int a = 0;
+                a + +;
+                return a;
+            }
+            """, 
+            "Expected expression but found '+'");
+        Add("""
+            int main(void) {
+                int a = 0;
+                a - -;
+                return a;
+            }
+            """, 
+            "Expected expression but found ';'");
+        Add("""
+            int main(void) {
+                int a = 10;
+                a =/ 1;
+                return a;
+            }
+            """, 
+            "Expected expression but found '/'");
+        Add("""
+            int main(void)
+            {
+                int 10 = 0;
+                return 10;
+            }
+            """, 
+            "Expected '}' but found 'int'");
+        Add("""
+            int main(void) {
+                ints a = 1;
+                return a;
+            }
+            """, 
+            "Expected ';' but found 'a'");
+        Add("""
+            int main(void) {
+                int foo bar = 3;
+                return bar;
+            }
+            """, 
+            "Expected ';' but found 'bar'");
+        Add("""
+            int main(void) {
+                int return = 4;
+                return return + 1;
+            }
+            """, 
+            "Expected '}' but found 'int'");
+        Add("""
+            int main(void) {
+                int a = 0;
+                a + = 1;
+                return a;
+            }
+            """, 
+            "Expected expression but found '='");
+        Add("""
             int main(void)
             {
                 return !10
@@ -42,7 +216,7 @@ public class InvalidParseData : TheoryData<string, string>
                 10 <= !;
             }
             """, 
-            "Expected 'return' but found '10'");
+            "Expected expression but found ';'");
         Add("""
             int main(void) {
                 return 1 | | 2;
@@ -172,7 +346,7 @@ public class InvalidParseData : TheoryData<string, string>
                 RETURN 0;
             }
             """,
-            "Expected 'return' but found 'RETURN'");        
+            "Expected ';' but found '0'");        
         Add("""
             main(void) {
                 return 0;
@@ -184,7 +358,7 @@ public class InvalidParseData : TheoryData<string, string>
                 returns 0;
             }
             """,
-            "Expected 'return' but found 'returns'");        
+            "Expected ';' but found '0'");        
         Add("""
             int main (void) {
                 return 0
@@ -202,7 +376,7 @@ public class InvalidParseData : TheoryData<string, string>
                 retur n 0;
             }
             """,
-            "Expected 'return' but found 'retur'");        
+            "Expected ';' but found 'n'");        
         Add("""
             int main )( {
                 return 0;

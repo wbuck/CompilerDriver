@@ -44,12 +44,6 @@ public static class Emitter
                .AppendLine("movq %rsp, %rbp", 2);
         
         Emit(function.Instructions, builder, 2);
-        
-        builder.AppendLine("movq %rbp, %rsp", 2)
-               .AppendLine("popq %rbp", 2);        
-
-        AssertType<Ret>(function.Instructions.Last());
-        builder.AppendLine("ret", 2);
     }
 
     private static void Emit(in List<IInstruction> instructions, StringBuilder builder, int indent)
@@ -97,6 +91,9 @@ public static class Emitter
                     builder.AppendLine($"{label.Identifier}:");
                     break;
                 case Ret:
+                    builder.AppendLine("movq %rbp, %rsp", 2)
+                        .AppendLine("popq %rbp", 2)
+                        .AppendLine("ret");
                     break;
                 default:
                     throw new FormatException($"Unexpected instruction: {i.Tag.ToStringFast()}"); 

@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record SemicolonToken(int Index) : IToken
+public sealed record SemicolonToken(int Index) : IToken
 {
     public TokenType Type => TokenType.Semicolon;
     public int Length => 1;

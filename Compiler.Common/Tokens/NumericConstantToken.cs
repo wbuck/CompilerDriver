@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
 
-public partial record NumericConstantToken(int Index, int Length) : IToken
+public sealed partial record NumericConstantToken(int Index, int Length) : IToken
 {
     public TokenType Type => TokenType.NumericConstant;
     

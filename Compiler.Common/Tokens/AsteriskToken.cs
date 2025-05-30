@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record AsteriskToken(int Index) : IToken
+public sealed record AsteriskToken(int Index) : IToken
 {
     public TokenType Type => TokenType.Asterisk;
     public int Length => 1;

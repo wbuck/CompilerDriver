@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record OpenParenthesisToken(int Index) : IToken
+public sealed record OpenParenthesisToken(int Index) : IToken
 {
     public TokenType Type => TokenType.OpenParenthesis;
     public int Length => 1;

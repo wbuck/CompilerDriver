@@ -2,12 +2,12 @@ using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
 
-public sealed partial record EqualToToken(int Index) : IToken
+public sealed partial record GreaterThanOrEqualToken(int Index) : IToken
 {
-    public TokenType Type => TokenType.Equal;
+    public TokenType Type => TokenType.GreaterThanOrEqual;
     public int Length => 2;
     
-    [GeneratedRegex("==", RegexOptions.Multiline)]
+    [GeneratedRegex(">=", RegexOptions.Multiline)]
     private static partial Regex Pattern { get; }
     
     public static IToken? Parse(ref ReadOnlySpan<char> value, int offset)
@@ -18,6 +18,6 @@ public sealed partial record EqualToToken(int Index) : IToken
         
         var match = enumerator.Current;
         value = value[match.Length..];
-        return new EqualToToken(match.Index + offset);       
+        return new GreaterThanOrEqualToken(match.Index + offset);       
     }
 }

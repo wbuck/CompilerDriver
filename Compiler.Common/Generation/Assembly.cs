@@ -103,7 +103,7 @@ public sealed record Imm<T>(T Constant) : IConstant where T: INumber<T>
     public AssemblyTag Tag => AssemblyTag.Imm;
 }
 
-public sealed record Pseudo(string Identifier, int StackOffset): IOperand
+public sealed record Pseudo(string Identifier): IOperand
 {
     public AssemblyTag Tag => AssemblyTag.Pseudo;
 }
@@ -437,7 +437,7 @@ public record Program(Function Function): IAssembly
         {
             TackyConstant<int> integer => new Imm<int>(integer.Value),
             TackyConstant<double> floating => new Imm<double>(floating.Value),
-            TackyVariable variable => new Pseudo(variable.Identifier, variable.StackOffset),
+            TackyVariable variable => new Pseudo(variable.Identifier),
             _ => throw new FormatException($"Unknown operand type {value.Tag.ToStringFast()}")
         };
     

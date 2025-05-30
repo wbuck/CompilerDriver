@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
 using CliWrap;
+using Compiler.Common.Ast;
 using Compiler.Common.Stages;
 using Compiler.Driver;
 using Compiler.Driver.Extensions;
@@ -33,7 +34,11 @@ var parse = new Option<bool>
     "--parse",
     "Run the lexer and parser but stop before assembly generation"
 );
-
+var validate = new Option<bool>
+(
+    "--validate",
+    "Run the lexer, parser and semantic validation but stop before assembly generation"
+);
 var tacky = new Option<bool>
 (
     name: "--tacky",
@@ -56,6 +61,7 @@ var root = new RootCommand("Compiler Driver");
 root.AddArgument(file);
 root.AddOption(lex);
 root.AddOption(parse);
+root.AddOption(validate);
 root.AddOption(tacky);
 root.AddOption(codegen);
 root.AddOption(output);
@@ -94,6 +100,16 @@ root.SetHandler(async (ctx) =>
             return;
         }        
         if (ctx.GetOption(parse, false))
+        {
+            ctx.ExitCode = 0;
+            return;
+        }
+        if (!SemanticValidator.TryValidate(node, out var analyzed))
+        {
+            ctx.ExitCode = 1;
+            return;
+        }        
+        if (ctx.GetOption(validate, false))
         {
             ctx.ExitCode = 0;
             return;

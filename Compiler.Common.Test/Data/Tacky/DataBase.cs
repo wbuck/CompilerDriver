@@ -5,14 +5,20 @@ namespace Compiler.Common.Test.Data.Tacky;
 
 public class DataBase : TheoryData<string, TackyProgram>
 {
-    protected static TackyProgram GetExpected(List<ITackyInstruction> instructions) =>
-        new(new TackyFunction("main", instructions));
+    protected static TackyProgram GetExpected(List<ITackyInstruction> instructions)
+    {
+        instructions.Add(new TackyReturn(new TackyConstant<int>(0)));
+        return new TackyProgram(new TackyFunction("main", instructions));
+    }
 
     protected static TackyConstant<int> Const(int value)
         => new(value);
     
     protected static TackyVariable Var(int varCount)
-        => new($"tmp.{varCount}", varCount, varCount * Marshal.SizeOf<int>());
+        => new($"tmp.{varCount}");
+    
+    protected static TackyVariable Var(string id)
+        => new(id);
 
     protected static TackyLabel Label(string identifier)
         => new(identifier);

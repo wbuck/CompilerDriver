@@ -30,6 +30,11 @@ public class AssemblyTests(ITestOutputHelper output)
     [ClassData(typeof(LogicalAndRelationalData))]
     public void VisitLogicalAndRelationalOperatorsShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(LocalVariableData))]
+    public void VisitLocalVariableDataShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     private Program GetResult(string fileContent, Program expectedResult)
     {
@@ -71,7 +76,10 @@ public class AssemblyTests(ITestOutputHelper output)
         => new TackyVisitor().Visit(GetAst(fileContent));
     
     private static ProgramNode GetAst(ReadOnlyMemory<char> fileContent)
-        => Parser.Parse(GetTokens(fileContent.Span), fileContent);
+    {
+        SemanticValidator validator = new();
+        return validator.Validate(Parser.Parse(GetTokens(fileContent.Span), fileContent));
+    }
     
     private static List<IToken> GetTokens(ReadOnlySpan<char> fileContent)
     {

@@ -13,7 +13,7 @@ public class LogicalAndRelationalData : DataBase
                 return (10 && 0) + (0 && 4) + (0 && 0);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.OpenParenthesis),
                 Token(TokenType.NumericConstant, "10"),
@@ -42,7 +42,7 @@ public class LogicalAndRelationalData : DataBase
                 return 0 && (1 / 0);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "0"),
                 Token(TokenType.LogicalAnd),
@@ -61,7 +61,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 && -1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.LogicalAnd),
@@ -77,7 +77,7 @@ public class LogicalAndRelationalData : DataBase
                 return 5 >= 0 > 1 <= 0;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "5"),
                 Token(TokenType.GreaterThanOrEqual),
@@ -96,7 +96,7 @@ public class LogicalAndRelationalData : DataBase
                 return ~2 * -2 == 1 + 5;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Complement),
                 Token(TokenType.NumericConstant, "2"),
@@ -117,7 +117,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 == 2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.Equal),
@@ -132,7 +132,7 @@ public class LogicalAndRelationalData : DataBase
                 return 3 == 1 != 2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "3"),
                 Token(TokenType.Equal),
@@ -149,7 +149,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 == 1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.Equal),
@@ -164,7 +164,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 >= 2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.GreaterThanOrEqual),
@@ -179,7 +179,7 @@ public class LogicalAndRelationalData : DataBase
                 return (1 >= 1) + (1 >= -4);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.OpenParenthesis),
                 Token(TokenType.NumericConstant, "1"),
@@ -203,7 +203,7 @@ public class LogicalAndRelationalData : DataBase
                 return (1 > 2) + (1 > 1);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.OpenParenthesis),
                 Token(TokenType.NumericConstant, "1"),
@@ -226,7 +226,7 @@ public class LogicalAndRelationalData : DataBase
                 return 15 > 10;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "15"),
                 Token(TokenType.GreaterThan),
@@ -241,7 +241,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 <= -1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.LessThanOrEqual),
@@ -257,7 +257,7 @@ public class LogicalAndRelationalData : DataBase
                 return (0 <= 2) + (0 <= 0);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.OpenParenthesis),
                 Token(TokenType.NumericConstant, "0"),
@@ -280,7 +280,7 @@ public class LogicalAndRelationalData : DataBase
                 return 2 < 1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "2"),
                 Token(TokenType.LessThan),
@@ -295,7 +295,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 < 2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.LessThan),
@@ -310,7 +310,7 @@ public class LogicalAndRelationalData : DataBase
                 return 0 || 0 && (1 / 0);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "0"),
                 Token(TokenType.LogicalOr),
@@ -331,7 +331,7 @@ public class LogicalAndRelationalData : DataBase
                 return 0 != 0;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "0"),
                 Token(TokenType.NotEqual),
@@ -346,7 +346,7 @@ public class LogicalAndRelationalData : DataBase
                 return -1 != -2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Minus),
                 Token(TokenType.NumericConstant, "1"),
@@ -363,7 +363,7 @@ public class LogicalAndRelationalData : DataBase
                 return !-3;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Not),
                 Token(TokenType.Minus),
@@ -378,7 +378,7 @@ public class LogicalAndRelationalData : DataBase
                 return !(3 - 44);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Not),
                 Token(TokenType.OpenParenthesis),
@@ -396,7 +396,7 @@ public class LogicalAndRelationalData : DataBase
                 return !(4-4);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Not),
                 Token(TokenType.OpenParenthesis),
@@ -414,7 +414,7 @@ public class LogicalAndRelationalData : DataBase
                 return !0;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Not),
                 Token(TokenType.NumericConstant, "0"),
@@ -428,7 +428,7 @@ public class LogicalAndRelationalData : DataBase
                 return !5;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Not),
                 Token(TokenType.NumericConstant, "5"),
@@ -442,7 +442,7 @@ public class LogicalAndRelationalData : DataBase
                 return ~(0 && 1) - -(4 || 3);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Complement),
                 Token(TokenType.OpenParenthesis),
@@ -467,7 +467,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 || (1 / 0);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.LogicalOr),
@@ -486,7 +486,7 @@ public class LogicalAndRelationalData : DataBase
                 return (4 || 0) + (0 || 3) + (5 || 5);
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.OpenParenthesis),
                 Token(TokenType.NumericConstant, "4"),
@@ -515,7 +515,7 @@ public class LogicalAndRelationalData : DataBase
                 return (1 || 0) && 0;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.OpenParenthesis),
                 Token(TokenType.NumericConstant, "1"),
@@ -534,7 +534,7 @@ public class LogicalAndRelationalData : DataBase
                 return 2 == 2 >= 0;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "2"),
                 Token(TokenType.Equal),
@@ -551,7 +551,7 @@ public class LogicalAndRelationalData : DataBase
                 return 2 == 2 || 0;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "2"),
                 Token(TokenType.Equal),
@@ -568,7 +568,7 @@ public class LogicalAndRelationalData : DataBase
                 return (0 == 0 && 3 == 2 + 1 > 1) + 1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.OpenParenthesis),
                 Token(TokenType.NumericConstant, "0"),
@@ -595,7 +595,7 @@ public class LogicalAndRelationalData : DataBase
                 return 1 || 0 && 2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.LogicalOr),
@@ -612,7 +612,7 @@ public class LogicalAndRelationalData : DataBase
                 return 5 & 7 == 5;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "5"),
                 Token(TokenType.BitwiseAnd),
@@ -629,7 +629,7 @@ public class LogicalAndRelationalData : DataBase
                 return 5 | 7 != 5;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "5"),
                 Token(TokenType.BitwiseOr),
@@ -646,7 +646,7 @@ public class LogicalAndRelationalData : DataBase
                 return 20 >> 4 <= 3 << 1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "20"),
                 Token(TokenType.RightShift),
@@ -665,7 +665,7 @@ public class LogicalAndRelationalData : DataBase
                 return 5 ^ 7 < 5;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "5"),
                 Token(TokenType.BitwiseXor),

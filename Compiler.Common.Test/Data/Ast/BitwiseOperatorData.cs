@@ -13,7 +13,7 @@ public class BitwiseOperatorData : DataBase
                 return 3 & 5;
             }
             """,
-            GetExpected(new BitwiseNode(BitwiseAndNode.Operator, Constant(3), Constant(5)))
+            GetExpected(new BitwiseNode(BitwiseAndNode.Operator, Const(3), Const(5)))
         );
         Add
         (
@@ -22,7 +22,7 @@ public class BitwiseOperatorData : DataBase
                 return 1 | 2;
             }
             """,
-            GetExpected(new BitwiseNode(BitwiseOrNode.Operator, Constant(1), Constant(2)))
+            GetExpected(new BitwiseNode(BitwiseOrNode.Operator, Const(1), Const(2)))
         );
         Add
         (
@@ -34,20 +34,20 @@ public class BitwiseOperatorData : DataBase
             GetExpected(new BitwiseNode
             (
                 BitwiseOrNode.Operator, 
-                new BitwiseNode(BitwiseRightShiftNode.Operator, Constant(80), Constant(2)), 
+                new BitwiseNode(BitwiseRightShiftNode.Operator, Const(80), Const(2)), 
                 new BitwiseNode
                     (
                         BitwiseXorNode.Operator,
-                        Constant(1),
+                        Const(1),
                         new BitwiseNode
                             (
                                 BitwiseAndNode.Operator,
-                                Constant(5),
+                                Const(5),
                                 new BitwiseNode
                                     (
                                         BitwiseLeftShiftNode.Operator,
-                                        Constant(7),
-                                        Constant(1)
+                                        Const(7),
+                                        Const(1)
                                     )
                             )
                     )
@@ -63,8 +63,8 @@ public class BitwiseOperatorData : DataBase
             GetExpected(new BitwiseNode
             (
                 BitwiseLeftShiftNode.Operator, 
-                new BitwiseNode(BitwiseRightShiftNode.Operator, Constant(33), Constant(2)), 
-                Constant(1)
+                new BitwiseNode(BitwiseRightShiftNode.Operator, Const(33), Const(2)), 
+                Const(1)
             ))
         );
         Add
@@ -77,8 +77,8 @@ public class BitwiseOperatorData : DataBase
             GetExpected(new BitwiseNode
             (
                 BitwiseRightShiftNode.Operator, 
-                new BitwiseNode(BitwiseLeftShiftNode.Operator, Constant(33), Constant(4)), 
-                Constant(2)
+                new BitwiseNode(BitwiseLeftShiftNode.Operator, Const(33), Const(4)), 
+                Const(2)
             ))
         );
         Add
@@ -94,10 +94,10 @@ public class BitwiseOperatorData : DataBase
                 new BitwiseNode
                     (
                         BitwiseLeftShiftNode.Operator, 
-                        Constant(40), 
-                        new BinaryNode(AdditionNode.Operator, Constant(4), Constant(12))
+                        Const(40), 
+                        new BinaryNode(AdditionNode.Operator, Const(4), Const(12))
                     ), 
-                Constant(1)
+                Const(1)
             ))
         );
         Add
@@ -107,7 +107,7 @@ public class BitwiseOperatorData : DataBase
                 return 35 << 2;
             }
             """,
-            GetExpected(new BitwiseNode(BitwiseLeftShiftNode.Operator, Constant(35), Constant(2)))
+            GetExpected(new BitwiseNode(BitwiseLeftShiftNode.Operator, Const(35), Const(2)))
         );
         Add
         (
@@ -119,8 +119,8 @@ public class BitwiseOperatorData : DataBase
             GetExpected(new BitwiseNode
             (
                 BitwiseRightShiftNode.Operator, 
-                new UnaryNode(NegateNode.Operator, Constant(5)), 
-                Constant(30)
+                new UnaryNode(NegateNode.Operator, Const(5)), 
+                Const(30)
             ))
         );
         Add
@@ -130,7 +130,7 @@ public class BitwiseOperatorData : DataBase
                 return 1000 >> 4;
             }
             """,
-            GetExpected(new BitwiseNode(BitwiseRightShiftNode.Operator, Constant(1000), Constant(4)))
+            GetExpected(new BitwiseNode(BitwiseRightShiftNode.Operator, Const(1000), Const(4)))
         );
         Add
         (
@@ -145,14 +145,14 @@ public class BitwiseOperatorData : DataBase
                 new BitwiseNode
                     (
                         BitwiseLeftShiftNode.Operator, 
-                        Constant(4), 
-                        new BinaryNode(MultiplicationNode.Operator, Constant(2), Constant(2))
+                        Const(4), 
+                        new BinaryNode(MultiplicationNode.Operator, Const(2), Const(2))
                     ),
                 new BitwiseNode
                     (
                         BitwiseRightShiftNode.Operator, 
-                        Constant(100),
-                        new BinaryNode(AdditionNode.Operator, Constant(1), Constant(2))
+                        Const(100),
+                        new BinaryNode(AdditionNode.Operator, Const(1), Const(2))
                     )
             ))
         );
@@ -163,7 +163,7 @@ public class BitwiseOperatorData : DataBase
                 return 7 ^ 1;
             }
             """,
-            GetExpected(new BitwiseNode(BitwiseXorNode.Operator, Constant(7), Constant(1)))
+            GetExpected(new BitwiseNode(BitwiseXorNode.Operator, Const(7), Const(1)))
         );
     }
 }

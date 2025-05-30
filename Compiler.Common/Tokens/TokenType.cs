@@ -63,5 +63,7 @@ public enum TokenType
     GreaterThan,
     [Display(Name = ">=")]
     GreaterThanOrEqual,
+    [Display(Name = "=")]
+    Assignment,
     Unknown
 }

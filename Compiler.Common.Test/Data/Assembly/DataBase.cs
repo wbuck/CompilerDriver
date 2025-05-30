@@ -4,8 +4,12 @@ namespace Compiler.Common.Test.Data.Assembly;
 
 public class DataBase : TheoryData<string, Program>
 {
-    protected static Program GetExpected(List<IInstruction> instructions) =>
-        new(new Function("main", instructions));
+    protected static Program GetExpected(List<IInstruction> instructions)
+    {
+        instructions.Add(new Mov(Zero, Ax.Register));
+        instructions.Add(Ret.Instruction);
+        return new Program(new Function("main", instructions));
+    }
     
     protected static Imm<int> Imm(int value) =>
         new(value);

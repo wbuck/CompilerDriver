@@ -4,18 +4,11 @@ namespace Compiler.Common.Tacky;
 
 public sealed class VariableFactory
 {
-    private TackyVariable? _variable;
+    private int _count = 1;
 
-    public TackyVariable GetNextVariable()
+    public TackyVariable GetNextVariable(string? identifier = null)
     {
-        if (_variable is null)
-        {
-            _variable = new TackyVariable("tmp.1", 1, 1 * Marshal.SizeOf<int>());
-            return _variable;
-        }
-        
-        var next = _variable.VariableCount + 1;
-        _variable = new TackyVariable($"tmp.{next}", next, next * Marshal.SizeOf<int>());
-        return _variable;
+        var id = identifier ?? $"tmp.{_count++}";
+        return new TackyVariable(id);
     }
 }

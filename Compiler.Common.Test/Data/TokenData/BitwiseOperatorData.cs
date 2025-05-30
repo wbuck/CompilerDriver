@@ -13,7 +13,7 @@ public class BitwiseOperatorData : DataBase
                 return 3 & 5;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "3"),
                 Token(TokenType.BitwiseAnd),
@@ -28,7 +28,7 @@ public class BitwiseOperatorData : DataBase
                 return 1 | 2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1"),
                 Token(TokenType.BitwiseOr),
@@ -43,7 +43,7 @@ public class BitwiseOperatorData : DataBase
                 return 80 >> 2 | 1 ^ 5 & 7 << 1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "80"),
                 Token(TokenType.RightShift),
@@ -66,7 +66,7 @@ public class BitwiseOperatorData : DataBase
                 return 33 >> 2 << 1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "33"),
                 Token(TokenType.RightShift),
@@ -83,7 +83,7 @@ public class BitwiseOperatorData : DataBase
                 return 33 << 4 >> 2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "33"),
                 Token(TokenType.LeftShift),
@@ -100,7 +100,7 @@ public class BitwiseOperatorData : DataBase
                 return 40 << 4 + 12 >> 1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "40"),
                 Token(TokenType.LeftShift),
@@ -119,7 +119,7 @@ public class BitwiseOperatorData : DataBase
                 return 35 << 2;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "35"),
                 Token(TokenType.LeftShift),
@@ -134,7 +134,7 @@ public class BitwiseOperatorData : DataBase
                 return -5 >> 30;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.Minus),
                 Token(TokenType.NumericConstant, "5"),
@@ -150,7 +150,7 @@ public class BitwiseOperatorData : DataBase
                 return 1000 >> 4;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "1000"),
                 Token(TokenType.RightShift),
@@ -165,7 +165,7 @@ public class BitwiseOperatorData : DataBase
                 return (4 << (2 * 2)) + (100 >> (1 + 2));
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.OpenParenthesis),
                 Token(TokenType.NumericConstant, "4"),
@@ -196,7 +196,7 @@ public class BitwiseOperatorData : DataBase
                 return 7 ^ 1;
             }
             """,
-            Expected([
+            GetExpected([
                 Token(TokenType.Keyword, "return"),
                 Token(TokenType.NumericConstant, "7"),
                 Token(TokenType.BitwiseXor),

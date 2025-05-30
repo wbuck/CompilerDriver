@@ -107,22 +107,22 @@ public static partial class Lexer
                     tokens.Add(token);                    
                     continue;
                 }
-                if ((token = Parse<EqualToToken>(ref trimmed, offset)) is not null)
+                if ((token = Parse<EqualToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
                     continue;
                 }
-                if ((token = Parse<NotEqualToToken>(ref trimmed, offset)) is not null)
+                if ((token = Parse<NotEqualToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
                     continue;
                 }
-                if ((token = Parse<GreaterThanOrEqualToToken>(ref trimmed, offset)) is not null)
+                if ((token = Parse<GreaterThanOrEqualToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
                     continue;
                 } 
-                if ((token = Parse<LessThanOrEqualToToken>(ref trimmed, offset)) is not null)
+                if ((token = Parse<LessThanOrEqualToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
                     continue;
@@ -163,6 +163,11 @@ public static partial class Lexer
                     continue;
                 }
                 if ((token = Parse<NotToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<AssignmentToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    
                     continue;

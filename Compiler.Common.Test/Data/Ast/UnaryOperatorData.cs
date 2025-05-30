@@ -14,7 +14,7 @@ public class UnaryOperatorData : DataBase
                 return -((((10))));
             }
             """,
-            GetExpected(new UnaryNode(NegateNode.Operator, Constant(10)))
+            GetExpected(new UnaryNode(NegateNode.Operator, Const(10)))
         );
         Add
         (
@@ -24,7 +24,7 @@ public class UnaryOperatorData : DataBase
                 return (-2);
             }
             """,
-            GetExpected(new UnaryNode(NegateNode.Operator, Constant(2)))
+            GetExpected(new UnaryNode(NegateNode.Operator, Const(2)))
         );
         Add
         (
@@ -33,7 +33,7 @@ public class UnaryOperatorData : DataBase
                 return -(-4);
             }
             """,
-            GetExpected(Negate(Negate(Constant(4))))
+            GetExpected(Negate(Negate(Const(4))))
         );
         Add
         (
@@ -42,7 +42,7 @@ public class UnaryOperatorData : DataBase
                 return ~(2);
             }
             """,
-            GetExpected(Complement(Constant(2)))
+            GetExpected(Complement(Const(2)))
         );
         Add
         (
@@ -51,7 +51,7 @@ public class UnaryOperatorData : DataBase
                 return -1000;
             }
             """,
-            GetExpected(Negate(Constant(1000)))
+            GetExpected(Negate(Const(1000)))
         );
         Add
         (
@@ -60,7 +60,7 @@ public class UnaryOperatorData : DataBase
                 return ~1000;
             }
             """,
-            GetExpected(Complement(Constant(1000)))
+            GetExpected(Complement(Const(1000)))
         );
         Add
         (
@@ -69,7 +69,7 @@ public class UnaryOperatorData : DataBase
                 return ~-2147483647;
             }
             """,
-            GetExpected(Complement(Negate(Constant(2147483647))))
+            GetExpected(Complement(Negate(Const(2147483647))))
         );
     }
 }

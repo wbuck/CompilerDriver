@@ -30,6 +30,11 @@ public class EmitterTests(ITestOutputHelper output)
     public void EmitLogicalAndRelationalOperatorsShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
         => Assert.Equivalent(expected, GetResult(fileContent.AsMemory(), expected), strict: true);
     
+    [Theory]
+    [ClassData(typeof(LocalVariableData))]
+    public void EmitLocalVariableDaasShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+        => Assert.Equivalent(expected, GetResult(fileContent.AsMemory(), expected), strict: true);
+    
     private List<string> GetResult(ReadOnlyMemory<char> fileContent, string[] expected)
     {
         var compiled = Emitter.Emit(GetAssembly(fileContent));
@@ -42,6 +47,7 @@ public class EmitterTests(ITestOutputHelper output)
         output.WriteLine(fileContent.ToString());
         output.WriteLine(string.Empty);
         output.WriteLine("Actual Result:");
+        actual.ForEach(output.WriteLine);
         
         foreach (var (instruction, index) in actual.Select((i, index) => (i, index)))
         {            
@@ -74,9 +80,12 @@ public class EmitterTests(ITestOutputHelper output)
     
     private static TackyProgram GetTacky(ReadOnlyMemory<char> fileContent)
         => new TackyVisitor().Visit(GetAst(fileContent));
-    
+   
     private static ProgramNode GetAst(ReadOnlyMemory<char> fileContent)
-        => Parser.Parse(GetTokens(fileContent.Span), fileContent);
+    {
+        SemanticValidator validator = new();
+        return validator.Validate(Parser.Parse(GetTokens(fileContent.Span), fileContent));
+    }
     
     private static List<IToken> GetTokens(ReadOnlySpan<char> fileContent)
     {

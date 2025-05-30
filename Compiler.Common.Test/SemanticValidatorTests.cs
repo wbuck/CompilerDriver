@@ -4,14 +4,14 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Compiler.Common.Ast;
 using Compiler.Common.Stages;
-using Compiler.Common.Test.Data.Ast;
+using Compiler.Common.Test.Data.SemanticValidator;
 using Compiler.Common.Tokens;
 using Xunit.Abstractions;
 using static Compiler.Common.Test.Data.Ast.AstTypeResolver;
 
 namespace Compiler.Common.Test;
 
-public class ParserTests(ITestOutputHelper output)
+public class SemanticValidatorTests(ITestOutputHelper output)
 {
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -28,42 +28,22 @@ public class ParserTests(ITestOutputHelper output)
     };
     
     [Theory]
-    [ClassData(typeof(InvalidParseData))]
-    public void ParseWithInvalidCodeShouldFailWithExpectedMessage(string fileContent, string message)
-        => InvalidCheck(fileContent, message);
-    
-    
-    [Theory]
-    [ClassData(typeof(BinaryOperatorData))]
+    [ClassData(typeof(LocalVariableData))]
     public void ParsingBinaryOperationShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
     
     [Theory]
-    [ClassData(typeof(BitwiseOperatorData))]
-    public void ParsingBitwiseOperatorShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
-
-    [Theory]
-    [ClassData(typeof(UnaryOperatorData))]
-    public void ParsingUnaryShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+    [ClassData(typeof(InvalidSemanticData))]
+    public void ParseWithInvalidSemanticDataShouldFailWithExpectedMessage(string fileContent, string message)
+        => InvalidCheck(fileContent, message);
     
-    [Theory]
-    [ClassData(typeof(LogicalAndRelationalData))]
-    public void ParsingLogicalAndRelationalOperatorsShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
-    
-    [Theory]
-    [ClassData(typeof(LocalVariableData))]
-    public void ParsingLocalVariableDataShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
-
     private static void InvalidCheck(string fileContent, string message)
     {        
         var exception = Assert.Throws<FormatException>(() =>
         {
             var tokens = CollectionsMarshal.AsSpan(GetTokens(fileContent));
-            ProgramNode.Parse(ref tokens, fileContent.AsMemory());
+            var validator = new SemanticValidator();
+            validator.Validate(ProgramNode.Parse(ref tokens, fileContent.AsMemory()));
         });
         Assert.Equal(message, exception.Message);
     }
@@ -71,7 +51,8 @@ public class ParserTests(ITestOutputHelper output)
     private ProgramNode GetResult(string fileContent)
     {
         var tokens = CollectionsMarshal.AsSpan(GetTokens(fileContent));
-        var actual = ProgramNode.Parse(ref tokens, fileContent.AsMemory());
+        var validator = new SemanticValidator();
+        var actual = validator.Validate(ProgramNode.Parse(ref tokens, fileContent.AsMemory()));
         
         output.WriteLine("Input:");
         output.WriteLine(fileContent);

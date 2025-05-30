@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record OpenBraceToken(int Index) : IToken
+public sealed record OpenBraceToken(int Index) : IToken
 {
     public TokenType Type => TokenType.OpenBrace;
     public int Length => 1;

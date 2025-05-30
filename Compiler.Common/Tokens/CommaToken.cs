@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record CommaToken(int Index) : IToken
+public sealed record CommaToken(int Index) : IToken
 {
     public TokenType Type => TokenType.Comma;
     public int Length => 1;

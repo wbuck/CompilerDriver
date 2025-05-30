@@ -7,7 +7,7 @@ public class DataBase : TheoryData<string, List<ExpectedToken>>
     protected static ExpectedToken Token(TokenType type, string? value = null) 
         => new(type, value ?? type.ToStringFast(true));
     
-    protected static List<ExpectedToken> Expected(IEnumerable<ExpectedToken> tokens)
+    protected static List<ExpectedToken> GetExpected(IEnumerable<ExpectedToken> tokens)
         => [
             Token(TokenType.Keyword, "int"),
             Token(TokenType.Identifier, "main"),

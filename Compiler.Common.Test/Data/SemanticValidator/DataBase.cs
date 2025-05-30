@@ -1,6 +1,6 @@
 using Compiler.Common.Ast;
 
-namespace Compiler.Common.Test.Data.Ast;
+namespace Compiler.Common.Test.Data.SemanticValidator;
 
 public class DataBase : TheoryData<string, ProgramNode>
 {

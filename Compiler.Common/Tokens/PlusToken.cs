@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record PlusToken(int Index) : IToken
+public sealed record PlusToken(int Index) : IToken
 {
     public TokenType Type => TokenType.Plus;
     public int Length => 1;

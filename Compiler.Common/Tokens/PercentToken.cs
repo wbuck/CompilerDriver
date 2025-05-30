@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public record PercentToken(int Index) : IToken
+public sealed record PercentToken(int Index) : IToken
 {
     public TokenType Type => TokenType.Percent;
     public int Length => 1;
