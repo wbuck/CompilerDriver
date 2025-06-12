@@ -47,7 +47,6 @@ public class EmitterTests(ITestOutputHelper output)
         output.WriteLine(fileContent.ToString());
         output.WriteLine(string.Empty);
         output.WriteLine("Actual Result:");
-        actual.ForEach(output.WriteLine);
         
         foreach (var (instruction, index) in actual.Select((i, index) => (i, index)))
         {            

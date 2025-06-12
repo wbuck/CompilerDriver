@@ -65,7 +65,7 @@ public class SemanticValidator
     private IExpressionNode ResolveExpression(IExpressionNode expression)
         => expression switch
         {
-            AssignmentNode assignment => ResolveAssignment(assignment),
+            IAssignmentNode assignment => ResolveAssignment(assignment),
             UnaryNode unary => ResolveUnary(unary),
             BinaryNode binary => ResolveBinary(binary),
             BitwiseNode bitwise => ResolveBitwise(bitwise),
@@ -89,12 +89,43 @@ public class SemanticValidator
         => new(binary.Operator, ResolveExpression(binary.Lhs), ResolveExpression(binary.Rhs));
 
     private UnaryNode ResolveUnary(UnaryNode unary)
-        => unary with { Expression = ResolveExpression(unary.Expression) };
+    {
+        if (IsIncrement(unary.Operator) && unary.Expression is not VariableNode)        
+            throw new FormatException("An lvalue is required as increment operand");
+        
+        if (IsDecrement(unary.Operator) && unary.Expression is not VariableNode)        
+            throw new FormatException("An lvalue is required as decrement operand");
+        
+        return unary with { Expression = ResolveExpression(unary.Expression) };
 
-    private AssignmentNode ResolveAssignment(AssignmentNode assignment)
-        => assignment.Lhs is not VariableNode
-            ? throw new FormatException($"Invalid lvalue type found: {assignment.Lhs.Tag.ToStringFast()}")
-            : new AssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs));
+        static bool IsIncrement(IUnaryOperatorNode op) =>
+            op is PrefixIncrementNode or PostfixIncrementNode;
+        
+        static bool IsDecrement(IUnaryOperatorNode op) =>
+            op is PrefixDecrementNode or PostfixDecrementNode;
+    }
+
+    private IAssignmentNode ResolveAssignment(IAssignmentNode assignment)
+    {
+        if (assignment.Lhs is not VariableNode)
+            throw new FormatException("Expression must be modifiable lvalue");
+
+        return assignment switch
+        {
+            AssignmentNode => new AssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            AdditionAssignmentNode => new AdditionAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            SubtractionAssignmentNode => new SubtractionAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            MultiplicationAssignmentNode => new MultiplicationAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            DivisionAssignmentNode => new DivisionAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            RemainderAssignmentNode => new RemainderAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            BitwiseAndAssignmentNode => new BitwiseAndAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            BitwiseOrAssignmentNode => new BitwiseOrAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            BitwiseXorAssignmentNode => new BitwiseXorAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            LeftShiftAssignmentNode => new LeftShiftAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            RightShiftAssignmentNode => new RightShiftAssignmentNode(ResolveExpression(assignment.Lhs), ResolveExpression(assignment.Rhs)),
+            _ => throw new UnreachableException($"Unknown assignment type: {assignment.Tag.ToStringFast()}")
+        };
+    }
 
     private IBlockItem ResolveStatement(IStatementNode statement)
         => statement switch

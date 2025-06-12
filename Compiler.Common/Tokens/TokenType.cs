@@ -25,6 +25,8 @@ public enum TokenType
     Complement,
     [Display(Name = "--")]
     Decrement,
+    [Display(Name = "++")]
+    Increment,
     [Display(Name = "+")]
     Plus,
     [Display(Name = "-")]
@@ -65,5 +67,25 @@ public enum TokenType
     GreaterThanOrEqual,
     [Display(Name = "=")]
     Assignment,
+    [Display(Name = "+=")]
+    AdditionAssignment,
+    [Display(Name = "-=")]
+    SubtractionAssignment,
+    [Display(Name = "*=")]
+    MultiplicationAssignment,
+    [Display(Name = "/=")]
+    DivisionAssignment,
+    [Display(Name = "%=")]
+    RemainderAssignment,
+    [Display(Name = "&=")]
+    BitwiseAndAssignment,
+    [Display(Name = "|=")]
+    BitwiseOrAssignment,
+    [Display(Name = "^=")]
+    BitwiseXorAssignment,
+    [Display(Name = "<<=")]
+    LeftShiftAssignment,
+    [Display(Name = ">>=")]
+    RightShiftAssignment,
     Unknown
 }

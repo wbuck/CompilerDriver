@@ -19,6 +19,9 @@ public class DataBase : TheoryData<string, ProgramNode>
     protected static VariableNode Var(string identifier) =>
         new(identifier);
     
+    protected static ExpressionNode Expr(IExpressionNode expression)
+        => new(expression);
+    
     protected static ProgramNode GetExpected(params List<IBlockItem> body) =>
         new(new FunctionNode("main", "int", body));
     

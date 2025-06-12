@@ -36,27 +36,32 @@ public class ParserTests(ITestOutputHelper output)
     [Theory]
     [ClassData(typeof(BinaryOperatorData))]
     public void ParsingBinaryOperationShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(BitwiseOperatorData))]
     public void ParsingBitwiseOperatorShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     [Theory]
     [ClassData(typeof(UnaryOperatorData))]
     public void ParsingUnaryShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(LogicalAndRelationalData))]
     public void ParsingLogicalAndRelationalOperatorsShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(LocalVariableData))]
     public void ParsingLocalVariableDataShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(CompoundOperatorData))]
+    public void ParsingCompoundShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     private static void InvalidCheck(string fileContent, string message)
     {        
@@ -68,7 +73,7 @@ public class ParserTests(ITestOutputHelper output)
         Assert.Equal(message, exception.Message);
     }
     
-    private ProgramNode GetResult(string fileContent)
+    private ProgramNode GetResult(string fileContent, ProgramNode expected)
     {
         var tokens = CollectionsMarshal.AsSpan(GetTokens(fileContent));
         var actual = ProgramNode.Parse(ref tokens, fileContent.AsMemory());
@@ -77,7 +82,35 @@ public class ParserTests(ITestOutputHelper output)
         output.WriteLine(fileContent);
         output.WriteLine(string.Empty);
         output.WriteLine("Actual Result:");
-        output.WriteLine(JsonSerializer.Serialize(actual, Options));      
+        var actualResult = JsonSerializer.Serialize(actual, Options)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        
+        var expectedResult = JsonSerializer.Serialize(expected, Options)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        
+        foreach (var (line, index) in actualResult.Select((i, index) => (i, index)))
+        {            
+            if (expectedResult.Length > index && !expectedResult[index].Equals(line))
+            {
+                output.WriteLine("\e[0;31m=====MISMATCH=====");
+                output.WriteLine($"ACTUAL: {line}");
+                output.WriteLine($"EXPECTED: {expectedResult[index]}");
+                output.WriteLine("==================\e[0;37m");
+                continue;
+            }
+            if (expectedResult.Length <= index)
+            {
+                output.WriteLine($"\e[0;31mEXTRA: {line}\e[0;37m");
+                continue;           
+            }
+            output.WriteLine(line);
+        }
+        if (expectedResult.Length > actualResult.Length)
+        {
+            expectedResult.Skip(actualResult.Length)
+                .ToList()
+                .ForEach(i => output.WriteLine($"\e[0;31mMISSING: {i}\e[0;37m"));           
+        }         
         return actual;
     }
 

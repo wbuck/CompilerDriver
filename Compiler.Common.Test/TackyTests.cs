@@ -49,6 +49,11 @@ public class TackyTests(ITestOutputHelper output)
     [ClassData(typeof(LocalVariableData))]
     public void ParsingLocalVariableDataShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(CompoundOperatorData))]
+    public void ParsingCompoundOperatorDataShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
 
     private TackyProgram GetResult(string fileContent)
     {

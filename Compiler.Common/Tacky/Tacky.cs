@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Compiler.Common.Ast;
+using Compiler.Common.Generation;
 using NetEscapades.EnumGenerators;
 
 namespace Compiler.Common.Tacky;
@@ -98,6 +99,7 @@ public interface ITackyValue : ITackyTag
 {
     public static TackyConstant<int> True { get; } = new(1);
     public static TackyConstant<int> False { get; } = new(0);
+    public static TackyConstant<int> One { get; } = new(1);
 }
 public sealed record TackyConstant<T>(T Value) : ITackyValue where T : INumber<T>
 {
@@ -314,13 +316,38 @@ public class TackyVisitor
             BitwiseNode bitwise => VisitBitwise(bitwise, instructions, factory),
             BinaryNode binary => VisitBinary(binary, instructions, factory),
             VariableNode variable => factory.GetNextVariable(variable.Identifier),
-            AssignmentNode assignment => VisitAssignment(assignment, instructions, factory),
+            IAssignmentNode { IsCompound: false } assignment => VisitAssignment(assignment, instructions, factory),
+            IAssignmentNode { IsCompound: true } assignment => VisitCompoundAssignment(assignment, instructions, factory),
             _ => throw new FormatException($"Unknown expression type: {expression.Tag.ToStringFast()}")
         };
 
     private TackyVariable VisitAssignment(
-        AssignmentNode assignment, List<ITackyInstruction> instructions, VariableFactory factory)
+        IAssignmentNode assignment, List<ITackyInstruction> instructions, VariableFactory factory)
             => VisitAssignment(assignment.Lhs, assignment.Rhs, instructions, factory);
+
+    private TackyVariable VisitCompoundAssignment(IAssignmentNode assignment, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        var left = VisitExpression(assignment.Lhs, instructions, factory);
+        var right = VisitExpression(assignment.Rhs, instructions, factory);
+        
+        // This should never happen as the semantic analysis stage should
+        // have handled this already.
+        Debug.Assert(left is TackyVariable, $"Invalid assignment type: {left.Tag.ToStringFast()}");
+ 
+        var variable = (TackyVariable)left;
+        if (ToTackyBinaryOperator(assignment) is { } binary)
+        {
+            instructions.Add(new TackyBinary(binary, variable, right, variable));
+            return variable;
+        }
+
+        if (ToTackyBitwiseOperator(assignment) is not { } bitwise)
+            throw new FormatException($"Unknown compound assignment operator: {assignment.Tag.ToStringFast()}");
+        
+        instructions.Add(new TackyBitwise(bitwise, variable, right, variable));
+        return variable;
+
+    }
 
     private TackyVariable VisitAssignment(
         IExpressionNode lhs, IExpressionNode rhs, List<ITackyInstruction> instructions, VariableFactory factory)
@@ -413,12 +440,32 @@ public class TackyVisitor
     
     private TackyVariable VisitUnary(UnaryNode unary, List<ITackyInstruction> instructions, VariableFactory factory)
     {
-        var source = VisitExpression(unary.Expression, instructions, factory);   
+        var source = VisitExpression(unary.Expression, instructions, factory);
+        if (unary is { Operator: PrefixIncrementNode or PrefixDecrementNode })
+        {
+            instructions.Add(new TackyBinary(GetBinaryOperator(unary.Operator), source, ITackyValue.One, source));
+            return (TackyVariable)source;
+        }
+        
         var dest = factory.GetNextVariable();
+        if (unary is { Operator: PostfixIncrementNode or PostfixDecrementNode })
+        {
+            instructions.Add(new TackyCopy(source, dest));
+            instructions.Add(new TackyBinary(GetBinaryOperator(unary.Operator), source, ITackyValue.One, source));
+            return dest;
+        }
         
         instructions.Add(new TackyUnary(GetUnaryOperator(unary), source, dest));
-        return dest;
+        return dest; 
     }
+    
+    private static ITackyBinaryOperator GetBinaryOperator(IUnaryOperatorNode op)
+        => op switch
+        {
+            PrefixIncrementNode or PostfixIncrementNode => TackyAddition.Operator,
+            PrefixDecrementNode or PostfixDecrementNode => TackySubtraction.Operator,
+            _ => throw new UnreachableException($"Invalid unary operator {op.Tag.ToStringFast()}")
+        };
     
     private static ITackyUnaryOperator GetUnaryOperator(UnaryNode unary)
         => unary.Operator switch
@@ -427,6 +474,28 @@ public class TackyVisitor
             NegateNode => TackyNegate.Operator,
             NotNode => TackyNot.Operator,
             _ => throw new FormatException($"Unknown unary operator: {unary.Operator.Tag.ToStringFast()}")
+        };
+    
+    private static ITackyBitwiseOperator? ToTackyBitwiseOperator(IAssignmentNode node)
+        => node switch
+        {
+            BitwiseAndAssignmentNode => TackyBitwiseAnd.Operator,
+            BitwiseOrAssignmentNode => TackyBitwiseOr.Operator,
+            BitwiseXorAssignmentNode => TackyBitwiseXor.Operator,
+            LeftShiftAssignmentNode => TackyLeftShift.Operator,
+            RightShiftAssignmentNode => TackyRightShift.Operator,
+            _ => null
+        };
+
+    private static ITackyBinaryOperator? ToTackyBinaryOperator(IAssignmentNode node)
+        => node switch
+        {
+            AdditionAssignmentNode => TackyAddition.Operator,
+            SubtractionAssignmentNode => TackySubtraction.Operator,
+            MultiplicationAssignmentNode => TackyMultiplication.Operator,
+            DivisionAssignmentNode => TackyDivision.Operator,
+            RemainderAssignmentNode => TackyRemainder.Operator,
+            _ => null
         };
     
     private static ITackyBinaryOperator GetBinaryOperator(BinaryNode binary)

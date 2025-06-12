@@ -72,6 +72,61 @@ public static partial class Lexer
                     tokens.Add(token);                    
                     continue;
                 }  
+                if ((token = Parse<IncrementToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }  
+                if ((token = Parse<AdditionAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<SubtractionAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<MultiplicationAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<DivisionAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<RemainderAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<BitwiseAndAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<BitwiseOrAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<BitwiseXorAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                } 
+                if ((token = Parse<LeftShiftAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<RightShiftAssignmentToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
                 if ((token = Parse<MinusToken>(ref trimmed, offset)) is not null)
                 {
                     tokens.Add(token);                    

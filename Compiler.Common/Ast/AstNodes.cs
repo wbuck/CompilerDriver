@@ -1,9 +1,9 @@
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Numerics;
-using Compiler.Common.Generation;
-using Compiler.Common.Tacky;
+using Compiler.Common.Extensions;
 using Compiler.Common.Tokens;
 using NetEscapades.EnumGenerators;
 
@@ -41,6 +41,20 @@ public enum AstNodeTag
     GreaterThan,
     GreaterThanOrEqual,
     Assignment,
+    AdditionAssignment,
+    SubtractionAssignment,
+    MultiplicationAssignment,
+    DivisionAssignment,
+    RemainderAssignment,
+    BitwiseAndAssignment,
+    BitwiseOrAssignment,
+    BitwiseXorAssignment,
+    LeftShiftAssignment,
+    RightShiftAssignment,
+    PrefixIncrement,
+    PrefixDecrement,
+    PostfixIncrement,
+    PostfixDecrement,
     Variable,
     Declaration,
     Expression,
@@ -99,9 +113,67 @@ public sealed record BitwiseNode(IBitwiseOperatorNode Operator, IExpressionNode 
 {
     public AstNodeTag Tag => AstNodeTag.Bitwise;
 }
-public sealed record AssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
+
+public interface IAssignmentNode : IExpressionNode
+{
+    IExpressionNode Lhs { get; }
+    IExpressionNode Rhs { get; }
+    bool IsCompound { get; }
+}
+public sealed record AssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
 {
     public AstNodeTag Tag => AstNodeTag.Assignment;
+    public bool IsCompound => false;
+}
+public sealed record AdditionAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.AdditionAssignment;
+    public bool IsCompound => true;
+}
+public sealed record SubtractionAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.SubtractionAssignment;
+    public bool IsCompound => true;
+}
+public sealed record MultiplicationAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.MultiplicationAssignment;
+    public bool IsCompound => true;
+}
+public sealed record DivisionAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.DivisionAssignment;
+    public bool IsCompound => true;
+}
+public sealed record RemainderAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.RemainderAssignment;
+    public bool IsCompound => true;
+}
+public sealed record BitwiseAndAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.BitwiseAndAssignment;
+    public bool IsCompound => true;
+}
+public sealed record BitwiseOrAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.BitwiseOrAssignment;
+    public bool IsCompound => true;
+}
+public sealed record BitwiseXorAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.BitwiseXorAssignment;
+    public bool IsCompound => true;
+}
+public sealed record LeftShiftAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.LeftShiftAssignment;
+    public bool IsCompound => true;
+}
+public sealed record RightShiftAssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
+{
+    public AstNodeTag Tag => AstNodeTag.RightShiftAssignment;
+    public bool IsCompound => true;
 }
 public sealed record VariableNode(string Identifier) : IExpressionNode
 {
@@ -159,7 +231,30 @@ public sealed record NotNode : IUnaryOperatorNode
     private NotNode() { }
     public AstNodeTag Tag => AstNodeTag.Not;
 }
-
+public sealed record PrefixIncrementNode : IUnaryOperatorNode
+{
+    public static PrefixIncrementNode Operator { get; } = new();
+    private PrefixIncrementNode() { }
+    public AstNodeTag Tag => AstNodeTag.PrefixIncrement;
+}
+public sealed record PostfixIncrementNode : IUnaryOperatorNode
+{
+    public static PostfixIncrementNode Operator { get; } = new();
+    private PostfixIncrementNode() { }
+    public AstNodeTag Tag => AstNodeTag.PostfixIncrement;
+}
+public sealed record PrefixDecrementNode : IUnaryOperatorNode
+{
+    public static PrefixDecrementNode Operator { get; } = new();
+    private PrefixDecrementNode() { }
+    public AstNodeTag Tag => AstNodeTag.PrefixDecrement;
+}
+public sealed record PostfixDecrementNode : IUnaryOperatorNode
+{
+    public static PostfixDecrementNode Operator { get; } = new();
+    private PostfixDecrementNode() { }
+    public AstNodeTag Tag => AstNodeTag.PostfixDecrement;
+}
 public interface IBinaryOperatorNode : IAstNodeTag;
 public sealed record AdditionNode : IBinaryOperatorNode
 {
@@ -243,8 +338,15 @@ public sealed record GreaterThanOrEqualNode : IBinaryOperatorNode
 
 public record ProgramNode(FunctionNode Function) : IAstNodeTag
 {
+    private static readonly FrozenDictionary<TokenType, int> UnaryPrecedence =
+        new Dictionary<TokenType, int>
+        {
+            [TokenType.Not] = 1,
+            [TokenType.Complement] = 2,
+        }.ToFrozenDictionary();
+    
     private static readonly FrozenDictionary<TokenType, int> Precedence = new Dictionary<TokenType, int>
-    {         
+    {                 
         [TokenType.Asterisk] = 40,
         [TokenType.ForwardSlash] = 40,
         [TokenType.Percent] = 40,
@@ -263,7 +365,17 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         [TokenType.BitwiseOr] = 13,
         [TokenType.LogicalAnd] = 12,
         [TokenType.LogicalOr] = 11,
-        [TokenType.Assignment] = 1
+        [TokenType.Assignment] = 1,
+        [TokenType.AdditionAssignment] = 1,
+        [TokenType.SubtractionAssignment] = 1,
+        [TokenType.MultiplicationAssignment] = 1,
+        [TokenType.DivisionAssignment] = 1,
+        [TokenType.RemainderAssignment] = 1,
+        [TokenType.BitwiseAndAssignment] = 1,
+        [TokenType.BitwiseOrAssignment] = 1,
+        [TokenType.BitwiseXorAssignment] = 1,
+        [TokenType.LeftShiftAssignment] = 1,
+        [TokenType.RightShiftAssignment] = 1
     }.ToFrozenDictionary();
     
     public AstNodeTag Tag => AstNodeTag.Program;
@@ -341,7 +453,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         AssertKeywordAndConsume(tokens, "int", fileContent.Span, out tokens);
         var id = AssertTokenAndConsume<IdentifierToken>(ref tokens, TokenType.Identifier);
 
-        if (GetTokenAndConsume<AssignmentToken>(ref tokens) is not { } keyword)
+        if (GetTokenAndConsume<AssignmentToken>(ref tokens) is null )
         {
             AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
             return new DeclarationNode(GetString(id, fileContent));            
@@ -381,24 +493,41 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         return new ReturnNode(expression);
     }
 
+    private static IExpressionNode CreateAssignmentNode(TokenType type, IExpressionNode lhs, IExpressionNode rhs)
+        => type switch
+        {
+            TokenType.AdditionAssignment => new AdditionAssignmentNode(lhs, rhs),
+            TokenType.SubtractionAssignment => new SubtractionAssignmentNode(lhs, rhs),
+            TokenType.MultiplicationAssignment => new MultiplicationAssignmentNode(lhs, rhs),
+            TokenType.DivisionAssignment => new DivisionAssignmentNode(lhs, rhs),
+            TokenType.RemainderAssignment => new RemainderAssignmentNode(lhs, rhs),
+            TokenType.BitwiseAndAssignment => new BitwiseAndAssignmentNode(lhs, rhs),
+            TokenType.BitwiseOrAssignment => new BitwiseOrAssignmentNode(lhs, rhs),
+            TokenType.BitwiseXorAssignment => new BitwiseXorAssignmentNode(lhs, rhs),
+            TokenType.LeftShiftAssignment => new LeftShiftAssignmentNode(lhs, rhs),
+            TokenType.RightShiftAssignment => new RightShiftAssignmentNode(lhs, rhs),
+            TokenType.Assignment => new AssignmentNode(lhs, rhs),
+            _ => throw new FormatException($"Expected assignment but found '{type.ToStringFast()}'")
+        };
+
     private static IExpressionNode? ParseExpression(
         ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent, int precedence = 0)
     {
         var lhs = ParseFactor(ref tokens, fileContent);
-        while (PeekBitwiseOrBinaryOperator(ref tokens, out var op) && Precedence[op] >= precedence)
+        while (PeekOperator(ref tokens, out var op) && Precedence[op] >= precedence)
         {
             if (lhs is null)
                 throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
-            
-            if (op is TokenType.Assignment)
+
+            if (IsAssignment(op))
             {
-                AssertTypeAndConsume(tokens, TokenType.Assignment, fileContent.Span, out tokens);
+                AssertTypeAndConsume(tokens, op, fileContent.Span, out tokens);
                 
                 if (ParseExpression(ref tokens, fileContent, Precedence[op]) is not { } rhs)
                     throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
-                
-                lhs = new AssignmentNode(lhs, rhs);
-                continue;           
+
+                lhs = CreateAssignmentNode(op, lhs, rhs);
+                continue;
             }
             if (ParseBinaryOperator(ref tokens) is { } binary)
             {
@@ -422,7 +551,20 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         return lhs;
     }
 
-    private static bool PeekBitwiseOrBinaryOperator(ref Span<IToken> tokens, out TokenType type)
+    private static bool IsAssignment(TokenType op)
+        => op is TokenType.AdditionAssignment
+              or TokenType.SubtractionAssignment
+              or TokenType.DivisionAssignment
+              or TokenType.MultiplicationAssignment
+              or TokenType.RemainderAssignment
+              or TokenType.BitwiseAndAssignment
+              or TokenType.BitwiseOrAssignment
+              or TokenType.BitwiseXorAssignment
+              or TokenType.LeftShiftAssignment
+              or TokenType.RightShiftAssignment
+              or TokenType.Assignment;
+
+    private static bool PeekOperator(ref Span<IToken> tokens, out TokenType type)
     {
         type = TokenType.Unknown;        
         if (CheckType(tokens, TokenType.Plus))
@@ -463,9 +605,29 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             type = TokenType.GreaterThanOrEqual;
         if (CheckType(tokens, TokenType.Assignment))
             type = TokenType.Assignment;
+        if (CheckType(tokens, TokenType.AdditionAssignment))
+            type = TokenType.AdditionAssignment;
+        if (CheckType(tokens, TokenType.SubtractionAssignment))
+            type = TokenType.SubtractionAssignment;
+        if (CheckType(tokens, TokenType.DivisionAssignment))
+            type = TokenType.DivisionAssignment;
+        if (CheckType(tokens, TokenType.MultiplicationAssignment))
+            type = TokenType.MultiplicationAssignment;
+        if (CheckType(tokens, TokenType.RemainderAssignment))
+            type = TokenType.RemainderAssignment;
+        if (CheckType(tokens, TokenType.BitwiseAndAssignment))
+            type = TokenType.BitwiseAndAssignment;
+        if (CheckType(tokens, TokenType.BitwiseOrAssignment))
+            type = TokenType.BitwiseOrAssignment;
+        if (CheckType(tokens, TokenType.BitwiseXorAssignment))
+            type = TokenType.BitwiseXorAssignment;
+        if (CheckType(tokens, TokenType.LeftShiftAssignment))
+            type = TokenType.LeftShiftAssignment;
+        if (CheckType(tokens, TokenType.RightShiftAssignment))
+            type = TokenType.RightShiftAssignment;
         
         return type != TokenType.Unknown;
-    }    
+    }        
     
     private static IExpressionNode? ParseFactor(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
@@ -504,18 +666,64 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         AssertTypeAndConsume(tokens, TokenType.CloseParenthesis, fileContent.Span, out tokens);
         return expression;
     }
-
+    
     private static UnaryNode? ParseUnary(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
-    {
-        if (ParseUnaryOperator(ref tokens) is not { } op) 
-            return null;
+    {           
+        IExpressionNode? expr = null;
+        var prefix = ParseUnaryOperator(ref tokens, postfix: false);
         
-        if (ParseFactor(ref tokens, fileContent) is not { } factor)
-            throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
-            
-        return new UnaryNode(op, factor);
-    }
+        if (prefix is not null)
+        {
+            if ((expr = ParseFactor(ref tokens, fileContent)) is null)
+                throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
 
+            if (expr is not VariableNode)            
+                return new UnaryNode(prefix, expr);            
+        }
+
+        if (expr is null && !IsPostfixUnary(tokens))
+            return null;
+
+        expr ??= ParseVariable(ref tokens, fileContent);
+        expr ??= ParseParenthesizedExpression(ref tokens, fileContent);
+        expr ??= ParseConstant<int>(ref tokens, fileContent);
+        
+        if (expr is null)
+            throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        
+        while (ParseUnaryOperator(ref tokens, postfix: true) is { } postfix)
+            expr = new UnaryNode(postfix, expr);
+        
+        return prefix is not null
+            ? new UnaryNode(prefix, expr)
+            : (UnaryNode)expr;    
+    }
+    
+    private static bool IsPostfixUnary(in Span<IToken> tokens)
+    {
+        var shifted = tokens;
+        var result = false;
+        
+        if (CheckType(shifted, TokenType.OpenParenthesis))
+        {
+            while (!CheckType(shifted, TokenType.CloseParenthesis) && Shift(shifted, out shifted)) { }
+
+            if (!CheckType(shifted, TokenType.CloseParenthesis))
+                return false;
+            
+            shifted = shifted[1..];
+            result = true;
+        }
+        else if (CheckType(shifted, TokenType.NumericConstant) || CheckType(shifted, TokenType.Identifier))
+        {
+            shifted = shifted[1..];
+            result = true;
+        }        
+        return result && shifted[0].Type is TokenType.Increment or TokenType.Decrement;
+    }
+    
+    
+    
     private static ConstantNode<T>? ParseConstant<T>(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent) 
         where T : INumber<T>
     {
@@ -582,7 +790,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         return null;
     }
     
-    private static IUnaryOperatorNode? ParseUnaryOperator(ref Span<IToken> tokens)
+    private static IUnaryOperatorNode? ParseUnaryOperator(ref Span<IToken> tokens, bool postfix)
     {
         if (CheckTypeAndConsume(tokens, TokenType.Minus, out tokens))
             return NegateNode.Operator;
@@ -590,8 +798,18 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             return ComplementNode.Operator;
         if (CheckTypeAndConsume(tokens, TokenType.Not, out tokens))
             return NotNode.Operator;
+        if (CheckTypeAndConsume(tokens, TokenType.Increment, out tokens))
+            return GetIncrementOperator(postfix);
+        if (CheckTypeAndConsume(tokens, TokenType.Decrement, out tokens))
+            return GetDecrementOperator(postfix);
         
         return null;
+        
+        static IUnaryOperatorNode GetIncrementOperator(bool postfix) =>
+            postfix ? PostfixIncrementNode.Operator : PrefixIncrementNode.Operator;
+        
+        static IUnaryOperatorNode GetDecrementOperator(bool postfix) =>
+            postfix ? PostfixDecrementNode.Operator : PrefixDecrementNode.Operator;
     }
 
     [Pure]
