@@ -1,6 +1,6 @@
 namespace Compiler.Common.Tokens;
 
-public sealed record KeywordToken(int Index, int Length, string Keyword) : IToken
+public sealed record KeywordToken(int Index, int Length, Keyword Keyword) : IToken
 {
     public TokenType Type => TokenType.Keyword;
 

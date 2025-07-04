@@ -70,9 +70,18 @@ public class SemanticValidator
             BinaryNode binary => ResolveBinary(binary),
             BitwiseNode bitwise => ResolveBitwise(bitwise),
             VariableNode variable => ResolveVariable(variable),
+            ConditionalNode conditional => ResolveConditional(conditional),
             IConstantNode constant => constant,            
             _ => throw new UnreachableException($"Unknown expression type: {expression.Tag.ToStringFast()}")
         };
+
+    private ConditionalNode ResolveConditional(ConditionalNode conditional) => new
+    (
+        ResolveExpression(conditional.Condition), 
+        ResolveExpression(conditional.True), 
+        ResolveExpression(conditional.False)
+    );
+    
 
     private VariableNode ResolveVariable(VariableNode variable)
         => _variables.TryGetValue(new Original(variable.Identifier), out var mangled)
@@ -127,12 +136,18 @@ public class SemanticValidator
         };
     }
 
-    private IBlockItem ResolveStatement(IStatementNode statement)
+    [return: NotNullIfNotNull(nameof(statement))]
+    private IStatementNode? ResolveStatement(IStatementNode? statement)
         => statement switch
         {
             ReturnNode ret => new ReturnNode(ResolveExpression(ret.Expression)),
             ExpressionNode exp => new ExpressionNode(ResolveExpression(exp.Expression)),
+            IfNode @if => new IfNode(
+                ResolveExpression(@if.Condition), 
+                ResolveStatement(@if.Then), 
+                ResolveStatement(@if.Else)),
             NullNode @null => @null,
+            null => null,
             _ => throw new UnreachableException($"Unknow statement type: {statement.Tag.ToStringFast()}")
         };
     

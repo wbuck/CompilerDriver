@@ -87,5 +87,9 @@ public enum TokenType
     LeftShiftAssignment,
     [Display(Name = ">>=")]
     RightShiftAssignment,
+    [Display(Name = "?")]
+    QuestionMark,
+    [Display(Name = ":")]
+    Colon,
     Unknown
 }

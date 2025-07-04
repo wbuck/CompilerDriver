@@ -47,7 +47,7 @@ public class TokenTests
         Assert.Equal(expectedValue.Length, token.Length);
         
         if (token is KeywordToken keywordToken)
-            Assert.Equal(expectedValue, keywordToken.Keyword);
+            Assert.Equal(KeywordExtensions.Parse(expectedValue, true), keywordToken.Keyword);
     }
     
     [Theory]

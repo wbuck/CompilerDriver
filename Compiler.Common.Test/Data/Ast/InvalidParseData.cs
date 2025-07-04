@@ -7,6 +7,48 @@ public class InvalidParseData : TheoryData<string, string>
     {
         Add("""
             int main(void) {
+                int a = 0;
+                if (1)
+                    return 1;
+                else
+                    return 2;
+                else
+                    return 3;
+            }
+            """, 
+            "Expected '}' but found 'else'");
+        Add("""
+            int main(void) {
+                if 0 return 1;
+            }
+            """, 
+            "Expected '(' but found '0'");
+        Add("""
+            int main(void) {
+                int flag = 0;
+                int a = if (flag)
+                            2;
+                        else
+                            3;
+                return a;
+            }
+            """, 
+            "Expected ';' but found 'if'");
+        Add("""
+            int main(void) {
+                if (0) else return 0;
+            }
+            """, 
+            "Expected statement but found 'else'");
+        Add("""
+            int main(void) {
+                if (5)
+                    int i = 0;
+            }
+            """, 
+            "Expected statement but found 'int'");
+        Add("""
+            int main(void) {
                 int 10 = return 0;
             }
             """, 

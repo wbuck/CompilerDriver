@@ -58,7 +58,9 @@ public enum AstNodeTag
     Variable,
     Declaration,
     Expression,
-    Null
+    Null,
+    If,
+    Conditional
 }
 
 public interface IAstNodeTag
@@ -80,6 +82,11 @@ public sealed record DeclarationNode(string Identifier, IExpressionNode? Initial
 }
 
 public interface IStatementNode : IBlockItem;
+
+public sealed record IfNode(IExpressionNode Condition, IStatementNode Then, IStatementNode? Else = null) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.If;
+}
 public sealed record ReturnNode(IExpressionNode Expression) : IStatementNode
 {
     public AstNodeTag Tag => AstNodeTag.Return;
@@ -114,6 +121,11 @@ public sealed record BitwiseNode(IBitwiseOperatorNode Operator, IExpressionNode 
     public AstNodeTag Tag => AstNodeTag.Bitwise;
 }
 
+public sealed record ConditionalNode(IExpressionNode Condition, IExpressionNode True, IExpressionNode False)
+    : IExpressionNode
+{
+    public AstNodeTag Tag => AstNodeTag.Conditional;
+}
 public interface IAssignmentNode : IExpressionNode
 {
     IExpressionNode Lhs { get; }
@@ -338,13 +350,6 @@ public sealed record GreaterThanOrEqualNode : IBinaryOperatorNode
 
 public record ProgramNode(FunctionNode Function) : IAstNodeTag
 {
-    private static readonly FrozenDictionary<TokenType, int> UnaryPrecedence =
-        new Dictionary<TokenType, int>
-        {
-            [TokenType.Not] = 1,
-            [TokenType.Complement] = 2,
-        }.ToFrozenDictionary();
-    
     private static readonly FrozenDictionary<TokenType, int> Precedence = new Dictionary<TokenType, int>
     {                 
         [TokenType.Asterisk] = 40,
@@ -365,6 +370,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         [TokenType.BitwiseOr] = 13,
         [TokenType.LogicalAnd] = 12,
         [TokenType.LogicalOr] = 11,
+        [TokenType.QuestionMark] = 3,
         [TokenType.Assignment] = 1,
         [TokenType.AdditionAssignment] = 1,
         [TokenType.SubtractionAssignment] = 1,
@@ -405,7 +411,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             throw new FormatException($"Expected '{expected}' but found '{ReadTokenValue(shifted, fileContent.Span)}'");
         }
 
-        AssertKeywordAndConsume(shifted, "void", fileContent.Span, out shifted);  
+        AssertKeywordAndConsume(shifted, Keyword.Void, fileContent.Span, out shifted);  
         AssertTypeAndConsume(shifted, TokenType.CloseParenthesis, fileContent.Span, out shifted);
         AssertTypeAndConsume(shifted, TokenType.OpenBrace, fileContent.Span, out shifted);
 
@@ -450,7 +456,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             return null;
 
         // TODO: Handle different type other than int.
-        AssertKeywordAndConsume(tokens, "int", fileContent.Span, out tokens);
+        AssertKeywordAndConsume(tokens, Keyword.Int, fileContent.Span, out tokens);
         var id = AssertTokenAndConsume<IdentifierToken>(ref tokens, TokenType.Identifier);
 
         if (GetTokenAndConsume<AssignmentToken>(ref tokens) is null )
@@ -469,21 +475,59 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         
         if (ParseReturn(ref tokens, fileContent) is { } @return)
             return @return;
+        
         if (ParseExpression(ref tokens, fileContent) is { } expression)
         {
             var expr = new ExpressionNode(expression);
             AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
             return expr;
         }
+
+        if (ParseIf(ref tokens, fileContent) is { } @if)
+            return @if;
+        
         if (CheckTypeAndConsume(tokens, TokenType.Semicolon, out tokens))
             return NullNode.Statement;
 
         return null;
+    }    
+
+    private static IfNode? ParseIf(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {        
+        if (CheckKeywordAndConsume(tokens, Keyword.If, out tokens))
+        {
+            AssertTypeAndConsume(tokens, TokenType.OpenParenthesis, fileContent.Span, out tokens);
+            
+            if (ParseExpression(ref tokens, fileContent) is not { } condition)
+                throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+            
+            AssertTypeAndConsume(tokens, TokenType.CloseParenthesis, fileContent.Span, out tokens);
+
+            if (ParseStatement(ref tokens, fileContent) is not { } statement)
+                throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+            
+            return new IfNode(condition, statement, ParseElse(ref tokens, fileContent));
+        }
+        return null;
+    }
+    
+    private static IStatementNode? ParseElse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.Else, out tokens)) 
+            return null;
+        
+        if (ParseIf(ref tokens, fileContent) is {} @if)
+            return @if;
+            
+        if (ParseStatement(ref tokens, fileContent) is not { } statement)
+            throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+            
+        return statement;
     }
 
     private static ReturnNode? ParseReturn(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
-        if (!CheckKeywordAndConsume(tokens, "return", out tokens))
+        if (!CheckKeywordAndConsume(tokens, Keyword.Return, out tokens))
             return null;
         
         if (ParseExpression(ref tokens, fileContent) is not { } expression)
@@ -529,6 +573,16 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
                 lhs = CreateAssignmentNode(op, lhs, rhs);
                 continue;
             }
+            if (IsConditional(op))
+            {
+                var middle = ParseConditionMiddle(ref tokens, fileContent);
+                
+                if (ParseExpression(ref tokens, fileContent, Precedence[op]) is not { } rhs)
+                    throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+                
+                lhs = new ConditionalNode(lhs, middle, rhs);
+                continue;
+            }
             if (ParseBinaryOperator(ref tokens) is { } binary)
             {
                 if (ParseExpression(ref tokens, fileContent, Precedence[op] + 1) is not { } rhs)
@@ -550,6 +604,21 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         }
         return lhs;
     }
+
+    private static IExpressionNode ParseConditionMiddle(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        AssertTypeAndConsume(tokens, TokenType.QuestionMark, fileContent.Span, out tokens);
+        
+        if (ParseExpression(ref tokens, fileContent) is not { } condition)
+            throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        
+        AssertTypeAndConsume(tokens, TokenType.Colon, fileContent.Span, out tokens);
+        
+        return condition;
+    }
+    
+    private static bool IsConditional(TokenType op)
+        => op is TokenType.QuestionMark;
 
     private static bool IsAssignment(TokenType op)
         => op is TokenType.AdditionAssignment
@@ -625,6 +694,8 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             type = TokenType.LeftShiftAssignment;
         if (CheckType(tokens, TokenType.RightShiftAssignment))
             type = TokenType.RightShiftAssignment;
+        if (CheckType(tokens, TokenType.QuestionMark))
+            type = TokenType.QuestionMark;
         
         return type != TokenType.Unknown;
     }        
@@ -856,10 +927,10 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         => tokens.IsEmpty ? default : fileContent.Slice(tokens[0].Index, tokens[0].Length);
     
     [Pure]
-    private static bool CheckKeyword(in Span<IToken> tokens, in ReadOnlySpan<char> keyword) => 
+    private static bool CheckKeyword(in Span<IToken> tokens, in Keyword keyword) => 
         !tokens.IsEmpty && 
         tokens[0] is KeywordToken token && 
-        token.Keyword.AsSpan().SequenceEqual(keyword);
+        token.Keyword == keyword;
 
     [Pure]
     private static void AssertTypeAndConsume(
@@ -877,14 +948,14 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
     
     [Pure]
     private static void AssertKeywordAndConsume(
-        Span<IToken> tokens, ReadOnlySpan<char> keyword, ReadOnlySpan<char> fileContent, out Span<IToken> shifted)
+        Span<IToken> tokens, Keyword keyword, ReadOnlySpan<char> fileContent, out Span<IToken> shifted)
     {
         if (CheckKeywordAndConsume(tokens, keyword, out shifted))
             return;
         
         throw tokens.IsEmpty 
-            ? new FormatException($"Missing '{keyword}'")
-            : new FormatException($"Expected '{keyword}' but found '{ReadTokenValue(tokens, fileContent)}'");                    
+            ? new FormatException($"Missing '{keyword.ToStringFast(true)}'")
+            : new FormatException($"Expected '{keyword.ToStringFast(true)}' but found '{ReadTokenValue(tokens, fileContent)}'");                    
     }
 
     [Pure]
@@ -895,7 +966,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
     }
     
     [Pure]
-    private static bool CheckKeywordAndConsume(Span<IToken> tokens, ReadOnlySpan<char> keyword, out Span<IToken> shifted)
+    private static bool CheckKeywordAndConsume(Span<IToken> tokens, Keyword keyword, out Span<IToken> shifted)
     {
         shifted = tokens;
         return CheckKeyword(tokens, keyword) && Shift(tokens, out shifted);

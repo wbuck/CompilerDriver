@@ -6,13 +6,15 @@ namespace Compiler.Common.Tokens;
 
 public sealed partial record IdentifierToken(int Index, int Length) : IToken
 {
-    private static readonly HashSet<string> Keywords = [
+    private static readonly HashSet<string> Keywords2 = [
         "auto", "break", "case", "char", "const", "continue", "default", 
         "do", "double", "else", "enum", "extern", "float", "for", "goto", 
         "if", "int", "long", "register", "return", "short", "signed", "sizeof", 
         "static", "struct", "switch", "typedef", "union", "unsigned", "void", 
         "volatile", "while"
     ];
+    
+    private static readonly HashSet<string> Keywords = [..KeywordExtensions.GetNames().Select(n => n.ToLower())];
     
     public TokenType Type => TokenType.Identifier;
     
@@ -32,7 +34,7 @@ public sealed partial record IdentifierToken(int Index, int Length) : IToken
             
         value = value[match.Length..];
         return lookup.TryGetValue(identifier, out var keyword)
-            ? new KeywordToken(match.Index + offset, match.Length, keyword)
+            ? new KeywordToken(match.Index + offset, match.Length, KeywordExtensions.Parse(keyword, true))
             : new IdentifierToken(match.Index + offset, match.Length);
     }
 }

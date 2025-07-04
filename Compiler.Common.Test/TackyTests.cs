@@ -54,6 +54,11 @@ public class TackyTests(ITestOutputHelper output)
     [ClassData(typeof(CompoundOperatorData))]
     public void ParsingCompoundOperatorDataShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(IfStatementAndConditionalExpressionData))]
+    public void ParsingIfStatementAndConditionalExpressionDataShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
 
     private TackyProgram GetResult(string fileContent)
     {

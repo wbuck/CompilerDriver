@@ -227,6 +227,17 @@ public static partial class Lexer
                     tokens.Add(token);                    
                     continue;
                 }
+                if ((token = Parse<ColonToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                if ((token = Parse<QuestionMarkToken>(ref trimmed, offset)) is not null)
+                {
+                    tokens.Add(token);                    
+                    continue;
+                }
+                
                 
                 var enumerator = NonWhiteSpacePattern.EnumerateMatches(trimmed);
                 if (enumerator.MoveNext())

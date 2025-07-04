@@ -62,6 +62,11 @@ public class ParserTests(ITestOutputHelper output)
     [ClassData(typeof(CompoundOperatorData))]
     public void ParsingCompoundShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(IfStatementAndConditionalExpressionData))]
+    public void ParsingIfAndConditionalShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     private static void InvalidCheck(string fileContent, string message)
     {        

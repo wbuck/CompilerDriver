@@ -8,6 +8,39 @@ public class InvalidSemanticData : TheoryData<string, string>
         (
             """
             int main(void) {
+                return a > 0 ? 1 : 2;
+                int a = 5;
+            }
+            """,
+            "Undeclared variable: a"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 2;
+                int b = 1;
+                a > b ? a = 1 : a = 0;
+                return a;
+            }
+            """,
+            "Expression must be modifiable lvalue"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                if (1)
+                    return c;
+                int c = 0;
+            }
+            """,
+            "Undeclared variable: c"
+        );
+        Add
+        (
+            """
+            int main(void) {
                 int a = 10;
                 (a += 1) -= 2;
             }

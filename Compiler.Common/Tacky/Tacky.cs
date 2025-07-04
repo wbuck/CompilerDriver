@@ -289,6 +289,8 @@ public class TackyVisitor
         {
             case ReturnNode ret:
                 return VisitReturn(ret, instructions, factory);
+            case IfNode @if:
+                return VisitIf(@if, instructions, factory);
             case ExpressionNode expr:
                 // We don't care about the result of the expression statement
                 // in this case.
@@ -299,7 +301,7 @@ public class TackyVisitor
             default:
                 throw new UnreachableException($"Unknown statement type: {statement.Tag.ToStringFast()}");
         }
-    } 
+    }    
 
     private List<ITackyInstruction> VisitReturn(ReturnNode @return, List<ITackyInstruction> instructions, VariableFactory factory)
     {        
@@ -316,10 +318,39 @@ public class TackyVisitor
             BitwiseNode bitwise => VisitBitwise(bitwise, instructions, factory),
             BinaryNode binary => VisitBinary(binary, instructions, factory),
             VariableNode variable => factory.GetNextVariable(variable.Identifier),
+            ConditionalNode conditional => VisitConditional(conditional, instructions, factory),
             IAssignmentNode { IsCompound: false } assignment => VisitAssignment(assignment, instructions, factory),
             IAssignmentNode { IsCompound: true } assignment => VisitCompoundAssignment(assignment, instructions, factory),
             _ => throw new FormatException($"Unknown expression type: {expression.Tag.ToStringFast()}")
         };
+
+    private TackyVariable VisitConditional(
+        ConditionalNode conditional, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        var elseLabel = _labelGenerator.GetNextLabel(TackyConstants.CONDITION_ELSE_LABEL);
+        var endLabel =  _labelGenerator.GetNextLabel(TackyConstants.CONDITION_END_LABEL);
+        var dest = factory.GetNextVariable();
+        
+        var condition = VisitExpression(conditional.Condition, instructions, factory); 
+        
+        instructions.Add(new TackyJumpIfZero(condition, elseLabel));       
+        instructions.Add(new TackyCopy
+        (
+            VisitExpression(conditional.True, instructions, factory), 
+            dest
+        ));        
+        instructions.Add(new TackyJump(endLabel));
+        
+        instructions.Add(new TackyLabel(elseLabel));                   
+        instructions.Add(new TackyCopy
+        (
+            VisitExpression(conditional.False, instructions, factory), 
+            dest
+        ));
+        
+        instructions.Add(new TackyLabel(endLabel));
+        return dest;
+    }
 
     private TackyVariable VisitAssignment(
         IAssignmentNode assignment, List<ITackyInstruction> instructions, VariableFactory factory)
@@ -395,6 +426,34 @@ public class TackyVisitor
         instructions.Add(new TackyLabel(endLabel));       
         
         return result;
+    }
+    
+    private List<ITackyInstruction> VisitIf(IfNode @if, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        if (@if.Else is not null)
+            return VisitIfElse(@if, instructions, factory);
+        
+        var endLabel = _labelGenerator.GetNextLabel(TackyConstants.IF_END_LABEL);
+        var condition = VisitExpression(@if.Condition, instructions, factory);
+        instructions.Add(new TackyJumpIfZero(condition, endLabel));
+        instructions.AddRange(VisitStatement(@if.Then, [], factory));
+        instructions.Add(new TackyLabel(endLabel));
+        return instructions;
+    }
+    
+    private List<ITackyInstruction> VisitIfElse(IfNode @if, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        var endLabel = _labelGenerator.GetNextLabel(TackyConstants.IF_END_LABEL);
+        var elseLabel = _labelGenerator.GetNextLabel(TackyConstants.ELSE_LABEL);
+        var condition = VisitExpression(@if.Condition, instructions, factory);
+        instructions.Add(new TackyJumpIfZero(condition, elseLabel));
+        instructions.AddRange(VisitStatement(@if.Then, [], factory));
+        instructions.Add(new TackyJump(endLabel));
+        instructions.Add(new TackyLabel(elseLabel));
+        Debug.Assert(@if.Else is not null);
+        instructions.AddRange(VisitStatement(@if.Else!, [], factory));
+        instructions.Add(new TackyLabel(endLabel));
+        return instructions;
     }
 
     private TackyVariable VisitBinaryLogicalAnd(

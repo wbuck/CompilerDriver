@@ -33,6 +33,11 @@ public class LexerTests(ITestOutputHelper output)
     public void ShouldSuccessfullyHandleCompoundOperators(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent)); 
     
+    [Theory]
+    [ClassData(typeof(IfStatementsAndConditionalExpressionsData))]
+    public void ShouldSuccessfullyHandleIfStatementsAndConditionalExpressions(string fileContent, List<ExpectedToken> expected)
+        => Validate(fileContent, expected, GetResult(fileContent)); 
+    
     private static void Validate(string fileContent, List<ExpectedToken> expected, List<IToken> actual)
     {
         Assert.Equal(expected.Count, actual.Count);
@@ -46,9 +51,9 @@ public class LexerTests(ITestOutputHelper output)
         {
             Assert.Equal(expectedValue, GetSection(fileContent, token));
             Assert.Equal(expectedType, token.Type);
-            
-            if (token is KeywordToken keywordToken)
-                Assert.Equal(expectedValue, keywordToken.Keyword);
+
+            if (token is KeywordToken keywordToken)            
+                Assert.Equal(KeywordExtensions.Parse(expectedValue, true), keywordToken.Keyword);            
         }
     }
     
