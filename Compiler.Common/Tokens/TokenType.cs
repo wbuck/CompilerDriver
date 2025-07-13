@@ -90,6 +90,6 @@ public enum TokenType
     [Display(Name = "?")]
     QuestionMark,
     [Display(Name = ":")]
-    Colon,
+    Colon,   
     Unknown
 }

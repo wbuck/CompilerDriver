@@ -298,10 +298,26 @@ public class TackyVisitor
                 return instructions;
             case NullNode:
                 return instructions;
+            case LabelNode label:
+                return VisitLabel(label, instructions, factory);
+            case GotoNode @goto:
+                return VisitGoto(@goto, instructions);
             default:
                 throw new UnreachableException($"Unknown statement type: {statement.Tag.ToStringFast()}");
         }
-    }    
+    }
+
+    private static List<ITackyInstruction> VisitGoto(GotoNode @goto, List<ITackyInstruction> instructions)
+    {
+        instructions.Add(new TackyJump(@goto.Label));
+        return instructions;
+    }
+
+    private List<ITackyInstruction> VisitLabel(LabelNode label, List<ITackyInstruction> instructions, VariableFactory factory)
+    {
+        instructions.Add(new TackyLabel(label.Name));
+        return VisitStatement(label.Statement, instructions, factory);
+    }
 
     private List<ITackyInstruction> VisitReturn(ReturnNode @return, List<ITackyInstruction> instructions, VariableFactory factory)
     {        

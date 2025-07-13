@@ -35,7 +35,7 @@ public enum Keyword
     [Display(Name = "for")]
     For,
     [Display(Name = "goto")]
-    GoTo,
+    Goto,
     [Display(Name = "if")]
     If,
     [Display(Name = "int")]

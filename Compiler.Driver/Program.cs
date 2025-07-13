@@ -108,7 +108,12 @@ root.SetHandler(async (ctx) =>
         {
             ctx.ExitCode = 1;
             return;
-        }        
+        }
+        if (!LabelValidator.TryValidate(analyzed))
+        {
+            ctx.ExitCode = 1;
+            return;
+        }
         if (ctx.GetOption(validate, false))
         {
             ctx.ExitCode = 0;
@@ -139,7 +144,7 @@ root.SetHandler(async (ctx) =>
         
         if (!Emitter.TryEmit(program, out var compiled))
         {
-            ctx.ExitCode = 0;
+            ctx.ExitCode = 1;
             return;
         }
         

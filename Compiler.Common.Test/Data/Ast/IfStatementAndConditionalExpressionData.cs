@@ -15,7 +15,8 @@ public class IfStatementAndConditionalExpressionData : DataBase
                     return 5;
             }
             """,
-            GetExpected(
+            GetExpected
+            (
                 new IfNode
                 (
                     new BinaryNode
@@ -573,6 +574,246 @@ public class IfStatementAndConditionalExpressionData : DataBase
                     )
                 ),
                 new DeclarationNode("a", Const(5))
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = -1;           
+                if (++a)
+                    return 0;
+                else if (++a)
+                    return 1;
+                return 0;
+            
+            }
+            """,
+            GetExpected
+            (
+                new DeclarationNode("a", new UnaryNode(NegateNode.Operator, Const(1))),
+                new IfNode
+                (
+                    new UnaryNode(PrefixIncrementNode.Operator, Var("a")),
+                    Ret(Const(0)),
+                    new IfNode
+                         (
+                             new UnaryNode(PrefixIncrementNode.Operator, Var("a")),
+                             Ret(Const(1))
+                         )
+                ),
+                Ret(Const(0))
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int x = 1;
+                goto post_declaration;
+                int i = (x = 0);
+            post_declaration:
+                i = 5;
+                return 0;
+            }
+            """,
+            GetExpected
+            (
+                new DeclarationNode("x", Const(1)),
+                new GotoNode("post_declaration"),
+                new DeclarationNode("i", new AssignmentNode(Var("x"), Const(0))),
+                new LabelNode
+                (
+                    "post_declaration",
+                    new ExpressionNode(new AssignmentNode(Var("i"), Const(5)))
+                ),                
+                Ret(Const(0))
+            )
+        );        
+        Add
+        (
+            """
+            int main(void) {
+                if (0)
+                label:
+                    return 5;
+                goto label;
+                return 0;
+            }
+            """,
+            GetExpected
+            (
+                new IfNode
+                (
+                    Const(0),
+                    new LabelNode("label", Ret(Const(5))
+                )),
+                new GotoNode("label"),
+                Ret(Const(0))
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {                
+                int ident = 5;
+                goto ident;
+                return 0;
+            ident:
+                return ident;
+            }
+            """,
+            GetExpected
+            (
+                new DeclarationNode("ident", Const(5)),
+                new GotoNode("ident"),
+                Ret(Const(0)),
+                new LabelNode("ident", Ret(Var("ident")))
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {
+                goto _main;
+                return 0;
+                _main:
+                    return 1;
+            }
+            """,
+            GetExpected
+            (
+                new GotoNode("_main"),
+                Ret(Const(0)),
+                new LabelNode("_main", Ret(Const(1)))
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {
+                goto main;
+                return 5;
+            main:
+                return 0;
+            }
+            """,
+            GetExpected
+            (
+                new GotoNode("main"),
+                Ret(Const(5)),
+                new LabelNode("main", Ret(Const(0)))
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {
+                goto label;
+                return 0;
+            label:
+                return 1;
+            }
+            """,
+            GetExpected
+            (
+                new GotoNode("label"),
+                Ret(Const(0)),
+                new LabelNode("label", Ret(Const(1)))
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {
+                goto labelB;
+            
+                labelA:
+                    labelB:
+                        return 5;
+                return 0;
+            }
+            """,
+            GetExpected
+            (
+                new GotoNode("labelB"),
+                new LabelNode("labelA", new LabelNode("labelB", Ret(Const(5)))),
+                Ret(Const(0))
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 1;
+            label_if:
+                if (a)
+                    goto label_expression;
+                else
+                    goto label_empty;
+            
+            label_goto:
+                goto label_return;
+            
+                if (0)
+                label_expression:
+                    a = 0;
+            
+                goto label_if;
+            
+            label_return:
+                return a;
+            
+            label_empty:;
+                a = 100;
+                goto label_goto;
+            }
+            """,
+            GetExpected
+            (
+                new DeclarationNode("a", Const(1)),
+                new LabelNode
+                (
+                    "label_if", 
+                    new IfNode
+                    (
+                        Var("a"), 
+                        new GotoNode("label_expression"),
+                        new GotoNode("label_empty")
+                    )
+                ),
+                new LabelNode("label_goto", new GotoNode("label_return")),
+                new IfNode
+                (
+                    Const(0), 
+                    new LabelNode
+                    (
+                        "label_expression",
+                        new ExpressionNode(new AssignmentNode(Var("a"), Const(0)))
+                    )
+                ),
+                new GotoNode("label_if"),
+                new LabelNode("label_return", Ret(Var("a"))),
+                new LabelNode("label_empty", NullNode.Statement),
+                new ExpressionNode(new AssignmentNode(Var("a"), Const(100))),
+                new GotoNode("label_goto")
+            )
+        );
+        Add
+        (
+            """
+            int main(void) {
+                goto _foo_1_;
+                return 0;
+            _foo_1_:
+                return 1;
+            }
+            """,
+            GetExpected
+            (
+                new GotoNode("_foo_1_"),
+                Ret(Const(0)),
+                new LabelNode("_foo_1_", Ret(Const(1)))
             )
         );
     }

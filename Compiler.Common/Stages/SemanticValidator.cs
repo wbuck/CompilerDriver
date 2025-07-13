@@ -5,10 +5,9 @@ using Compiler.Common.Extensions;
 
 namespace Compiler.Common.Stages;
 
-
 public class SemanticValidator
 {
-    private int _variableCount = 0;
+    private int _variableCount;
     private readonly Dictionary<Original, Mangled> _variables = [];
 
     public static bool TryValidate(ProgramNode program, [NotNullWhen(true)] out ProgramNode? analyzed)
@@ -27,8 +26,8 @@ public class SemanticValidator
         return false;       
     }
     
-    public ProgramNode Validate(ProgramNode program)
-        => new ProgramNode(Function: ValidateFunction(program.Function));    
+    public ProgramNode Validate(ProgramNode program) => 
+        new(Function: ValidateFunction(program.Function));    
 
     private FunctionNode ValidateFunction(FunctionNode function)
     {
@@ -146,6 +145,8 @@ public class SemanticValidator
                 ResolveExpression(@if.Condition), 
                 ResolveStatement(@if.Then), 
                 ResolveStatement(@if.Else)),
+            LabelNode label => label with { Statement = ResolveStatement(label.Statement) },
+            GotoNode @goto => @goto,
             NullNode @null => @null,
             null => null,
             _ => throw new UnreachableException($"Unknow statement type: {statement.Tag.ToStringFast()}")

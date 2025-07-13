@@ -1,20 +1,10 @@
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace Compiler.Common.Tokens;
 
 public sealed partial record IdentifierToken(int Index, int Length) : IToken
 {
-    private static readonly HashSet<string> Keywords2 = [
-        "auto", "break", "case", "char", "const", "continue", "default", 
-        "do", "double", "else", "enum", "extern", "float", "for", "goto", 
-        "if", "int", "long", "register", "return", "short", "signed", "sizeof", 
-        "static", "struct", "switch", "typedef", "union", "unsigned", "void", 
-        "volatile", "while"
-    ];
-    
-    private static readonly HashSet<string> Keywords = [..KeywordExtensions.GetNames().Select(n => n.ToLower())];
+    private static readonly HashSet<string> Keywords = [..KeywordExtensions.GetValues().Select(k => k.ToStringFast(true))];
     
     public TokenType Type => TokenType.Identifier;
     

@@ -60,7 +60,9 @@ public enum AstNodeTag
     Expression,
     Null,
     If,
-    Conditional
+    Conditional,
+    Goto,
+    Label
 }
 
 public interface IAstNodeTag
@@ -83,6 +85,15 @@ public sealed record DeclarationNode(string Identifier, IExpressionNode? Initial
 
 public interface IStatementNode : IBlockItem;
 
+public sealed record LabelNode(string Name, IStatementNode Statement) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.Label;
+}
+
+public sealed record GotoNode(string Label) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.Goto;
+}
 public sealed record IfNode(IExpressionNode Condition, IStatementNode Then, IStatementNode? Else = null) : IStatementNode
 {
     public AstNodeTag Tag => AstNodeTag.If;
@@ -424,7 +435,6 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             body.Add(item);
         }
             
-        //throw new FormatException($"Unexpected token: {ReadTokenValue(shifted, fileContent.Span)}");
         AssertTypeAndConsume(shifted, TokenType.CloseBrace, fileContent.Span, out shifted);
         
         tokens = shifted;        
@@ -436,16 +446,39 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
     private static IBlockItem? ParseBlockItem(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         if (tokens.IsEmpty)
-            return null;                
+            return null;        
 
         if (ParseStatement(ref tokens, fileContent) is { } statement)
-            return statement;         
+            return statement;       
         
         if (ParseDeclaration(ref tokens, fileContent) is { } declaration)
             return declaration;
 
         return null;
-    }    
+    }
+
+    private static List<string>? ParseLabels(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        List<string>? labels = null;
+        while (IsLabel(tokens))
+        {
+            labels ??= [];
+            labels.Add(ConsumeLabel(ref tokens, fileContent));
+        }
+        
+        return labels;
+        
+        static string ConsumeLabel(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+        {
+            var identifier = AssertTokenAndConsume<IdentifierToken>(ref tokens, TokenType.Identifier);
+            AssertTypeAndConsume(tokens, TokenType.Colon, fileContent.Span, out tokens);
+            return GetString(identifier, fileContent);
+        }       
+        static bool IsLabel(in Span<IToken> tokens)
+            => CheckType(tokens, TokenType.Identifier) &&
+               Shift(tokens, out var shifted) &&
+               CheckType(shifted, TokenType.Colon);
+    }
 
     private static DeclarationNode? ParseDeclaration(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
@@ -472,43 +505,72 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
 
     private static IStatementNode? ParseStatement(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
-        
+        var labels = ParseLabels(ref tokens, fileContent);
         if (ParseReturn(ref tokens, fileContent) is { } @return)
-            return @return;
+            return WrapStatement(@return, labels);
+        
+        if (ParseGoto(ref tokens, fileContent) is { } @goto)
+            return WrapStatement(@goto, labels);
         
         if (ParseExpression(ref tokens, fileContent) is { } expression)
         {
             var expr = new ExpressionNode(expression);
             AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
-            return expr;
+            return WrapStatement(expr, labels);
         }
 
         if (ParseIf(ref tokens, fileContent) is { } @if)
-            return @if;
+            return WrapStatement(@if, labels);
         
         if (CheckTypeAndConsume(tokens, TokenType.Semicolon, out tokens))
-            return NullNode.Statement;
+            return WrapStatement(NullNode.Statement, labels);
+        
+        // Note, in C23 this is supported.
+        if (labels is not null)
+            throw new FormatException("A label can only be part of a statement");
 
         return null;
-    }    
+
+        static IStatementNode WrapStatement(IStatementNode statement, List<string>? labels)
+        {
+            if (labels is null or { Count: 0 }) 
+                return statement;
+            
+            var last = labels.Last();
+            labels.RemoveAt(labels.Count - 1);            
+            labels.Reverse();
+            
+            return labels.Aggregate(
+                new LabelNode(last, statement), (acc, label) => new LabelNode(label, acc));
+        }
+    }
+
+    private static GotoNode? ParseGoto(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.Goto, out tokens)) 
+            return null;
+        
+        var identifier = AssertTokenAndConsume<IdentifierToken>(ref tokens, TokenType.Identifier);
+        AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+        return new GotoNode(GetString(identifier, fileContent));
+    }
 
     private static IfNode? ParseIf(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
-    {        
-        if (CheckKeywordAndConsume(tokens, Keyword.If, out tokens))
-        {
-            AssertTypeAndConsume(tokens, TokenType.OpenParenthesis, fileContent.Span, out tokens);
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.If, out tokens)) 
+            return null;
+        
+        AssertTypeAndConsume(tokens, TokenType.OpenParenthesis, fileContent.Span, out tokens);
             
-            if (ParseExpression(ref tokens, fileContent) is not { } condition)
-                throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        if (ParseExpression(ref tokens, fileContent) is not { } condition)
+            throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
             
-            AssertTypeAndConsume(tokens, TokenType.CloseParenthesis, fileContent.Span, out tokens);
+        AssertTypeAndConsume(tokens, TokenType.CloseParenthesis, fileContent.Span, out tokens);
 
-            if (ParseStatement(ref tokens, fileContent) is not { } statement)
-                throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        if (ParseStatement(ref tokens, fileContent) is not { } statement)
+            throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'");
             
-            return new IfNode(condition, statement, ParseElse(ref tokens, fileContent));
-        }
-        return null;
+        return new IfNode(condition, statement, ParseElse(ref tokens, fileContent));
     }
     
     private static IStatementNode? ParseElse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
@@ -721,6 +783,9 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
     {
         if (!CheckType(tokens, TokenType.Identifier))
             return null;
+        
+        // if (!Shift(tokens, out var shifted) || CheckType(shifted, TokenType.Colon))
+        //     return null;
         
         var id = AssertTokenAndConsume<IdentifierToken>(ref tokens, TokenType.Identifier);
         return new VariableNode(GetString(id, fileContent));

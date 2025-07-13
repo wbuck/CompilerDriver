@@ -8,6 +8,99 @@ public class InvalidSemanticData : TheoryData<string, string>
         (
             """
             int main(void) {
+                goto(a);
+            a:
+                return 0;
+            }
+            """,
+            "Expected token Identifier but found ("
+        );
+        Add
+        (
+            """
+            label:
+            int main(void) {
+                return 0;
+            }
+            """,
+            "Expected return type but found 'label'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                1 && label: 2;
+            }
+            """,
+            "Expected ';' but found ':'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                return: return 0;
+            }
+            """,
+            "Expected expression but found ':'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                goto;
+            lbl:
+                return 0;
+            }
+            """,
+            "Expected token Identifier but found ;"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                foo:
+            }
+            """,
+            "A label can only be part of a statement"
+        );
+        Add
+        (
+            """
+            int main(void) {
+            label:
+                int a = 0;
+                return 0;
+            }
+            """,
+            "A label can only be part of a statement"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int x = 0;
+                a:
+                x = a;
+                return 0;
+            }
+            """,
+            "Undeclared variable: a"
+        );
+        Add
+        (
+            """
+            int main(void) {
+            lbl:
+                return a;
+                return 0;
+            }
+            """,
+            "Undeclared variable: a"
+        );
+        Add
+        (
+            """
+            int main(void) {
                 return a > 0 ? 1 : 2;
                 int a = 5;
             }
