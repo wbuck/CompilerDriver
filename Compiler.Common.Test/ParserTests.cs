@@ -29,43 +29,48 @@ public class ParserTests(ITestOutputHelper output)
     
     [Theory]
     [ClassData(typeof(InvalidParseData))]
-    public void ParseWithInvalidCodeShouldFailWithExpectedMessage(string fileContent, string message)
+    public void InvalidSyntax(string fileContent, string message)
         => InvalidCheck(fileContent, message);
     
     
     [Theory]
     [ClassData(typeof(BinaryOperatorData))]
-    public void ParsingBinaryOperationShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+    public void BinaryOperatos(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(BitwiseOperatorData))]
-    public void ParsingBitwiseOperatorShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+    public void BitwiseOperators(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     [Theory]
     [ClassData(typeof(UnaryOperatorData))]
-    public void ParsingUnaryShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+    public void UnaryOperators(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(LogicalAndRelationalData))]
-    public void ParsingLogicalAndRelationalOperatorsShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+    public void LogicalAndRelationalOperators(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(LocalVariableData))]
-    public void ParsingLocalVariableDataShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+    public void LocalVariables(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(CompoundOperatorData))]
-    public void ParsingCompoundShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+    public void CompoundOperators(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(IfStatementAndConditionalExpressionData))]
-    public void ParsingIfAndConditionalShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+    public void IfStatementsAndConditionalExpressions(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(CompoundStatementData))]
+    public void CompoundStatements(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     private static void InvalidCheck(string fileContent, string message)

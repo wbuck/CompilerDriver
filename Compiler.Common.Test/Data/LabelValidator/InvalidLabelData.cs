@@ -9,6 +9,27 @@ public class InvalidLabelData : TheoryData<string, string>
             """
             int main(void) {
                 int x = 0;
+                if (x) {
+                    x = 5;
+                    goto l;
+                    return 0;
+                    l:
+                        return x;
+                } else {
+                    goto l;
+                    return 0;
+                    l:
+                        return x;
+                }
+            }
+            """,
+            "Duplicate label: l"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int x = 0;
             label:
                 x = 1;
             label:

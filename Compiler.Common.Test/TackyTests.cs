@@ -27,37 +27,42 @@ public class TackyTests(ITestOutputHelper output)
     
     [Theory]
     [ClassData(typeof(UnaryOperatorData))]
-    public void ParsingUnaryShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+    public void UnaryOperators(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
     
     [Theory]
     [ClassData(typeof(BinaryOperatorData))]
-    public void ParsingBinaryOperatorShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+    public void BinaryOperators(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
     
     [Theory]
     [ClassData(typeof(BitwiseOperatorData))]
-    public void ParsingBitwiseOperatorShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+    public void BitwiseOperators(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
     
     [Theory]
     [ClassData(typeof(LogicalAndRelationalData))]
-    public void ParsingLogicalAndRelationalOperatorsShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+    public void LogicalAndRelationalOperators(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
     
     [Theory]
     [ClassData(typeof(LocalVariableData))]
-    public void ParsingLocalVariableDataShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+    public void LocalVariables(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
     
     [Theory]
     [ClassData(typeof(CompoundOperatorData))]
-    public void ParsingCompoundOperatorDataShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+    public void CompoundOperators(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
     
     [Theory]
     [ClassData(typeof(IfStatementAndConditionalExpressionData))]
-    public void ParsingIfStatementAndConditionalExpressionDataShouldSuccessfullyConvertAstInToTacky(string fileContent, TackyProgram expected)
+    public void IfStatementsAndConditionalExpressions(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(CompoundStatementData))]
+    public void CompoundStatements(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
 
     private TackyProgram GetResult(string fileContent)

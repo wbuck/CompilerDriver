@@ -11,22 +11,8 @@ using static Compiler.Common.Test.Data.Ast.AstTypeResolver;
 
 namespace Compiler.Common.Test;
 
-public class LabelValidatorTests(ITestOutputHelper output)
+public class LabelValidatorTests
 {
-    private static readonly JsonSerializerOptions Options = new()
-    {
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
-        TypeInfoResolver = new DefaultJsonTypeInfoResolver()
-            .WithAddedModifier(AddPolymorphicTypeInfo<IStatementNode>)
-            .WithAddedModifier(AddPolymorphicTypeInfo<IExpressionNode>)
-            .WithAddedModifier(AddPolymorphicTypeInfo<IUnaryOperatorNode>)
-            .WithAddedModifier(AddPolymorphicTypeInfo<IBinaryOperatorNode>)
-            .WithAddedModifier(AddPolymorphicTypeInfo<IBitwiseOperatorNode>)
-            .WithAddedModifier(AddPolymorphicTypeInfo<IBlockItem>)
-            .WithAddedModifier(AddPolymorphicTypeInfo<IDeclarationNode>)
-    };
-    
     [Theory]
     [ClassData(typeof(InvalidLabelData))]
     public void ParseWithInvalidLabelDataShouldFailWithExpectedMessage(string fileContent, string message)

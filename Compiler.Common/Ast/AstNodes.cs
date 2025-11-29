@@ -62,7 +62,9 @@ public enum AstNodeTag
     If,
     Conditional,
     Goto,
-    Label
+    Label,
+    Block,
+    Compound
 }
 
 public interface IAstNodeTag
@@ -70,12 +72,16 @@ public interface IAstNodeTag
     AstNodeTag Tag { get; }
 }
 
-public sealed record FunctionNode(string Name, string ReturnType, List<IBlockItem> Body) : IAstNodeTag
+public interface IBlockItem : IAstNodeTag;
+
+public sealed record BlockNode(List<IBlockItem> Items) : IAstNodeTag
+{
+    public AstNodeTag Tag => AstNodeTag.Block;
+}
+public sealed record FunctionNode(string Name, string ReturnType, BlockNode Body) : IAstNodeTag
 {
     public AstNodeTag Tag => AstNodeTag.Function;
 }
-
-public interface IBlockItem : IAstNodeTag;
 
 public interface IDeclarationNode : IBlockItem;
 public sealed record DeclarationNode(string Identifier, IExpressionNode? Initializer = null) : IDeclarationNode
@@ -89,7 +95,6 @@ public sealed record LabelNode(string Name, IStatementNode Statement) : IStateme
 {
     public AstNodeTag Tag => AstNodeTag.Label;
 }
-
 public sealed record GotoNode(string Label) : IStatementNode
 {
     public AstNodeTag Tag => AstNodeTag.Goto;
@@ -106,6 +111,12 @@ public sealed record ExpressionNode(IExpressionNode Expression) : IStatementNode
 {
     public AstNodeTag Tag => AstNodeTag.Expression;
 }
+
+public sealed record CompoundNode(BlockNode Block) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.Compound;
+}
+
 public sealed record NullNode : IStatementNode
 {
     public static NullNode Statement { get; } = new();
@@ -440,7 +451,7 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         tokens = shifted;        
         var returnType = fileContent.Slice(keyword.Index, keyword.Length);
         
-        return new FunctionNode(GetString(id, fileContent), returnType.ToString(), body);
+        return new FunctionNode(GetString(id, fileContent), returnType.ToString(), new BlockNode(body));
     }
 
     private static IBlockItem? ParseBlockItem(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
@@ -522,6 +533,9 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         if (ParseIf(ref tokens, fileContent) is { } @if)
             return WrapStatement(@if, labels);
         
+        if (ParseCompound(ref tokens, fileContent) is { } compound)
+            return WrapStatement(compound, labels);
+        
         if (CheckTypeAndConsume(tokens, TokenType.Semicolon, out tokens))
             return WrapStatement(NullNode.Statement, labels);
         
@@ -543,6 +557,23 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             return labels.Aggregate(
                 new LabelNode(last, statement), (acc, label) => new LabelNode(label, acc));
         }
+    }
+
+    private static CompoundNode? ParseCompound(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckTypeAndConsume(tokens, TokenType.OpenBrace, out tokens))
+            return null;
+        
+        List<IBlockItem> body = [];
+        while (!CheckType(tokens, TokenType.CloseBrace))
+        {
+            if (ParseBlockItem(ref tokens, fileContent) is not { } item)
+                break;
+            
+            body.Add(item);
+        }                   
+        AssertTypeAndConsume(tokens, TokenType.CloseBrace, fileContent.Span, out tokens);
+        return new CompoundNode(new BlockNode(body));
     }
 
     private static GotoNode? ParseGoto(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)

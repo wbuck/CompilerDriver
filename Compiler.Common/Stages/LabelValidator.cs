@@ -28,14 +28,19 @@ public class LabelValidator
     private void ValidateFunction(FunctionNode function)
     {
         Clear();
-        foreach (var statement in function.Body.OfType<IStatementNode>())
-            VisitStatement(statement);
+        VisitBlock(function.Body);
 
         foreach (var label in _gotos)
         {
             if (!_labels.Contains(label))
                 throw new FormatException($"Label '{label}' used but not defined");
         }       
+    }
+
+    private void VisitBlock(BlockNode block)
+    {
+        foreach (var statement in block.Items.OfType<IStatementNode>())
+            VisitStatement(statement);
     }
 
     private void VisitStatement(IStatementNode? statement)
@@ -50,6 +55,9 @@ public class LabelValidator
                 break;
             case LabelNode node:
                 VisitLabel(node);
+                break;
+            case CompoundNode node:
+                VisitBlock(node.Block);
                 break;
             default:
                 return;

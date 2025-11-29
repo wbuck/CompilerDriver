@@ -12,27 +12,32 @@ public class EmitterTests(ITestOutputHelper output)
 {    
     [Theory]
     [ClassData(typeof(BinaryOperatorData))]
-    public void EmitBinaryOperatorShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    public void BinaryOperators(string fileContent, string[] expected)
         => Assert.Equivalent(expected, GetResult(fileContent.AsMemory(), expected), strict: true);
 
     [Theory]
     [ClassData(typeof(UnaryOperatorData))]
-    public void EmitUnaryOperatorShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    public void UnaryOperators(string fileContent, string[] expected)
         => Assert.Equivalent(expected, GetResult(fileContent.AsMemory(), expected), strict: true);
 
     [Theory]
     [ClassData(typeof(BitwiseOperatorData))]
-    public void EmitBitwiseOperatorShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    public void BitwiseOperators(string fileContent, string[] expected)
         => Assert.Equivalent(expected, GetResult(fileContent.AsMemory(), expected), strict: true);
     
     [Theory]
     [ClassData(typeof(LogicalAndRelationalData))]
-    public void EmitLogicalAndRelationalOperatorsShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    public void LogicalAndRelationalOperators(string fileContent, string[] expected)
         => Assert.Equivalent(expected, GetResult(fileContent.AsMemory(), expected), strict: true);
     
     [Theory]
     [ClassData(typeof(LocalVariableData))]
-    public void EmitLocalVariableDaasShouldSuccessfullyConvertProgramToAssembly(string fileContent, string[] expected)
+    public void LocalVariables(string fileContent, string[] expected)
+        => Assert.Equivalent(expected, GetResult(fileContent.AsMemory(), expected), strict: true);    
+    
+    [Theory]
+    [ClassData(typeof(CompoundStatementData))]
+    public void CompoundStatements(string fileContent, string[] expected)
         => Assert.Equivalent(expected, GetResult(fileContent.AsMemory(), expected), strict: true);
     
     private List<string> GetResult(ReadOnlyMemory<char> fileContent, string[] expected)
@@ -48,29 +53,31 @@ public class EmitterTests(ITestOutputHelper output)
         output.WriteLine(string.Empty);
         output.WriteLine("Actual Result:");
         
-        foreach (var (instruction, index) in actual.Select((i, index) => (i, index)))
-        {            
-            if (expected.Length > index && !expected[index].Equals(instruction))
-            {
-                output.WriteLine("\e[0;31m=====MISMATCH=====");
-                output.WriteLine($"ACTUAL: {instruction}");
-                output.WriteLine($"EXPECTED: {expected[index]}");
-                output.WriteLine("==================\e[0;37m");
-                continue;
-            }
-            if (expected.Length <= index)
-            {
-                output.WriteLine($"\e[0;31mEXTRA: {instruction}\e[0;37m");
-                continue;           
-            }
-            output.WriteLine(instruction);
-        }
-        if (expected.Length > actual.Count)
-        {
-            expected.Skip(actual.Count)
-                .ToList()
-                .ForEach(i => output.WriteLine($"\e[0;31mMISSING: {i}\e[0;37m"));           
-        }       
+        actual.ForEach(output.WriteLine);
+        
+        // foreach (var (instruction, index) in actual.Select((i, index) => (i, index)))
+        // {            
+        //     if (expected.Length > index && !expected[index].Equals(instruction))
+        //     {
+        //         output.WriteLine("\e[0;31m=====MISMATCH=====");
+        //         output.WriteLine($"ACTUAL: {instruction}");
+        //         output.WriteLine($"EXPECTED: {expected[index]}");
+        //         output.WriteLine("==================\e[0;37m");
+        //         continue;
+        //     }
+        //     if (expected.Length <= index)
+        //     {
+        //         output.WriteLine($"\e[0;31mEXTRA: {instruction}\e[0;37m");
+        //         continue;           
+        //     }
+        //     output.WriteLine(instruction);
+        // }
+        // if (expected.Length > actual.Count)
+        // {
+        //     expected.Skip(actual.Count)
+        //         .ToList()
+        //         .ForEach(i => output.WriteLine($"\e[0;31mMISSING: {i}\e[0;37m"));           
+        // }       
         return actual;
     }
     

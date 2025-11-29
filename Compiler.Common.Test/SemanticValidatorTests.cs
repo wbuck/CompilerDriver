@@ -29,12 +29,17 @@ public class SemanticValidatorTests(ITestOutputHelper output)
     
     [Theory]
     [ClassData(typeof(LocalVariableData))]
-    public void ParsingBinaryOperationShouldSuccessfullyConvertTokensInToAst(string fileContent, ProgramNode expected)
+    public void LocalVariables(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(CompoundStatementData))]
+    public void CompoundStatements(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
     
     [Theory]
     [ClassData(typeof(InvalidSemanticData))]
-    public void ParseWithInvalidSemanticDataShouldFailWithExpectedMessage(string fileContent, string message)
+    public void InvalidSemantics(string fileContent, string message)
         => InvalidCheck(fileContent, message);
     
     private static void InvalidCheck(string fileContent, string message)

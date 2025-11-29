@@ -13,27 +13,27 @@ public class AssemblyTests(ITestOutputHelper output)
     
     [Theory]
     [ClassData(typeof(UnaryOperatorData))]
-    public void VisitUnaryOperationsShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
+    public void UnaryOperators(string fileContent, Program expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     [Theory]
     [ClassData(typeof(BinaryOperatorData))]
-    public void VisitBinaryOperationsShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
+    public void BinaryOperators(string fileContent, Program expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(BitwiseOperatorData))]
-    public void VisitBitwiseOperationsShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
+    public void BitwiseOperators(string fileContent, Program expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(LogicalAndRelationalData))]
-    public void VisitLogicalAndRelationalOperatorsShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
+    public void LogicalAndRelationalOperators(string fileContent, Program expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
     [ClassData(typeof(LocalVariableData))]
-    public void VisitLocalVariableDataShouldSuccessfullyConvertTackyIntoAssembly(string fileContent, Program expected)
+    public void LocalVariables(string fileContent, Program expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     private Program GetResult(string fileContent, Program expectedResult)

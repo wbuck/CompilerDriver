@@ -250,25 +250,26 @@ public class TackyVisitor
 
     private TackyFunction VisitFunction(FunctionNode function)
     {
-        List<ITackyInstruction> instructions = [];
-        VariableFactory factory = new();
-        foreach (var item in function.Body)
-        {
-            switch (item)
-            {
-                case DeclarationNode node:
-                    VisitDeclaration(node, instructions, factory);
-                    break;
-                case IStatementNode statement:
-                    VisitStatement(statement, instructions, factory);
-                    break;
-                default:
-                    throw new UnreachableException($"Unknown block item type: {item.Tag.ToStringFast()}");
-            }
-        }
-        
+        var instructions = VisitBlock(function.Body, [], new VariableFactory());        
         instructions.Add(new TackyReturn(new TackyConstant<int>(0)));
         return new TackyFunction(function.Name, instructions);
+    }
+
+    private List<ITackyInstruction> VisitBlock(
+        BlockNode block, 
+        List<ITackyInstruction> instructions,
+        VariableFactory factory)
+    {
+        foreach (var item in block.Items)
+        {
+            _ = item switch
+            {
+                DeclarationNode node => VisitDeclaration(node, instructions, factory),
+                IStatementNode node => VisitStatement(node, instructions, factory),
+                _ => throw new UnreachableException($"Unknown block item type: {item.Tag.ToStringFast()}")
+            };
+        }
+        return instructions;
     }
 
     private List<ITackyInstruction> VisitDeclaration(
@@ -302,6 +303,8 @@ public class TackyVisitor
                 return VisitLabel(label, instructions, factory);
             case GotoNode @goto:
                 return VisitGoto(@goto, instructions);
+            case CompoundNode node:
+                return VisitBlock(node.Block, instructions, factory);
             default:
                 throw new UnreachableException($"Unknown statement type: {statement.Tag.ToStringFast()}");
         }

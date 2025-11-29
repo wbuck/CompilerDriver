@@ -7,6 +7,40 @@ public class InvalidParseData : TheoryData<string, string>
     {
         Add("""
             int main(void) {
+                int a;
+                return 1 ? { a = 2 } : a = 4;
+            }
+            """,
+            "Expected expression but found '{'");
+        Add("""
+            int main(void) {
+                int a = 4;
+                {
+                    a = 5;
+                    return a
+                }
+            }
+            """,
+            "Expected ';' but found '}'");
+        Add("""
+            int main(void) {
+                if(0){
+                    return 1;
+                return 2;
+            }
+            """,
+            "Missing '}'");
+        Add("""
+            int main(void) {
+                if(0){
+                    return 1;
+                }}
+                return 2;
+            }
+            """,
+            "Unexpected token: return");
+        Add("""
+            int main(void) {
                 int a = 0;
                 if (1)
                     return 1;

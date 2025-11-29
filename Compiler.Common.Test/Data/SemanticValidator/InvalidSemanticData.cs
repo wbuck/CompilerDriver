@@ -3,7 +3,59 @@ namespace Compiler.Common.Test.Data.SemanticValidator;
 public class InvalidSemanticData : TheoryData<string, string>
 {
     public InvalidSemanticData()
-    {
+    {                
+        Add
+        (
+            """
+            int main(void) {
+                int a;
+                {
+                    b = 10;
+                }
+                int b;
+                return b;
+            }
+            """,
+            "Undeclared variable: b"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                {
+                    int a = 2;
+                }
+                return a;
+            }
+            """,
+            "Undeclared variable: a"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                {
+                    int a;
+                    int a;
+                }
+            }            
+            """,
+            "Duplicate variable declaration: a"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 3;
+                {
+                    a = 5;
+                }
+                int a = 2;
+                return a;
+            }
+            """,
+            "Duplicate variable declaration: a"
+        );
         Add
         (
             """
@@ -414,6 +466,34 @@ public class InvalidSemanticData : TheoryData<string, string>
             }
             """,
             "Duplicate variable declaration: a"
+        );
+        Add
+        (
+            """
+            int main(void) {
+            label1:;
+                int a = 10;
+            label2:;
+                int a = 11;
+                return 1;
+            }
+            """,
+            "Duplicate variable declaration: a"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int x = 0;
+                if (x != 0) {
+                    return_y:
+                    return y;
+                }
+                int y = 4;
+                goto return_y;
+            }
+            """,
+            "Undeclared variable: y"
         );
     }
 }

@@ -15,27 +15,27 @@ public class LexerTests(ITestOutputHelper output)
     
     [Theory]
     [ClassData(typeof(BitwiseOperatorData))]
-    public void ShouldSuccessfullyHandleBitwiseOperatorsData(string fileContent, List<ExpectedToken> expected)
+    public void BitwiseOperators(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent)); 
     
     [Theory]
     [ClassData(typeof(LogicalAndRelationalData))]
-    public void ShouldSuccessfullyHandleLogicalAndRelationalOperatorsData(string fileContent, List<ExpectedToken> expected)
+    public void LogicalAndRelationalOperators(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent));
     
     [Theory]
     [ClassData(typeof(LocalVariableData))]
-    public void ShouldSuccessfullyHandleLocalVariableData(string fileContent, List<ExpectedToken> expected)
+    public void LocalVariables(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent)); 
     
     [Theory]
     [ClassData(typeof(CompoundOperatorData))]
-    public void ShouldSuccessfullyHandleCompoundOperators(string fileContent, List<ExpectedToken> expected)
+    public void CompoundOperators(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent)); 
     
     [Theory]
     [ClassData(typeof(IfStatementsAndConditionalExpressionsData))]
-    public void ShouldSuccessfullyHandleIfStatementsAndConditionalExpressions(string fileContent, List<ExpectedToken> expected)
+    public void IfStatementsAndConditionalExpressions(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent)); 
     
     private static void Validate(string fileContent, List<ExpectedToken> expected, List<IToken> actual)
