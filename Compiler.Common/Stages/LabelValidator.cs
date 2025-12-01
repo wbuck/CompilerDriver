@@ -59,9 +59,45 @@ public class LabelValidator
             case CompoundNode node:
                 VisitBlock(node.Block);
                 break;
+            case WhileNode node:
+                ValidateWhile(node);
+                break;
+            case DoWhileNode node:
+                ValidateDoWhile(node);
+                break;
+            case ForNode node:
+                ValidateFor(node);
+                break;
+            case BreakNode node:
+                ValidateBreakLabel(node);
+                break;
+            case ContinueNode node:
+                ValidateContinueLabel(node);
+                break;
             default:
                 return;
         }
+    }
+    
+    private void ValidateFor(ForNode node)
+        => VisitStatement(node.Body);
+    
+    private void ValidateDoWhile(DoWhileNode node)
+        => VisitStatement(node.Body);
+
+    private void ValidateWhile(WhileNode node)
+        => VisitStatement(node.Body);
+    
+    private static void ValidateContinueLabel(ContinueNode node)
+    {
+        if (node is { Label: null })
+            throw new FormatException("continue statement not within a loop");
+    }
+
+    private static void ValidateBreakLabel(BreakNode node)
+    {
+        if (node is { Label: null })
+            throw new FormatException("break statement not within loop or switch");
     }
     
     private void VisitLabel(LabelNode node)

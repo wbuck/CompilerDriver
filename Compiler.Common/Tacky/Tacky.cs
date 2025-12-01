@@ -1,8 +1,10 @@
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Compiler.Common.Ast;
 using Compiler.Common.Generation;
+using Compiler.Common.Helpers;
 using NetEscapades.EnumGenerators;
 
 namespace Compiler.Common.Tacky;
@@ -288,26 +290,163 @@ public class TackyVisitor
     {
         switch (statement)
         {
-            case ReturnNode ret:
-                return VisitReturn(ret, instructions, factory);
-            case IfNode @if:
-                return VisitIf(@if, instructions, factory);
-            case ExpressionNode expr:
+            case ReturnNode node:
+                return VisitReturn(node, instructions, factory);
+            case IfNode node:
+                return VisitIf(node, instructions, factory);
+            case ExpressionNode node:
                 // We don't care about the result of the expression statement
                 // in this case.
-                _ = VisitExpression(expr.Expression, instructions, factory);
+                _ = VisitExpression(node.Expression, instructions, factory);
                 return instructions;
             case NullNode:
                 return instructions;
-            case LabelNode label:
-                return VisitLabel(label, instructions, factory);
-            case GotoNode @goto:
-                return VisitGoto(@goto, instructions);
-            case CompoundNode node:
-                return VisitBlock(node.Block, instructions, factory);
+            case LabelNode node:
+                return VisitLabel(node, instructions, factory);
+            case GotoNode node:
+                return VisitGoto(node, instructions);
+            case CompoundNode { Block: { } block }:
+                return VisitBlock(block, instructions, factory);
+            case BreakNode node:
+                return VisitBreak(node, instructions);
+            case ContinueNode node:
+                return VisitContinue(node, instructions);
+            case WhileNode node:
+                return VisitWhile(node, instructions, factory);
+            case DoWhileNode node:
+                return VisitDoWhile(node, instructions, factory);
+            case ForNode node:
+                return VisitFor(node, instructions, factory);
             default:
                 throw new UnreachableException($"Unknown statement type: {statement.Tag.ToStringFast()}");
         }
+    }
+    
+    [Pure]
+    private static string GetBreakLabel(string label) 
+        => $".break{label}";
+    
+    [Pure]
+    private static string GetContinueLabel(string label)
+        => $".continue{label}";
+    
+    [Pure]
+    private static string BeginLabel(string label)
+        => $".begin{label}";
+
+    private static List<ITackyInstruction> VisitBreak(BreakNode node, List<ITackyInstruction> instructions)
+    {
+        Debug.Assert(node.Label is not null);
+        instructions.Add(new TackyJump(GetBreakLabel(node.Label!)));
+        return instructions;
+    }
+    
+    private static List<ITackyInstruction> VisitContinue(ContinueNode node, List<ITackyInstruction> instructions)
+    {
+        Debug.Assert(node.Label is not null);
+        instructions.Add(new TackyJump(GetContinueLabel(node.Label!)));
+        return instructions;
+    }
+
+    private List<ITackyInstruction> VisitForInit(
+        IForLoopInitializer? init, 
+        List<ITackyInstruction> instructions,
+        VariableFactory factory)
+    {
+        switch (init)
+        {
+            case DeclarationNode declaration:
+                return VisitDeclaration(declaration, instructions, factory);
+            case IExpressionNode expression:
+                // We can ignore the return value here as it's not used in the
+                // for loop initializer.
+                VisitExpression(expression, instructions, factory);
+                return instructions;
+            case null:
+                return instructions;
+            default:
+                throw new UnreachableException($"Unknown init type: {init.GetType().Name}");
+        }
+    }
+    
+    private List<ITackyInstruction> VisitFor(
+        ForNode node, 
+        List<ITackyInstruction> instructions,
+        VariableFactory factory)
+    {
+        Debug.Assert(node.Label is not null);  
+        
+        var continueLabel = GetContinueLabel(node.Label!);
+        var breakLabel = GetBreakLabel(node.Label);
+        var beginLabel = BeginLabel(node.Label);
+        
+        VisitForInit(node.Initializer, instructions, factory);
+        instructions.Add(new TackyLabel(beginLabel));
+
+        if (node is { Condition: { } condition })
+        {
+            var result = VisitExpression(condition, instructions, factory);
+            instructions.Add(new TackyJumpIfZero(result, breakLabel));
+        }
+        
+        VisitStatement(node.Body, instructions, factory);
+        instructions.Add(new TackyLabel(continueLabel));
+
+        if (node is { Post: { } post })
+        {
+            // We can ignore the return value here as it's not used
+            // in the for loop post expression.
+            VisitExpression(post, instructions, factory);            
+        }
+        instructions.Add(new TackyJump(beginLabel));
+        instructions.Add(new TackyLabel(breakLabel));
+        
+        return instructions;
+    }
+    
+    private List<ITackyInstruction> VisitDoWhile(
+        DoWhileNode node, 
+        List<ITackyInstruction> instructions,
+        VariableFactory factory)
+    {
+        Debug.Assert(node.Label is not null);
+        
+        var continueLabel = GetContinueLabel(node.Label!);
+        var breakLabel = GetBreakLabel(node.Label);
+        var beginLabel = BeginLabel(node.Label);
+        
+        instructions.Add(new TackyLabel(beginLabel));
+        VisitStatement(node.Body, instructions, factory);        
+        instructions.Add(new TackyLabel(continueLabel));
+        
+        var condition = VisitExpression(node.Condition, instructions, factory);        
+        instructions.Add(new TackyJumpIfNotZero(condition, beginLabel));
+        
+        instructions.Add(new TackyLabel(breakLabel));
+        
+        return instructions;
+    }
+
+    private List<ITackyInstruction> VisitWhile(
+        WhileNode node, 
+        List<ITackyInstruction> instructions,
+        VariableFactory factory)
+    {
+        Debug.Assert(node.Label is not null);
+        var continueLabel = GetContinueLabel(node.Label!);
+        var breakLabel = GetBreakLabel(node.Label);
+        
+        instructions.Add(new TackyLabel(continueLabel));
+        
+        var condition = VisitExpression(node.Condition, instructions, factory);        
+        instructions.Add(new TackyJumpIfZero(condition,  breakLabel));
+
+        VisitStatement(node.Body, instructions, factory);
+        
+        instructions.Add(new TackyJump(continueLabel));
+        instructions.Add(new TackyLabel(breakLabel));
+        
+        return instructions;
     }
 
     private static List<ITackyInstruction> VisitGoto(GotoNode @goto, List<ITackyInstruction> instructions)

@@ -1,4 +1,4 @@
-namespace Compiler.Common.Tacky;
+namespace Compiler.Common.Helpers;
 
 public class LabelGenerator
 {

@@ -109,6 +109,9 @@ root.SetHandler(async (ctx) =>
             ctx.ExitCode = 1;
             return;
         }
+        
+        analyzed = LabelAnnotation.Annotate(analyzed);
+        
         if (!LabelValidator.TryValidate(analyzed))
         {
             ctx.ExitCode = 1;
@@ -219,14 +222,14 @@ namespace Compiler.Driver
 {
     internal record Result<T>(int Code, T? Value = default)
     {
-        private const int Success = 0;
+        private const int SUCCESS = 0;
     
         [MemberNotNullWhen(true, nameof(Value))]
-        public bool IsSuccess => Code == Success;
+        public bool IsSuccess => Code == SUCCESS;
         public T? Value { get; } = Value;
         public int Code { get; } = Code;
         public static implicit operator int(Result<T> result) => result.Code;
-        public static implicit operator bool(Result<T> result) => result.Code == Success;
+        public static implicit operator bool(Result<T> result) => result.Code == SUCCESS;
     }
 }
 

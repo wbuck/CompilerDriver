@@ -3,7 +3,29 @@ namespace Compiler.Common.Test.Data.SemanticValidator;
 public class InvalidSemanticData : TheoryData<string, string>
 {
     public InvalidSemanticData()
-    {                
+    {       
+        Add
+        (
+            """
+            int main(void) {
+                for (i = 0; i < 1; i = i + 1) {
+                    return 0;
+                }
+            }
+            """,
+            "Undeclared variable: i"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                do {
+                    int a = a + 1;
+                } while (a < 100);
+            }
+            """,
+            "Undeclared variable: a"
+        );
         Add
         (
             """

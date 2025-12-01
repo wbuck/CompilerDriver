@@ -7,6 +7,104 @@ public class InvalidParseData : TheoryData<string, string>
     {
         Add("""
             int main(void) {
+                while 1 {
+                    return 0;
+                }
+            }             
+            """,
+            "Expected '(' but found '1'");
+        Add("""
+            int main(void) {
+                while(int a) {
+                    2;
+                }
+            }                
+            """,
+            "Expected expression but found '('");
+        Add("""
+            int main(void) {
+                for (int i = 2; ))
+                    int a = 0;
+            }                 
+            """,
+            "Expected ';' but found ')'");
+        Add("""
+            int main(void) {
+                for (int i = 0; i < 10)
+                    ;
+                return 0;
+            }                    
+            """,
+            "Expected ';' but found ')'");
+        Add("""
+            int main(void) {
+                for (2 + 2 == 4)
+                    ;
+                return 0;
+            }            
+            """,
+            "Expected ';' but found ')'");
+        Add("""
+            int main(void) {
+                for (int i = 0;)
+                    ;
+                return 0;
+            }
+            """,
+            "Expected ';' but found ')'");
+        Add("""
+            int main(void) {
+                for (; int i = 0; i = i + 1)
+                    ;
+                return 0;
+            }
+            """,
+            "Expected ';' but found 'int'");
+        Add("""
+            int main(void) {
+                for (int i = 0; i < 10; i = i + 1; )
+                    ;
+                return 0;
+            }
+            """,
+            "Expected ')' but found ';'");
+        Add("""
+            int main(void) {
+                do
+                    1;
+                while ();
+                return 0;
+            }
+            """,
+            "Expected expression but found '('");
+        Add("""
+            int main(void) {
+                do {
+                    4;
+                } while(1)
+                return 0;
+            }
+            """,
+            "Expected ';' but found 'return'");
+        Add("""
+            int main(void) {
+                do {
+                    int a;
+                }; while(1);
+                return 0;
+            }
+            """,
+            "Expected 'while' but found ';'");
+        Add("""
+            int main(void) {
+                while (1)
+                    int i = 0;
+                return 0;
+            }
+            """,
+            "Expected statement but found 'int'");
+        Add("""
+            int main(void) {
                 int a;
                 return 1 ? { a = 2 } : a = 4;
             }

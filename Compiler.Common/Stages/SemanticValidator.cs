@@ -31,22 +31,22 @@ public class SemanticValidator
     private FunctionNode ValidateFunction(FunctionNode function)
     => function with { Body = ResolveBlock(function.Body, [], 0) };
 
-    private BlockNode ResolveBlock(BlockNode block, Dictionary<Original, Mangled> variables, int depth)
+    private BlockNode ResolveBlock(BlockNode block, Dictionary<Original, Mangled> variables, int scope)
         => new([
             ..block.Items.Select(i => i switch
             {
-                DeclarationNode declaration => ResolveDeclaration(declaration, variables, depth),
-                IStatementNode statement => ResolveStatement(statement, variables, depth),
+                DeclarationNode declaration => (IBlockItem)ResolveDeclaration(declaration, variables, scope),
+                IStatementNode statement => ResolveStatement(statement, variables, scope),
                 _ => throw new UnreachableException($"Unknown block item: {i.Tag.ToStringFast()}")
             })
         ]);
 
-    private IBlockItem ResolveDeclaration(
+    private DeclarationNode ResolveDeclaration(
         DeclarationNode declaration, 
         Dictionary<Original, Mangled> variables,
-        int depth)
+        int scope)
     {
-        var id = new Original(declaration.Identifier, depth);
+        var id = new Original(declaration.Identifier, scope);
         if (variables.TryGetValue(id, out var mangled) && mangled.FromCurrentBlock)
             throw new FormatException($"Duplicate variable declaration: {declaration.Identifier}");
         
@@ -57,42 +57,42 @@ public class SemanticValidator
         );
         
         var initializer = declaration.Initializer is { } init
-            ? ResolveExpression(init, variables, depth)
+            ? ResolveExpression(init, variables, scope)
             : null;
         
         return new DeclarationNode(name, initializer);
     }
 
-    private IExpressionNode ResolveExpression(IExpressionNode expression, Dictionary<Original, Mangled> variables, int depth)
+    private IExpressionNode ResolveExpression(IExpressionNode expression, Dictionary<Original, Mangled> variables, int scope)
         => expression switch
         {
-            IAssignmentNode assignment => ResolveAssignment(assignment, variables, depth),
-            UnaryNode unary => ResolveUnary(unary, variables, depth),
-            BinaryNode binary => ResolveBinary(binary, variables, depth),
-            BitwiseNode bitwise => ResolveBitwise(bitwise, variables, depth),
-            VariableNode variable => ResolveVariable(variable, variables, depth),
-            ConditionalNode conditional => ResolveConditional(conditional, variables, depth),
+            IAssignmentNode assignment => ResolveAssignment(assignment, variables, scope),
+            UnaryNode unary => ResolveUnary(unary, variables, scope),
+            BinaryNode binary => ResolveBinary(binary, variables, scope),
+            BitwiseNode bitwise => ResolveBitwise(bitwise, variables, scope),
+            VariableNode variable => ResolveVariable(variable, variables, scope),
+            ConditionalNode conditional => ResolveConditional(conditional, variables, scope),
             IConstantNode constant => constant,            
             _ => throw new UnreachableException($"Unknown expression type: {expression.Tag.ToStringFast()}")
         };
 
-    private ConditionalNode ResolveConditional(ConditionalNode conditional, Dictionary<Original, Mangled> variables, int depth) 
+    private ConditionalNode ResolveConditional(ConditionalNode conditional, Dictionary<Original, Mangled> variables, int scope) 
         => new
         (
-            ResolveExpression(conditional.Condition, variables, depth), 
-            ResolveExpression(conditional.True, variables, depth), 
-            ResolveExpression(conditional.False, variables, depth)
+            ResolveExpression(conditional.Condition, variables, scope), 
+            ResolveExpression(conditional.True, variables, scope), 
+            ResolveExpression(conditional.False, variables, scope)
         );
 
     private static VariableNode ResolveVariable(
         VariableNode variable, 
         Dictionary<Original, Mangled> variables,
-        int depth)
+        int scope)
     {
-        while (depth >= 0)
+        while (scope >= 0)
         {
             // If needed check outer scope(s) to find the matching variable.
-            if (variables.TryGetValue(new Original(variable.Identifier, depth--), out var mangled))
+            if (variables.TryGetValue(new Original(variable.Identifier, scope--), out var mangled))
                 return new VariableNode(mangled);
         }
         throw new FormatException($"Undeclared variable: {variable.Identifier}");
@@ -101,23 +101,23 @@ public class SemanticValidator
     private string MangleIdentifier(string identifier)
         => $"{identifier}.{_variableCount++}";
 
-    private BitwiseNode ResolveBitwise(BitwiseNode bitwise, Dictionary<Original, Mangled> variables, int depth)
+    private BitwiseNode ResolveBitwise(BitwiseNode bitwise, Dictionary<Original, Mangled> variables, int scope)
         => new
            (
                bitwise.Operator, 
-               ResolveExpression(bitwise.Lhs, variables, depth), 
-               ResolveExpression(bitwise.Rhs,  variables, depth)
+               ResolveExpression(bitwise.Lhs, variables, scope), 
+               ResolveExpression(bitwise.Rhs,  variables, scope)
            );
     
-    private BinaryNode ResolveBinary(BinaryNode binary,  Dictionary<Original, Mangled> variables, int depth)
+    private BinaryNode ResolveBinary(BinaryNode binary,  Dictionary<Original, Mangled> variables, int scope)
         => new
            (
                binary.Operator, 
-               ResolveExpression(binary.Lhs, variables, depth), 
-               ResolveExpression(binary.Rhs, variables, depth)
+               ResolveExpression(binary.Lhs, variables, scope), 
+               ResolveExpression(binary.Rhs, variables, scope)
            );
 
-    private UnaryNode ResolveUnary(UnaryNode unary,  Dictionary<Original, Mangled> variables, int depth)
+    private UnaryNode ResolveUnary(UnaryNode unary,  Dictionary<Original, Mangled> variables, int scope)
     {
         if (IsIncrement(unary.Operator) && unary.Expression is not VariableNode)        
             throw new FormatException("An lvalue is required as increment operand");
@@ -125,7 +125,7 @@ public class SemanticValidator
         if (IsDecrement(unary.Operator) && unary.Expression is not VariableNode)        
             throw new FormatException("An lvalue is required as decrement operand");
         
-        return unary with { Expression = ResolveExpression(unary.Expression, variables, depth) };
+        return unary with { Expression = ResolveExpression(unary.Expression, variables, scope) };
 
         static bool IsIncrement(IUnaryOperatorNode op) =>
             op is PrefixIncrementNode or PostfixIncrementNode;
@@ -134,55 +134,109 @@ public class SemanticValidator
             op is PrefixDecrementNode or PostfixDecrementNode;
     }
 
-    private IAssignmentNode ResolveAssignment(IAssignmentNode assignment,  Dictionary<Original, Mangled> variables, int depth)
+    private IAssignmentNode ResolveAssignment(IAssignmentNode assignment,  Dictionary<Original, Mangled> variables, int scope)
     {
         if (assignment.Lhs is not VariableNode)
             throw new FormatException("Expression must be modifiable lvalue");
 
         return assignment switch
         {
-            AssignmentNode => new AssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            AdditionAssignmentNode => new AdditionAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            SubtractionAssignmentNode => new SubtractionAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            MultiplicationAssignmentNode => new MultiplicationAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            DivisionAssignmentNode => new DivisionAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            RemainderAssignmentNode => new RemainderAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            BitwiseAndAssignmentNode => new BitwiseAndAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            BitwiseOrAssignmentNode => new BitwiseOrAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            BitwiseXorAssignmentNode => new BitwiseXorAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            LeftShiftAssignmentNode => new LeftShiftAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
-            RightShiftAssignmentNode => new RightShiftAssignmentNode(ResolveExpression(assignment.Lhs, variables, depth), ResolveExpression(assignment.Rhs, variables, depth)),
+            AssignmentNode => new AssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            AdditionAssignmentNode => new AdditionAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            SubtractionAssignmentNode => new SubtractionAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            MultiplicationAssignmentNode => new MultiplicationAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            DivisionAssignmentNode => new DivisionAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            RemainderAssignmentNode => new RemainderAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            BitwiseAndAssignmentNode => new BitwiseAndAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            BitwiseOrAssignmentNode => new BitwiseOrAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            BitwiseXorAssignmentNode => new BitwiseXorAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            LeftShiftAssignmentNode => new LeftShiftAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
+            RightShiftAssignmentNode => new RightShiftAssignmentNode(ResolveExpression(assignment.Lhs, variables, scope), ResolveExpression(assignment.Rhs, variables, scope)),
             _ => throw new UnreachableException($"Unknown assignment type: {assignment.Tag.ToStringFast()}")
         };
     }
 
     [return: NotNullIfNotNull(nameof(statement))]
-    private IStatementNode? ResolveStatement(IStatementNode? statement, Dictionary<Original, Mangled> variables, int depth)
+    private IStatementNode? ResolveStatement(IStatementNode? statement, Dictionary<Original, Mangled> variables, int scope)
         => statement switch
         {
-            ReturnNode ret => new ReturnNode(ResolveExpression(ret.Expression, variables, depth)),
-            ExpressionNode exp => new ExpressionNode(ResolveExpression(exp.Expression, variables, depth)),
-            IfNode @if => new IfNode(
-                ResolveExpression(@if.Condition, variables, depth), 
-                ResolveStatement(@if.Then, variables, depth), 
-                ResolveStatement(@if.Else, variables, depth)),
-            LabelNode label => label with { Statement = ResolveStatement(label.Statement, variables, depth) },
-            CompoundNode compound => ResolveCompound(compound, variables, depth),
-            GotoNode @goto => @goto,
-            NullNode @null => @null,
+            ReturnNode node => ResolveReturn(node, variables, scope),
+            ExpressionNode node => ResolveExpressionStatement(node, variables, scope),
+            IfNode node => ResolveIf(node, variables, scope),
+            WhileNode node => ResolveWhile(node, variables, scope),
+            DoWhileNode node => ResolveDoWhile(node, variables, scope),
+            ForNode node => ResolveFor(node, Duplicate(variables), scope + 1),
+            LabelNode node => ResolveLabel(node, variables, scope),
+            CompoundNode node => ResolveCompound(node, Duplicate(variables), scope + 1),
+            GotoNode node => node,
+            NullNode node => node,
+            BreakNode node => node,
+            ContinueNode node => node,
             null => null,
             _ => throw new UnreachableException($"Unknow statement type: {statement.Tag.ToStringFast()}")
         };
+
+    private LabelNode ResolveLabel(LabelNode node, Dictionary<Original, Mangled> variables, int scope)
+        => node with { Statement = ResolveStatement(node.Statement, variables, scope) };
+
+    private ReturnNode ResolveReturn(ReturnNode node, Dictionary<Original, Mangled> variables, int scope) 
+        => new(ResolveExpression(node.Expression, variables, scope));
+
+    private ExpressionNode ResolveExpressionStatement(
+        ExpressionNode node, Dictionary<Original, Mangled> variables, int scope) 
+            => new(ResolveExpression(node.Expression, variables, scope));
+
+    private ForNode ResolveFor(ForNode node, Dictionary<Original, Mangled> variables, int scope)
+    {
+        IForLoopInitializer? init = node.Initializer switch
+        {
+            DeclarationNode n => ResolveDeclaration(n, variables, scope),
+            IExpressionNode n => ResolveExpression(n, variables, scope),
+            _ => null
+        };
+
+        var condition = node.Condition is not null
+            ? ResolveExpression(node.Condition, variables, scope)
+            : null;
+
+        var post = node.Post is not null
+            ? ResolveExpression(node.Post, variables, scope)
+            : null;
+        
+        var body = ResolveStatement(node.Body, variables, scope);
+        
+        return new ForNode(init, condition, post, body);
+    }
+
+    private DoWhileNode ResolveDoWhile(DoWhileNode node, Dictionary<Original, Mangled> variables, int scope)
+        => new
+        (
+            ResolveStatement(node.Body, variables, scope),
+            ResolveExpression(node.Condition, variables, scope)
+        );
     
-    private CompoundNode ResolveCompound(CompoundNode compound, Dictionary<Original, Mangled> variables, int depth)
-        => new(ResolveBlock(compound.Block, Duplicate(variables), depth + 1));
+    private WhileNode ResolveWhile(WhileNode node, Dictionary<Original, Mangled> variables, int scope)
+        => new
+        (
+            ResolveExpression(node.Condition, variables, scope),
+            ResolveStatement(node.Body, variables, scope)
+        );
+
+    private IfNode ResolveIf(IfNode node, Dictionary<Original, Mangled> variables, int scope)
+        => new
+        (
+            ResolveExpression(node.Condition, variables, scope),
+            ResolveStatement(node.Then, variables, scope),
+            ResolveStatement(node.Else, variables, scope)
+        );
+    
+    private CompoundNode ResolveCompound(CompoundNode compound, Dictionary<Original, Mangled> variables, int scope)
+        => new(ResolveBlock(compound.Block, variables, scope));
 
     // Create a copy of the variables lookup table for
-    // each new block scope that's entered.
+    // each new scope that's entered.
     private static Dictionary<Original, Mangled> Duplicate(in Dictionary<Original, Mangled> variables)
         => variables.ToDictionary(kvp => kvp.Key, kvp => kvp.Value with { FromCurrentBlock = false });
-
-    
     
     private static void PrintError(ReadOnlySpan<char> error)
     {
@@ -191,7 +245,7 @@ public class SemanticValidator
         Console.ResetColor();
     }
 
-    private readonly record struct Original(string Name, int Depth);
+    private readonly record struct Original(string Name, int Scope);
 
     private readonly record struct Mangled(string Name, bool FromCurrentBlock)
     {

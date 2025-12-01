@@ -64,7 +64,12 @@ public enum AstNodeTag
     Goto,
     Label,
     Block,
-    Compound
+    Compound,
+    Break,
+    Continue,
+    While,
+    DoWhile,
+    For
 }
 
 public interface IAstNodeTag
@@ -73,6 +78,20 @@ public interface IAstNodeTag
 }
 
 public interface IBlockItem : IAstNodeTag;
+public interface IStatementNode : IBlockItem;
+public interface IForLoopInitializer: IAstNodeTag;
+public interface IDeclarationNode : IBlockItem, IForLoopInitializer;
+public interface IExpressionNode : IForLoopInitializer;
+public interface IConstantNode : IExpressionNode;
+public interface IAssignmentNode : IExpressionNode
+{
+    IExpressionNode Lhs { get; }
+    IExpressionNode Rhs { get; }
+    bool IsCompound { get; }
+}
+public interface IBitwiseOperatorNode : IAstNodeTag;
+public interface IBinaryOperatorNode : IAstNodeTag;
+
 
 public sealed record BlockNode(List<IBlockItem> Items) : IAstNodeTag
 {
@@ -83,14 +102,38 @@ public sealed record FunctionNode(string Name, string ReturnType, BlockNode Body
     public AstNodeTag Tag => AstNodeTag.Function;
 }
 
-public interface IDeclarationNode : IBlockItem;
 public sealed record DeclarationNode(string Identifier, IExpressionNode? Initializer = null) : IDeclarationNode
 {
     public AstNodeTag Tag => AstNodeTag.Declaration;
 }
 
-public interface IStatementNode : IBlockItem;
+public sealed record BreakNode(string? Label = null) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.Break;
+}
+public sealed record ContinueNode(string? Label = null) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.Continue;
+}
+public sealed record WhileNode(IExpressionNode Condition, IStatementNode Body, string? Label = null) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.While;
+}
+public sealed record DoWhileNode(IStatementNode Body, IExpressionNode Condition, string? Label = null) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.DoWhile;
+}
 
+public sealed record ForNode(
+    IForLoopInitializer? Initializer,
+    IExpressionNode? Condition, 
+    IExpressionNode? Post,
+    IStatementNode Body,    
+    string? Label = null
+) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.For;
+}
 public sealed record LabelNode(string Name, IStatementNode Statement) : IStatementNode
 {
     public AstNodeTag Tag => AstNodeTag.Label;
@@ -124,8 +167,6 @@ public sealed record NullNode : IStatementNode
     public AstNodeTag Tag => AstNodeTag.Null;
 }
 
-public interface IExpressionNode : IAstNodeTag;
-public interface IConstantNode : IExpressionNode;
 public sealed record ConstantNode<T>(T Value) : IConstantNode where T : INumber<T>
 {
     public AstNodeTag Tag => AstNodeTag.Constant;
@@ -148,12 +189,7 @@ public sealed record ConditionalNode(IExpressionNode Condition, IExpressionNode 
 {
     public AstNodeTag Tag => AstNodeTag.Conditional;
 }
-public interface IAssignmentNode : IExpressionNode
-{
-    IExpressionNode Lhs { get; }
-    IExpressionNode Rhs { get; }
-    bool IsCompound { get; }
-}
+
 public sealed record AssignmentNode(IExpressionNode Lhs, IExpressionNode Rhs) : IAssignmentNode
 {
     public AstNodeTag Tag => AstNodeTag.Assignment;
@@ -214,7 +250,6 @@ public sealed record VariableNode(string Identifier) : IExpressionNode
     public AstNodeTag Tag => AstNodeTag.Variable;
 }
 
-public interface IBitwiseOperatorNode : IAstNodeTag;
 public sealed record BitwiseAndNode : IBitwiseOperatorNode
 {
     public static BitwiseAndNode Operator { get; } = new();
@@ -289,7 +324,7 @@ public sealed record PostfixDecrementNode : IUnaryOperatorNode
     private PostfixDecrementNode() { }
     public AstNodeTag Tag => AstNodeTag.PostfixDecrement;
 }
-public interface IBinaryOperatorNode : IAstNodeTag;
+
 public sealed record AdditionNode : IBinaryOperatorNode
 {
     public static AdditionNode Operator { get; } = new();
@@ -536,6 +571,30 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         if (ParseCompound(ref tokens, fileContent) is { } compound)
             return WrapStatement(compound, labels);
         
+        if (ParseWhile(ref tokens, fileContent) is { } @while)
+            return WrapStatement(@while, labels);
+
+        if (ParseDoWhile(ref tokens, fileContent) is { } doWhile)
+        {
+            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+            return WrapStatement(doWhile, labels);            
+        }
+        
+        if (ParseFor(ref tokens, fileContent) is { } @for) 
+            return WrapStatement(@for, labels);
+
+        if (ParseBreak(ref tokens) is { } @break)
+        {
+            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+            return WrapStatement(@break, labels);
+        }
+
+        if (ParseContinue(ref tokens) is { } @continue)
+        {
+            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+            return WrapStatement(@continue, labels);
+        }
+        
         if (CheckTypeAndConsume(tokens, TokenType.Semicolon, out tokens))
             return WrapStatement(NullNode.Statement, labels);
         
@@ -558,6 +617,72 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
                 new LabelNode(last, statement), (acc, label) => new LabelNode(label, acc));
         }
     }
+
+    private static ForNode? ParseFor(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.For, out tokens))
+            return null;
+        
+        AssertTypeAndConsume(tokens, TokenType.OpenParenthesis, fileContent.Span, out tokens);
+
+        IForLoopInitializer? init = ParseDeclaration(ref tokens, fileContent);
+
+        if (init is null)
+        {
+            init = ParseExpression(ref tokens, fileContent);
+            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+        }
+     
+        var condition = ParseExpression(ref tokens, fileContent);
+        
+        AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+        
+        var incrementOrDecrement = ParseExpression(ref tokens, fileContent);
+        
+        AssertTypeAndConsume(tokens, TokenType.CloseParenthesis, fileContent.Span, out tokens);
+
+        return ParseStatement(ref tokens, fileContent) is not { } body
+            ? throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'")
+            : new ForNode(init, condition, incrementOrDecrement, body);
+    }
+
+    private static DoWhileNode? ParseDoWhile(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.Do, out tokens))
+            return null;
+
+        if (ParseStatement(ref tokens, fileContent) is not { } statement)
+            throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'"); 
+       
+        AssertKeywordAndConsume(tokens, Keyword.While, fileContent.Span, out tokens);
+        
+        return ParseParenthesizedExpression(ref tokens, fileContent) is not { } condition 
+            ? throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'") 
+            : new DoWhileNode(statement, condition);
+    }
+
+    private static WhileNode? ParseWhile(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.While, out tokens))
+            return null;           
+        
+        var condition = ParseRequiredParenthesizedExpression(ref tokens, fileContent);             
+
+        return ParseStatement(ref tokens, fileContent) is not { } statement 
+            ? throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'") 
+            : new WhileNode(condition, statement);
+    }
+
+    private static BreakNode? ParseBreak(ref Span<IToken> tokens) =>
+        CheckKeywordAndConsume(tokens, Keyword.Break, out tokens)
+            ? new BreakNode()
+            : null;
+    
+    private static ContinueNode? ParseContinue(ref Span<IToken> tokens) =>
+        CheckKeywordAndConsume(tokens, Keyword.Continue, out tokens)
+            ? new ContinueNode()
+            : null;
+    
 
     private static CompoundNode? ParseCompound(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
@@ -815,9 +940,6 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         if (!CheckType(tokens, TokenType.Identifier))
             return null;
         
-        // if (!Shift(tokens, out var shifted) || CheckType(shifted, TokenType.Colon))
-        //     return null;
-        
         var id = AssertTokenAndConsume<IdentifierToken>(ref tokens, TokenType.Identifier);
         return new VariableNode(GetString(id, fileContent));
     }
@@ -825,12 +947,33 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
 
     private static IExpressionNode? ParseParenthesizedExpression(ref Span<IToken> tokens,
         ReadOnlyMemory<char> fileContent)
-    {
-        if (!CheckTypeAndConsume(tokens, TokenType.OpenParenthesis, out tokens)) 
+    {        
+        if (!CheckType(tokens, TokenType.OpenParenthesis)) 
+            return null;
+
+        if (!Shift(tokens, out var shifted))
+            return null;
+
+        if (ParseExpression(ref shifted, fileContent) is not { } expression)
             return null;
         
-        var expression = ParseExpression(ref tokens, fileContent);
-        AssertTypeAndConsume(tokens, TokenType.CloseParenthesis, fileContent.Span, out tokens);
+        AssertTypeAndConsume(shifted, TokenType.CloseParenthesis, fileContent.Span, out shifted);
+        
+        tokens = shifted;
+        return expression;
+    }
+    
+    private static IExpressionNode ParseRequiredParenthesizedExpression(ref Span<IToken> tokens,
+        ReadOnlyMemory<char> fileContent)
+    {        
+        AssertTypeAndConsume(tokens, TokenType.OpenParenthesis, fileContent.Span, out var shifted);        
+
+        if (ParseExpression(ref shifted, fileContent) is not { } expression)
+            throw new  FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        
+        AssertTypeAndConsume(shifted, TokenType.CloseParenthesis, fileContent.Span, out shifted);
+        
+        tokens = shifted;
         return expression;
     }
     

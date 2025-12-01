@@ -35,7 +35,7 @@ public class ParserTests(ITestOutputHelper output)
     
     [Theory]
     [ClassData(typeof(BinaryOperatorData))]
-    public void BinaryOperatos(string fileContent, ProgramNode expected)
+    public void BinaryOperators(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
@@ -72,6 +72,11 @@ public class ParserTests(ITestOutputHelper output)
     [ClassData(typeof(CompoundStatementData))]
     public void CompoundStatements(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(LoopData))]
+    public void Loops(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     private static void InvalidCheck(string fileContent, string message)
     {        
@@ -91,15 +96,26 @@ public class ParserTests(ITestOutputHelper output)
         output.WriteLine("Input:");
         output.WriteLine(fileContent);
         output.WriteLine(string.Empty);
-        output.WriteLine("Actual Result:");
+        
+        output.WriteLine("Actual Result:");        
+        output.WriteLine(JsonSerializer.Serialize(actual, Options));
+        output.WriteLine(string.Empty);
+        
+        output.WriteLine("Expected Result:");        
+        output.WriteLine(JsonSerializer.Serialize(expected, Options));
+        output.WriteLine(string.Empty);
+        
+        /*
         var actualResult = JsonSerializer.Serialize(actual, Options)
             .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        
+
         var expectedResult = JsonSerializer.Serialize(expected, Options)
             .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        
+
+
+
         foreach (var (line, index) in actualResult.Select((i, index) => (i, index)))
-        {            
+        {
             if (expectedResult.Length > index && !expectedResult[index].Equals(line))
             {
                 output.WriteLine("\e[0;31m=====MISMATCH=====");
@@ -111,7 +127,7 @@ public class ParserTests(ITestOutputHelper output)
             if (expectedResult.Length <= index)
             {
                 output.WriteLine($"\e[0;31mEXTRA: {line}\e[0;37m");
-                continue;           
+                continue;
             }
             output.WriteLine(line);
         }
@@ -119,8 +135,9 @@ public class ParserTests(ITestOutputHelper output)
         {
             expectedResult.Skip(actualResult.Length)
                 .ToList()
-                .ForEach(i => output.WriteLine($"\e[0;31mMISSING: {i}\e[0;37m"));           
-        }         
+                .ForEach(i => output.WriteLine($"\e[0;31mMISSING: {i}\e[0;37m"));
+        }
+        */
         return actual;
     }
 

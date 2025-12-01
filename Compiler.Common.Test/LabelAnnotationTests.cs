@@ -4,14 +4,14 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Compiler.Common.Ast;
 using Compiler.Common.Stages;
-using Compiler.Common.Test.Data.SemanticValidator;
+using Compiler.Common.Test.Data.LabelAnnotation;
 using Compiler.Common.Tokens;
 using Xunit.Abstractions;
 using static Compiler.Common.Test.Data.Ast.AstTypeResolver;
 
 namespace Compiler.Common.Test;
 
-public class SemanticValidatorTests(ITestOutputHelper output)
+public class LabelAnnotationTests(ITestOutputHelper output)
 {
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -28,47 +28,32 @@ public class SemanticValidatorTests(ITestOutputHelper output)
     };
     
     [Theory]
-    [ClassData(typeof(LocalVariableData))]
-    public void LocalVariables(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
-    
-    [Theory]
-    [ClassData(typeof(CompoundStatementData))]
-    public void CompoundStatements(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
-    
-    [Theory]
     [ClassData(typeof(LoopData))]
     public void Loops(string fileContent, ProgramNode expected)
-        => Assert.Equivalent(expected, GetResult(fileContent), strict: true);
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
-    [Theory]
-    [ClassData(typeof(InvalidSemanticData))]
-    public void InvalidSemantics(string fileContent, string message)
-        => InvalidCheck(fileContent, message);
-    
-    private static void InvalidCheck(string fileContent, string message)
-    {        
-        var exception = Assert.Throws<FormatException>(() =>
-        {
-            var tokens = CollectionsMarshal.AsSpan(GetTokens(fileContent));
-            var validator = new SemanticValidator();
-            validator.Validate(ProgramNode.Parse(ref tokens, fileContent.AsMemory()));
-        });
-        Assert.Equal(message, exception.Message);
-    }
-    
-    private ProgramNode GetResult(string fileContent)
+    private ProgramNode GetResult(string fileContent, ProgramNode expected)
     {
         var tokens = CollectionsMarshal.AsSpan(GetTokens(fileContent));
+        var actual = ProgramNode.Parse(ref tokens, fileContent.AsMemory());
+
         var validator = new SemanticValidator();
-        var actual = validator.Validate(ProgramNode.Parse(ref tokens, fileContent.AsMemory()));
+        actual = validator.Validate(actual);
+        
+        actual = LabelAnnotation.Annotate(actual);
         
         output.WriteLine("Input:");
         output.WriteLine(fileContent);
         output.WriteLine(string.Empty);
-        output.WriteLine("Actual Result:");
-        output.WriteLine(JsonSerializer.Serialize(actual, Options));      
+        
+        output.WriteLine("Actual Result:");        
+        output.WriteLine(JsonSerializer.Serialize(actual, Options));
+        output.WriteLine(string.Empty);
+        
+        output.WriteLine("Expected Result:");        
+        output.WriteLine(JsonSerializer.Serialize(expected, Options));
+        output.WriteLine(string.Empty);
+        
         return actual;
     }
 

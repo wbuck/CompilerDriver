@@ -8,6 +8,44 @@ public class InvalidLabelData : TheoryData<string, string>
         (
             """
             int main(void) {
+                do {
+                lbl:
+                    return 1;
+                lbl:
+                    return 2;
+                } while (1);
+                return 0;
+            }
+            """,
+            "Duplicate label: lbl"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                {
+                    int a;
+                    continue;
+                }
+                return 0;
+            }
+            """,
+            "continue statement not within a loop"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                if (1)
+                    break;
+            }
+            """,
+            "break statement not within loop or switch"
+        );
+        Add
+        (
+            """
+            int main(void) {
                 int x = 0;
                 if (x) {
                     x = 5;

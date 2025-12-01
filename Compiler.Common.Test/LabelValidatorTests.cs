@@ -23,8 +23,13 @@ public class LabelValidatorTests
         var exception = Assert.Throws<FormatException>(() =>
         {
             var tokens = CollectionsMarshal.AsSpan(GetTokens(fileContent));
+            var node = ProgramNode.Parse(ref tokens, fileContent.AsMemory());
+            
+            node = new SemanticValidator().Validate(node);
+            node = LabelAnnotation.Annotate(node);
+            
             var validator = new LabelValidator();
-            validator.Validate(ProgramNode.Parse(ref tokens, fileContent.AsMemory()));
+            validator.Validate(node);
         });
         Assert.Equal(message, exception.Message);
     }

@@ -64,13 +64,19 @@ public class TackyTests(ITestOutputHelper output)
     [ClassData(typeof(CompoundStatementData))]
     public void CompoundStatements(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(LoopData))]
+    public void Loops(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
 
     private TackyProgram GetResult(string fileContent)
     {
         SemanticValidator validator = new();
-        var ast = validator.Validate(GetAst(fileContent.AsMemory()));
+        var node = validator.Validate(GetAst(fileContent.AsMemory()));
+        node = LabelAnnotation.Annotate(node);
         
-        var actual = new TackyVisitor().Visit(ast);
+        var actual = new TackyVisitor().Visit(node);
         output.WriteLine("Input:");
         output.WriteLine(fileContent);
         output.WriteLine(string.Empty);
