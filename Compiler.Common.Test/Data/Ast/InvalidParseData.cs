@@ -5,6 +5,105 @@ public class InvalidParseData : TheoryData<string, string>
 {
     public InvalidParseData()
     {
+        Add
+        (
+            """
+            int main(void) {
+                switch {
+                    return 0;
+                }
+            }
+            """,
+            "Expected '(' but found '{'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                switch 3 {
+                    case 3: return 0;
+                }
+            }
+            """,
+            "Expected '(' but found '3'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                switch(0) {
+                    case: return 0;
+                }
+            }
+            """,
+            "Expected expression but found ':'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                goto 3;
+                switch (3) {
+                    case 3: return 0;
+                }
+            }
+            """,
+            "Expected token Identifier but found NumericConstant"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                switch(3) {
+                    case 3:
+                        int i = 0;
+                        return i;
+                }
+                return 0;
+            }
+            """,
+            "Expected statement but found 'int'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 0;
+                int b = 0;
+                do
+                do_body:
+                    a = a + 1;
+                    b = b - 1;
+                while (a < 10)
+                    ;
+                return 0;
+            }
+            """,
+            "Expected 'while' but found 'b'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                for (int i = 0; label: i < 10; i = i + 1) {
+                    ;
+                }
+                return 0;
+            }
+            """,
+            "Expected ';' but found ':'"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                for (int i += 1; i < 10; i += 1) {
+                    return 0;
+                }
+            }
+            """,
+            "Expected ';' but found '+='"
+        );
         Add("""
             int main(void) {
                 while 1 {

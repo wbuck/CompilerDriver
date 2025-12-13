@@ -77,6 +77,11 @@ public class ParserTests(ITestOutputHelper output)
     [ClassData(typeof(LoopData))]
     public void Loops(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(SwitchData))]
+    public void SwitchStatements(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     private static void InvalidCheck(string fileContent, string message)
     {        

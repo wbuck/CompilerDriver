@@ -5,5 +5,7 @@ public class LabelGenerator
     private int _count = 1;
 
     public string GetNextLabel(ReadOnlySpan<char> name)
-        => $".{name}{_count++}";
+        => name.StartsWith('.')
+            ? $"{name}{_count++}"
+            : $".{name}{_count++}";
 }

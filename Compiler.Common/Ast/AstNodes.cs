@@ -69,7 +69,10 @@ public enum AstNodeTag
     Continue,
     While,
     DoWhile,
-    For
+    For,
+    Switch,
+    Case,
+    Default
 }
 
 public interface IAstNodeTag
@@ -91,6 +94,7 @@ public interface IAssignmentNode : IExpressionNode
 }
 public interface IBitwiseOperatorNode : IAstNodeTag;
 public interface IBinaryOperatorNode : IAstNodeTag;
+public interface ISwitchLabelNode : IStatementNode;
 
 
 public sealed record BlockNode(List<IBlockItem> Items) : IAstNodeTag
@@ -105,6 +109,42 @@ public sealed record FunctionNode(string Name, string ReturnType, BlockNode Body
 public sealed record DeclarationNode(string Identifier, IExpressionNode? Initializer = null) : IDeclarationNode
 {
     public AstNodeTag Tag => AstNodeTag.Declaration;
+}
+
+public readonly record struct SwitchLabel
+(
+    string Label, 
+    IExpressionNode? Value,
+    int? CalculatedValue
+);
+
+public sealed record SwitchNode(
+    IExpressionNode Value, 
+    IStatementNode Body,
+    IReadOnlyList<SwitchLabel>? Cases = null,
+    string? Label = null
+) : IStatementNode
+{
+    public AstNodeTag Tag => AstNodeTag.Switch;
+}
+
+public sealed record CaseNode
+(
+    IExpressionNode ConstantExpression,
+    IStatementNode Statement,
+    string? Label = null
+) : ISwitchLabelNode
+{
+    public AstNodeTag Tag => AstNodeTag.Case;
+}
+
+public sealed record DefaultNode
+(
+    IStatementNode Statement, 
+    string? Label = null
+) : ISwitchLabelNode
+{
+    public AstNodeTag Tag => AstNodeTag.Default;
 }
 
 public sealed record BreakNode(string? Label = null) : IStatementNode
@@ -175,11 +215,21 @@ public sealed record UnaryNode(IUnaryOperatorNode Operator, IExpressionNode Expr
 {
     public AstNodeTag Tag => AstNodeTag.Unary;
 }
-public sealed record BinaryNode(IBinaryOperatorNode Operator, IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
+public sealed record BinaryNode
+(
+    IBinaryOperatorNode Operator, 
+    IExpressionNode Lhs, 
+    IExpressionNode Rhs
+) : IExpressionNode
 {
     public AstNodeTag Tag => AstNodeTag.Binary;
 }
-public sealed record BitwiseNode(IBitwiseOperatorNode Operator, IExpressionNode Lhs, IExpressionNode Rhs) : IExpressionNode
+public sealed record BitwiseNode
+(
+    IBitwiseOperatorNode Operator, 
+    IExpressionNode Lhs, 
+    IExpressionNode Rhs
+) : IExpressionNode
 {
     public AstNodeTag Tag => AstNodeTag.Bitwise;
 }
@@ -568,6 +618,15 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
         if (ParseIf(ref tokens, fileContent) is { } @if)
             return WrapStatement(@if, labels);
         
+        if (ParseSwitch(ref tokens, fileContent) is { } @switch)
+            return WrapStatement(@switch, labels);
+        
+        if (ParseDefault(ref tokens, fileContent) is { } @default)
+            return WrapStatement(@default, labels);
+        
+        if (ParseCase(ref tokens, fileContent) is { } @case)
+            return WrapStatement(@case, labels);
+        
         if (ParseCompound(ref tokens, fileContent) is { } compound)
             return WrapStatement(compound, labels);
         
@@ -616,6 +675,46 @@ public record ProgramNode(FunctionNode Function) : IAstNodeTag
             return labels.Aggregate(
                 new LabelNode(last, statement), (acc, label) => new LabelNode(label, acc));
         }
+    }
+    
+    private static DefaultNode? ParseDefault(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.Default, out tokens))
+            return null;
+        
+        AssertTypeAndConsume(tokens, TokenType.Colon, fileContent.Span, out tokens);
+        
+        return ParseStatement(ref tokens, fileContent) is not { } statement 
+            ? throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'") 
+            : new DefaultNode(statement);
+    }
+
+    private static CaseNode? ParseCase(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.Case, out tokens))
+            return null;
+
+        if (ParseExpression(ref tokens, fileContent) is not { } expression)
+            throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        
+        AssertTypeAndConsume(tokens, TokenType.Colon, fileContent.Span, out tokens);
+        
+        return ParseStatement(ref tokens, fileContent) is not { } statement 
+            ? throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'") 
+            : new CaseNode(expression, statement);     
+    }
+
+    private static SwitchNode? ParseSwitch(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    {
+        if (!CheckKeywordAndConsume(tokens, Keyword.Switch, out tokens))
+            return null;
+        
+        var condition = ParseRequiredParenthesizedExpression(ref tokens, fileContent);
+        
+        if (ParseStatement(ref tokens, fileContent) is not { } body)
+            throw new FormatException($"Expected statement but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+        
+        return new SwitchNode(condition, body);
     }
 
     private static ForNode? ParseFor(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)

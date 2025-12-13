@@ -38,6 +38,11 @@ public class LexerTests(ITestOutputHelper output)
     public void IfStatementsAndConditionalExpressions(string fileContent, List<ExpectedToken> expected)
         => Validate(fileContent, expected, GetResult(fileContent)); 
     
+    [Theory]
+    [ClassData(typeof(SwitchData))]
+    public void Switch(string fileContent, List<ExpectedToken> expected)
+        => Validate(fileContent, expected, GetResult(fileContent)); 
+    
     private static void Validate(string fileContent, List<ExpectedToken> expected, List<IToken> actual)
     {
         Assert.Equal(expected.Count, actual.Count);

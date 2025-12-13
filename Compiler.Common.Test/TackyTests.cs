@@ -69,6 +69,11 @@ public class TackyTests(ITestOutputHelper output)
     [ClassData(typeof(LoopData))]
     public void Loops(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent), true);
+    
+    [Theory]
+    [ClassData(typeof(SwitchData))]
+    public void Switch(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent), true);
 
     private TackyProgram GetResult(string fileContent)
     {

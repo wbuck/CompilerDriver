@@ -32,6 +32,11 @@ public class LabelAnnotationTests(ITestOutputHelper output)
     public void Loops(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
+    [Theory]
+    [ClassData(typeof(SwitchData))]
+    public void Switch(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
     private ProgramNode GetResult(string fileContent, ProgramNode expected)
     {
         var tokens = CollectionsMarshal.AsSpan(GetTokens(fileContent));

@@ -1,4 +1,6 @@
+using System.Text;
 using Compiler.Common.Ast;
+using Compiler.Common.Extensions;
 
 namespace Compiler.Common.Stages;
 
@@ -74,9 +76,69 @@ public class LabelValidator
             case ContinueNode node:
                 ValidateContinueLabel(node);
                 break;
+            case SwitchNode node:
+                ValidateSwitch(node);
+                break;
+            case CaseNode node:
+                ValidateCase(node);
+                break;
+            case DefaultNode node:
+                ValidateDefault(node);
+                break;
             default:
                 return;
         }
+    }
+
+    private void ValidateSwitch(SwitchNode node)
+    {
+        if (node.Cases is { Count: > 0 })
+        {
+            StringBuilder? sb = null;
+            if (node.Cases.Count(c => c.Label.EndsWith("default")) > 1)
+            {
+                sb = new StringBuilder();
+                sb.AppendLine("multiple default labels in one switch");
+            }
+            
+            Dictionary<int, (SwitchLabel, int)> lookup = new(node.Cases.Count);
+            foreach (var @case in node.Cases.Where(c => c.CalculatedValue.HasValue))
+            {
+                lookup.AddOrUpdate
+                (
+                    @case.CalculatedValue!.Value, 
+                    _ => (@case, 1), 
+                    (_, prev) => (prev.Item1, prev.Item2 + 1)
+                );
+            }
+            
+            foreach (var (@case, count) in lookup.Values)
+            {
+                if (count == 1) continue;
+                
+                sb ??= new StringBuilder();               
+                sb.AppendLine($"duplicate case value: {@case.CalculatedValue}");
+            }
+            if (sb is not null)
+                throw new FormatException(sb.ToString().TrimEnd());
+        }
+        VisitStatement(node.Body);
+    }
+
+    private void ValidateDefault(DefaultNode node)
+    {
+        if (node.Label is null)
+            throw new FormatException("default statement not within switch");
+        
+        VisitStatement(node.Statement);
+    }
+
+    private void ValidateCase(CaseNode node)
+    {
+        if (node.Label is null)
+            throw new FormatException("case statement not within switch");
+        
+        VisitStatement(node.Statement);
     }
     
     private void ValidateFor(ForNode node)

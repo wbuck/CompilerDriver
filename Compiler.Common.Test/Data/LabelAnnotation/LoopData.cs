@@ -3,7 +3,6 @@ using Compiler.Common.Ast;
 
 namespace Compiler.Common.Test.Data.LabelAnnotation;
 
-
 public class LoopData : DataBase
 {
     public LoopData()

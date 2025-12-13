@@ -317,22 +317,80 @@ public class TackyVisitor
                 return VisitDoWhile(node, instructions, factory);
             case ForNode node:
                 return VisitFor(node, instructions, factory);
+            case SwitchNode node:
+                return VisitSwitch(node, instructions, factory);
+            case CaseNode node:
+                return VisitCase(node, instructions, factory);
+            case DefaultNode node:
+                return VisitDefault(node, instructions, factory);
             default:
                 throw new UnreachableException($"Unknown statement type: {statement.Tag.ToStringFast()}");
         }
     }
     
-    [Pure]
-    private static string GetBreakLabel(string label) 
-        => $".break{label}";
-    
-    [Pure]
-    private static string GetContinueLabel(string label)
-        => $".continue{label}";
-    
-    [Pure]
-    private static string BeginLabel(string label)
-        => $".begin{label}";
+    private List<ITackyInstruction> VisitDefault(
+        DefaultNode node, 
+        List<ITackyInstruction> instructions,
+        VariableFactory factory)
+    {
+        Debug.Assert(node.Label is not null);
+        instructions.Add(new TackyLabel(node.Label!));
+        
+        VisitStatement(node.Statement, instructions, factory);
+        
+        return instructions;
+    }
+
+    private List<ITackyInstruction> VisitCase(
+        CaseNode node, 
+        List<ITackyInstruction> instructions,
+        VariableFactory factory)
+    {
+        Debug.Assert(node.Label is not null);
+        instructions.Add(new TackyLabel(node.Label!));
+        
+        VisitStatement(node.Statement, instructions, factory);
+        
+        return instructions;
+    }
+
+    private List<ITackyInstruction> VisitSwitch(
+        SwitchNode node, 
+        List<ITackyInstruction> instructions,
+        VariableFactory factory)
+    {
+        Debug.Assert(node.Label is not null); 
+                
+        if (node is { Cases: { } cases })
+        {
+            var dest = factory.GetNextVariable();           
+            var rhs = VisitExpression(node.Value, instructions, factory);
+
+            foreach (var @case in cases
+                .Where(c => !c.Label.EndsWith("default"))
+                .OrderByDescending(c => c.CalculatedValue))
+            {
+                var equal = new TackyBinary
+                (
+                    TackyEqual.Operator,
+                    new TackyConstant<int>(@case.CalculatedValue!.Value),
+                    rhs,
+                    dest
+                );
+                instructions.Add(equal);
+                instructions.Add(new TackyJumpIfZero(dest, @case.Label));
+            }
+
+            if (cases.FirstOrDefault(c => c.Label.EndsWith("default")) is { Label: not null } @default)            
+                instructions.Add(new TackyJump(@default.Label));                                  
+        }
+        VisitStatement(node.Body, instructions, factory);    
+        
+        if (node.Cases?.Count > 0)
+            instructions.Add(new TackyLabel(GetBreakLabel(node.Label)));
+        
+        return instructions;
+    }
 
     private static List<ITackyInstruction> VisitBreak(BreakNode node, List<ITackyInstruction> instructions)
     {
@@ -395,7 +453,7 @@ public class TackyVisitor
         if (node is { Post: { } post })
         {
             // We can ignore the return value here as it's not used
-            // in the for loop post expression.
+            // in the for loop post-expression.
             VisitExpression(post, instructions, factory);            
         }
         instructions.Add(new TackyJump(beginLabel));
@@ -749,5 +807,17 @@ public class TackyVisitor
             ConstantNode<int> integer => new TackyConstant<int>(integer.Value),
             ConstantNode<double> floating => new TackyConstant<double>(floating.Value),
             _ => throw new FormatException($"Unknown constant node type: {constant.Tag.ToStringFast()}")
-        };    
+        }; 
+    
+    [Pure]
+    private static string GetBreakLabel(string label) 
+        => $".break{label}";
+    
+    [Pure]
+    private static string GetContinueLabel(string label)
+        => $".continue{label}";
+    
+    [Pure]
+    private static string BeginLabel(string label)
+        => $".begin{label}";
 }

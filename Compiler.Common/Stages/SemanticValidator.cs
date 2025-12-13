@@ -168,12 +168,70 @@ public class SemanticValidator
             ForNode node => ResolveFor(node, Duplicate(variables), scope + 1),
             LabelNode node => ResolveLabel(node, variables, scope),
             CompoundNode node => ResolveCompound(node, Duplicate(variables), scope + 1),
+            SwitchNode node => ResolveSwitch(node, variables, scope),
+            CaseNode node => ResolveCase(node, variables, scope),
+            DefaultNode node => ResolveDefault(node, variables, scope),
             GotoNode node => node,
             NullNode node => node,
             BreakNode node => node,
             ContinueNode node => node,
             null => null,
             _ => throw new UnreachableException($"Unknow statement type: {statement.Tag.ToStringFast()}")
+        };
+    
+    private DefaultNode ResolveDefault(DefaultNode node, Dictionary<Original, Mangled> variables, int scope)
+        => node with { Statement = ResolveStatement(node.Statement, variables, scope) };
+
+    private CaseNode ResolveCase(CaseNode node, Dictionary<Original, Mangled> variables, int scope)
+    { 
+        AssertConstant(node.ConstantExpression);
+        return node with
+        {
+            ConstantExpression = ResolveExpression(node.ConstantExpression, variables, scope),
+            Statement = ResolveStatement(node.Statement, variables, scope)
+        };
+    }
+
+    private void AssertConstant(IExpressionNode expression)
+    {
+        switch (expression)
+        {
+            case BinaryNode node:
+                Binary(node);
+                break;
+            case UnaryNode node:
+                Unary(node);
+                break;
+            case BitwiseNode node:
+                Bitwise(node);
+                break;
+            case ConstantNode<int>:
+                break;
+            default: 
+                throw new FormatException("case label does not reduce to an integer constant");
+        }
+    }
+
+    private void Bitwise(BitwiseNode node)
+    {
+        AssertConstant(node.Lhs);
+        AssertConstant(node.Rhs);
+    }
+    
+    private void Unary(UnaryNode node)
+        => AssertConstant(node.Expression);
+
+    private void Binary(BinaryNode node)
+    {
+        AssertConstant(node.Lhs);
+        AssertConstant(node.Rhs);
+    }
+    
+    private SwitchNode ResolveSwitch(SwitchNode node, Dictionary<Original, Mangled> variables, int scope)
+        => node with
+        {
+            Value = ResolveExpression(node.Value, variables, scope), 
+            Body = ResolveStatement(node.Body, variables, scope)
         };
 
     private LabelNode ResolveLabel(LabelNode node, Dictionary<Original, Mangled> variables, int scope)

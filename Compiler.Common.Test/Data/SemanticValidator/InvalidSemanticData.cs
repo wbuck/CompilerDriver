@@ -3,7 +3,168 @@ namespace Compiler.Common.Test.Data.SemanticValidator;
 public class InvalidSemanticData : TheoryData<string, string>
 {
     public InvalidSemanticData()
-    {       
+    {     
+        Add
+        (
+            """
+            int main(void) {
+                int a = 3;
+                switch (1) {
+                    case a++: break;
+                }
+            }
+            """,
+            "case label does not reduce to an integer constant"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 3;
+                switch (1) {
+                    case ++a: break;
+                }
+            }
+            """,
+            "case label does not reduce to an integer constant"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 3;
+                switch (1) {
+                    case 12 * (2 + ~-!a): break;
+                }
+            }
+            """,
+            "case label does not reduce to an integer constant"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 3;
+                switch(a + 1) {
+                    case 0: return 0;
+                    case a: return 1;
+                    case 1: return 2;
+                }
+            }
+            """,
+            "case label does not reduce to an integer constant"
+        );        
+        Add
+        (
+            """
+            int main(void) {
+                int a = 10;
+                switch (a) {
+                    case 1:
+                        break;
+            
+                    default:
+                        return b;
+                        break;
+                }
+                return 0;
+            }
+            """,
+            "Undeclared variable: b"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 10;
+                switch (a) {
+                    case 1:
+                        return b;
+                        break;
+            
+                    default:
+                        break;
+                }
+                return 0;
+            }
+            """,
+            "Undeclared variable: b"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                switch(a) {
+                    case 1: return 0;
+                    case 2: return 1;
+                }
+                return 0;
+            }
+            """,
+            "Undeclared variable: a"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 1;
+                switch (a) {
+                    int b = 2;
+                    case 0:
+                        a = 3;
+                        int b = 2;
+                }
+                return 0;
+            }
+            """,
+            "Duplicate variable declaration: b"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 1;
+                switch (a) {
+                    case 1:;
+                        int b = 10;
+                        break;
+            
+                    case 2:;
+                        int b = 11;
+                        break;
+            
+                    default:
+                        break;
+                }
+                return 0;
+            }
+            """,
+            "Duplicate variable declaration: b"
+        );
+        Add
+        (
+            """
+            int main(void)
+            {
+                for (i = 0; i < 1; i = i + 1)
+                {
+                    return 0;
+                }
+            }
+            """,
+            "Undeclared variable: i"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                do {
+                    int a = a + 1;
+                } while (a < 100);
+            }
+            """,
+            "Undeclared variable: a"
+        );
         Add
         (
             """
