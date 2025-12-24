@@ -1,20 +1,29 @@
 ﻿using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using CliWrap;
-using Compiler.Common.Ast;
-using Compiler.Common.Stages;
+using Compiler.Analysis.Annotation;
+using Compiler.Analysis.Validators;
 using Compiler.Driver;
 using Compiler.Driver.Extensions;
+using Compiler.Emission;
+using Compiler.Generation;
+using Compiler.Lexer;
+using Compiler.Parser;
+using Compiler.Tacky;
 
-var file = new Argument<string>
+var files = new Argument<string[]>
 (
     "input",
-    "The input file to compile"
+    "The input file(s) to compile"
 );
-file.AddValidator(arg =>
+files.AddValidator(arg =>
 {
-    if (!File.Exists(arg.GetValueForArgument(file)))
-        arg.ErrorMessage = $"File does not exist";
+    foreach (var file in arg.GetValueForArgument(files))
+    {
+        if (!File.Exists(file))
+            arg.ErrorMessage = "File does not exist";
+    }    
 });
 
 var output = new Option<string>
@@ -57,134 +66,170 @@ var asm = new Option<bool>
     "Generate assembly code"
 );
 
+var compile = new Option<bool>
+(
+    ["-c", "--compile"],
+    "Only run preprocess, compile, and assemble steps"
+);
+
 var root = new RootCommand("Compiler Driver");
-root.AddArgument(file);
+root.AddArgument(files);
 root.AddOption(lex);
 root.AddOption(parse);
 root.AddOption(validate);
 root.AddOption(tacky);
 root.AddOption(codegen);
 root.AddOption(output);
+root.AddOption(compile);
+root.AddOption(asm);
 
 root.SetHandler(async (ctx) =>
 {
     var token = ctx.GetCancellationToken();
-    var input = ctx.ParseResult.GetValueForArgument(file);
+    var input = ctx.ParseResult.GetValueForArgument(files);
 
-    var result = await PreprocessAsync(input, token);
-    if (!result.IsSuccess)
+    await foreach (var result in PreprocessAsync(input, token))
     {
-        ctx.ExitCode = result;
-        return;
-    }
-    
-    var source = result.Value;
-    var content = await File.ReadAllTextAsync(source, token);
-    
-    try
-    {               
-        if (!Lexer.TryTokenize(content, out var tokens))
+        if (!result.IsSuccess)
         {
-            ctx.ExitCode = 1;
-            return;
-        }
-        if (ctx.GetOption(lex, false))
-        {
-            ctx.ExitCode = 0;
+            ctx.ExitCode = result;
             return;
         }
     
-        if (!Parser.TryParse(tokens, content.AsMemory(), out var node))
-        {
-            ctx.ExitCode = 1;
-            return;
-        }        
-        if (ctx.GetOption(parse, false))
-        {
-            ctx.ExitCode = 0;
-            return;
-        }
-        if (!SemanticValidator.TryValidate(node, out var analyzed))
-        {
-            ctx.ExitCode = 1;
-            return;
-        }
-        
-        analyzed = LabelAnnotation.Annotate(analyzed);
-        
-        if (!LabelValidator.TryValidate(analyzed))
-        {
-            ctx.ExitCode = 1;
-            return;
-        }
-        if (ctx.GetOption(validate, false))
-        {
-            ctx.ExitCode = 0;
-            return;
-        }
-        if (!TackyGenerator.TryGenerate(node, out var tackyProgram))
-        {
-            ctx.ExitCode = 1;
-            return;
-        }
-        if (ctx.GetOption(tacky, false))
-        {
-            ctx.ExitCode = 0;
-            return;
-        }
+        var source = result.Value;
+        var content = await File.ReadAllTextAsync(source, token);
+    
+        try
+        {               
+            if (!LexicalAnalyzer.TryTokenize(content, out var tokens))
+            {
+                ctx.ExitCode = 1;
+                return;
+            }
+            if (ctx.GetOption(lex, false))
+            {
+                ctx.ExitCode = 0;
+                return;
+            }
+    
+            if (!TokenParser.TryParse(tokens, content.AsMemory(), out var node))
+            {
+                ctx.ExitCode = 1;
+                return;
+            }        
+            if (ctx.GetOption(parse, false))
+            {
+                ctx.ExitCode = 0;
+                return;
+            }
+            if (!SemanticValidator.TryValidate(node, out node))
+            {
+                ctx.ExitCode = 1;
+                return;
+            }
 
-        if (!Generator.TryGenerate(tackyProgram, out var program))
-        {
-            ctx.ExitCode = 1;
-            return;
-        }
+            if (!TypeChecker.TryCheck(node))
+            {
+                ctx.ExitCode = 1;
+                return;
+            }
+        
+            node = LabelAnnotation.Annotate(node);
+        
+            if (!LabelValidator.TryValidate(node))
+            {
+                ctx.ExitCode = 1;
+                return;
+            }
 
-        if (ctx.GetOption(codegen, false))
-        {
-            ctx.ExitCode = 0;
-            return;
+            node = new LabelReplacer().Replace(node);
+            
+            if (ctx.GetOption(validate, false))
+            {
+                ctx.ExitCode = 0;
+                return;
+            }
+            if (!TackyGenerator.TryGenerate(node, out var tackyProgram))
+            {
+                ctx.ExitCode = 1;
+                return;
+            }
+            if (ctx.GetOption(tacky, false))
+            {
+                ctx.ExitCode = 0;
+                return;
+            }
+    
+            if (!Generator.TryGenerate(tackyProgram, out var program))
+            {
+                ctx.ExitCode = 1;
+                return;
+            }
+    
+            if (ctx.GetOption(codegen, false))
+            {
+                ctx.ExitCode = 0;
+                return;
+            }
+        
+            if (!Emitter.TryEmit(program, out var compiled))
+            {
+                ctx.ExitCode = 1;
+                return;
+            }
+        
+            var path = Path.ChangeExtension(source, "s");        
+            await File.WriteAllTextAsync(path, compiled, token);
+        
+            if (ctx.GetOption(asm, false))
+            {
+                ctx.ExitCode = 0;
+                return;
+            }
+        
+            ctx.ExitCode = await AssembleAndLinkAsync
+            (
+                path, 
+                ctx.GetOption(output), 
+                ctx.GetOption(compile), 
+                token
+            );
         }
-        
-        if (!Emitter.TryEmit(program, out var compiled))
+        finally
         {
-            ctx.ExitCode = 1;
-            return;
-        }
-        
-        var path = Path.ChangeExtension(source, "s");        
-        await File.WriteAllTextAsync(path, compiled, token);
-        
-        if (ctx.GetOption(asm, false))
-        {
-            ctx.ExitCode = 0;
-            return;
-        }
-        
-        if ((ctx.ExitCode = await AssembleAndLinkAsync(result.Value, ctx.GetOption(output), token)) != 0)
-            return;
-    }
-    finally
-    {
-        if (!ctx.GetOption(asm, false))
-            File.Delete(source);
-    } 
+            if (!ctx.GetOption(asm, false))
+                File.Delete(source);
+        } 
+    }    
 });
 
 return await root.InvokeAsync(args);
 
-static async Task<int> AssembleAndLinkAsync(string assembly, string? output = null, CancellationToken token = default)
+static async Task<int> AssembleAndLinkAsync(
+    string assembly, 
+    string? output, 
+    bool compile,
+    CancellationToken token = default)
 {
     output ??= Path.Combine
     (
         Path.GetDirectoryName(assembly) ?? string.Empty, 
         Path.GetFileNameWithoutExtension(assembly)
     );
-        
+    
+    if (compile)
+        output = Path.ChangeExtension(output, ".o");
+
     var result = await Cli.Wrap("gcc")
-        .WithArguments(args => args
-            .Add("-arch").Add("x86_64")            
-            .Add(assembly)
-            .Add("-o").Add(output))
+        .WithArguments(args =>
+        {
+            args.Add("-arch").Add("x86_64")
+                .Add(assembly)
+                .Add("-o").Add(output);
+            
+            if (compile)
+                args.Add("-c");
+        })
         .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.WriteLine))
         .WithStandardErrorPipe(PipeTarget.ToDelegate(WriteError))
         .WithValidation(CommandResultValidation.None)
@@ -194,7 +239,15 @@ static async Task<int> AssembleAndLinkAsync(string assembly, string? output = nu
     return result.ExitCode;
 }
 
-static async Task<Result<string>> PreprocessAsync(string file, CancellationToken token = default)
+static async IAsyncEnumerable<Result<string>> PreprocessAsync(
+    string[] files, 
+    [EnumeratorCancellation] CancellationToken token = default)
+{
+    foreach (var file in files)
+        yield return await RunPreprocessorAsync(file, token);
+}
+
+static async Task<Result<string>> RunPreprocessorAsync(string file, CancellationToken token = default)
 {
     var output = Path.ChangeExtension(file, ".i");
     var result = await Cli.Wrap("gcc")
@@ -208,7 +261,7 @@ static async Task<Result<string>> PreprocessAsync(string file, CancellationToken
         .WithValidation(CommandResultValidation.None)
         .ExecuteAsync(token);
 
-    return new(result.ExitCode, output);
+    return new Result<string>(result.ExitCode, output);
 }
 
 static void WriteError(string message)

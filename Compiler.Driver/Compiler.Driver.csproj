@@ -16,7 +16,11 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Compiler.Analysis\Compiler.Analysis.csproj" />
       <ProjectReference Include="..\Compiler.Common\Compiler.Common.csproj" />
+      <ProjectReference Include="..\Compiler.Emission\Compiler.Emission.csproj" />
+      <ProjectReference Include="..\Compiler.Generation\Compiler.Generation.csproj" />
+      <ProjectReference Include="..\Compiler.Tacky\Compiler.Tacky.csproj" />
     </ItemGroup>
 
 </Project>

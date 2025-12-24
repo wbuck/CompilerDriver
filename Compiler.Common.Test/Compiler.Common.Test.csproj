@@ -20,6 +20,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Compiler.Common\Compiler.Common.csproj" />
+      <ProjectReference Include="..\Compiler.Test.Common\Compiler.Test.Common.csproj" />
     </ItemGroup>
 
 </Project>
