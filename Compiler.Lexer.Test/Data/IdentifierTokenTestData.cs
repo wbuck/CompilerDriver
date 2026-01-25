@@ -21,5 +21,9 @@ public class IdentifierTokenTestData : TheoryData<int, string, TokenType, string
         Add(31, "for (int i = 0; i < 10; i++) { continue; }", TokenType.Keyword, Keyword.Continue.ToStringFast(true));
         Add(31, "for (int i = 0; i < 10; i++) { switch(i) { case 1: break; } }", TokenType.Keyword, Keyword.Switch.ToStringFast(true));
         Add(43, "for (int i = 0; i < 10; i++) { switch(i) { case 1: break; } }", TokenType.Keyword, Keyword.Case.ToStringFast(true));
+        Add(0, "static int var = 0;", TokenType.Keyword, Keyword.Static.ToStringFast(true));
+        Add(0, "extern int var;", TokenType.Keyword, Keyword.Extern.ToStringFast(true));
+        Add(0, "static int func() { return 42; }", TokenType.Keyword, Keyword.Static.ToStringFast(true));
+        Add(0, "extern int func() { return 42; }", TokenType.Keyword, Keyword.Extern.ToStringFast(true));
     }
 }
