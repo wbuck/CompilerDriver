@@ -15,10 +15,13 @@ public class LabelReplacer
     public ProgramNode Replace(ProgramNode node)
         => node with
         {
-            Functions = node.Functions.Select(f =>
+            Nodes = node.Nodes.Select(n =>
             {
-                _currentFuncName = f.Name;
-                return Function(f);
+                if (n is not FunctionDeclarationNode func) 
+                    return n;
+                
+                _currentFuncName = func.Name;
+                return Function(func);
             }).ToList()
         };
 

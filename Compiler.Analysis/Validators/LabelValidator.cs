@@ -24,8 +24,11 @@ public class LabelValidator
         return false;   
     }
 
-    public void Validate(ProgramNode program) =>
-        program.Functions.ForEach(ValidateFunction);
+    public void Validate(ProgramNode program)
+    {
+        foreach (var function in program.Nodes.OfType<FunctionDeclarationNode>())
+            ValidateFunction(function);
+    }
     
     private void ValidateFunction(FunctionDeclarationNode function)
     {

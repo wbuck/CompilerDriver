@@ -13,11 +13,16 @@ public class TackyVisitor
     
     public TackyProgram Visit(ProgramNode program)
     {
-        var funcDefinitions = program.Functions
-            .Where(f => f.Body is not null)
+        var nodes = program.Nodes
+            .Where(n => n switch
+            {
+                FunctionDeclarationNode { Body: null } => false,
+                _ => true
+            })
             .ToArray();
-        
-        return new TackyProgram(funcDefinitions.Select(VisitFunction).ToList());
+        // TODO: Handle file scoped variable declarations.
+        // return new TackyProgram(nodes.Select(VisitFunction).ToList());
+        throw new NotImplementedException();
     }
 
     private TackyFunction VisitFunction(FunctionDeclarationNode node)

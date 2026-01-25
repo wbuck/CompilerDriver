@@ -66,7 +66,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Expected function but found '='"
+            "error: illegal initializer (only variables can be initialized)"
         );
         Add
         (
@@ -77,7 +77,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Expected function but found '('"
+            "error: expected function body after function declarator"
         );
         Add
         (
@@ -362,7 +362,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 2;
             }
             """,
-            "expected identifier before '2'");
+            "error: type specifier missing");
         Add("""
             int main(void) {
                 int a = 0;
@@ -374,7 +374,7 @@ public class InvalidParseData : TheoryData<string, string>
                     return 3;
             }
             """, 
-            "Expected 'int' but found 'Else'");
+            "Expected '}' but found 'else'");
         Add("""
             int main(void) {
                 if 0 return 1;
@@ -482,7 +482,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return return + 1;
             }
             """, 
-            "expected identifier before 'return'");
+            "expected identifier before '='");
         Add("""
             int main(void) {
                 int a = 0;
@@ -570,7 +570,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return return + 1;
             }
             """, 
-            "expected identifier before 'return'");
+            "expected identifier before '='");
         Add("""
             int main(void) {
                 int a = 0;
@@ -734,7 +734,7 @@ public class InvalidParseData : TheoryData<string, string>
             }
             foo
             """,
-            "Expected function but found 'foo'"); 
+            "error: type specifier missing"); 
         Add("""
             int 3 (void) {
                 return 0;
@@ -752,7 +752,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Expected function but found 'main'");        
+            "error: type specifier missing");        
         Add("""
             int main(void) {
                 returns 0;
@@ -782,7 +782,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Expected function but found 'int'");        
+            "error: expected identifier or '('");        
         Add("""
             int main(void) {
             return 0;

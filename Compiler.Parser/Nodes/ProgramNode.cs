@@ -6,7 +6,7 @@ using Compiler.Lexer.Tokens;
 
 namespace Compiler.Parser.Nodes;
 
-public record ProgramNode(List<FunctionDeclarationNode> Functions) : IAstNodeTag
+public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
 {
     private static readonly FrozenDictionary<TokenType, int> Precedence = new Dictionary<TokenType, int>
     {                 
@@ -46,18 +46,25 @@ public record ProgramNode(List<FunctionDeclarationNode> Functions) : IAstNodeTag
     
     public static ProgramNode Parse(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
-        List<FunctionDeclarationNode> functions = new(10);        
+        List<IDeclarationNode> nodes = new(10);        
         while (!tokens.IsEmpty)
         {
-            if (ParseFunction(ref tokens, fileContent) is not { } func)
-                throw new FormatException($"Expected function but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+            var specifiers = ParseTypeAndStorageClass(ref tokens);
             
-            functions.Add(func);           
+            if (specifiers.Type is null)
+                throw new FormatException("error: type specifier missing");
+            
+            if (ParseFunctionDecl(ref tokens, fileContent, specifiers) is { } func)            
+                nodes.Add(func);            
+            else if (ParseVariableDecl(ref tokens, fileContent) is { } decl)
+                nodes.Add(decl);
+            else
+                throw new FormatException("error: expected identifier or '('");        
         }
             
-        return new ProgramNode(functions);
+        return new ProgramNode(nodes);
     }
-
+        
     private static List<string> ParseFunctionParams(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         if (CheckKeywordAndConsume(tokens, Keyword.Void, out tokens))
@@ -97,11 +104,68 @@ public record ProgramNode(List<FunctionDeclarationNode> Functions) : IAstNodeTag
         return body;
     }
 
-    private static FunctionDeclarationNode? ParseFunction(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    private static Specifiers ParseTypeAndStorageClass(ref Span<IToken> tokens)
+    {
+        List<Keyword> typeSpecifiers = new(3);
+        var storageClass = StorageClass.None;
+        
+        while (GetTokenAndConsume<KeywordToken>(ref tokens) is { } token)
+        {
+            switch (token.Keyword)
+            {
+                case Keyword.Static or Keyword.Extern when storageClass is not StorageClass.None:
+                    throw new FormatException(
+                        $"error: cannot combine with previous '{storageClass.ToStringFast(true)}' declaration specifier");
+                case Keyword.Static or Keyword.Extern:
+                    storageClass = token.Keyword is Keyword.Static 
+                        ? StorageClass.Static 
+                        : StorageClass.Extern;
+
+                    break;
+                case var type when IsBuiltInType(type):
+                    typeSpecifiers.Add(type);
+                    break;
+            }
+        }
+        return typeSpecifiers.Count switch
+        {            
+            // Right now we're assuming all types are int.
+            1 => new Specifiers(Keyword.Int, storageClass),
+            0 => new Specifiers(null, storageClass),
+            _ => throw new FormatException(
+                    $"error: cannot combine with previous '{typeSpecifiers[1].ToStringFast(true)}' declaration specifier")
+        };
+    }
+
+    private static bool IsBuiltInType(Keyword keyword) => keyword switch
+    {
+        Keyword.Int => true,
+        Keyword.Long => true,
+        Keyword.Float => true,
+        Keyword.Double => true,
+        Keyword.Char => true,
+        Keyword.Short => true,
+        Keyword.Bool => true,
+        Keyword.Void => true,
+        _ => false
+    };
+    
+    private static bool IsStorageSpecifier(Keyword keyword) =>
+        keyword is Keyword.Static or Keyword.Extern;
+
+    
+    private static FunctionDeclarationNode? ParseFunctionDecl(
+        ref Span<IToken> tokens, 
+        ReadOnlyMemory<char> fileContent,
+        Specifiers? specifiers = null)
     {
         var shifted = tokens;
-        if (GetTokenAndConsume<KeywordToken>(ref shifted) is not { } keyword)
-            return null;
+
+        specifiers ??= ParseTypeAndStorageClass(ref shifted);
+        var (type, storageClass) = specifiers.Value;
+        
+        if (type is null)
+            return null;               
 
         if (GetTokenAndConsume<IdentifierToken>(ref shifted) is not { } id)
             throw new FormatException($"expected identifier before '{ReadTokenValue(shifted, fileContent.Span)}'");
@@ -115,22 +179,65 @@ public record ProgramNode(List<FunctionDeclarationNode> Functions) : IAstNodeTag
         var body = ParseFunctionBody(ref shifted, fileContent) is { } nodes 
             ? new BlockNode(nodes) 
             : null;
-        
-        if (body is null)
-            CheckTypeAndConsume(shifted, TokenType.Semicolon, out shifted);
+
+        if (body is null && !CheckTypeAndConsume(shifted, TokenType.Semicolon, out shifted))
+        {
+            if (CheckType(shifted, TokenType.Assignment))
+                throw new FormatException("error: illegal initializer (only variables can be initialized)");
+
+            if (GetToken<KeywordToken>(shifted) is { } token && 
+                (IsBuiltInType(token.Keyword) || IsStorageSpecifier(token.Keyword)))
+            {
+                throw new FormatException("error: expected ';' after top level declarator");
+            }
+            throw new FormatException("error: expected function body after function declarator");
+        }       
         
         tokens = shifted;        
-        var returnType = fileContent.Slice(keyword.Index, keyword.Length);
         
         return new FunctionDeclarationNode
         (
             GetString(id, fileContent), 
-            returnType.ToString(), 
+            type.Value.ToStringFast(true), 
             parameters,
-            body
+            body,
+            storageClass
         );
-    }
+    }    
 
+    private static VariableDeclarationNode? ParseVariableDecl(
+        ref Span<IToken> tokens, 
+        ReadOnlyMemory<char> fileContent,
+        Specifiers? specifiers = null)
+    {
+        var shifted = tokens;
+        
+        specifiers ??= ParseTypeAndStorageClass(ref shifted);
+        var (type, storageClass) = specifiers.Value;
+        
+        if (type is null)
+            return null; 
+
+        if (GetTokenAndConsume<IdentifierToken>(ref shifted) is not { } id)
+            return null;
+
+        // If we find a parenthesis, then this is a function declaration.
+        if (CheckTypeAndConsume(shifted, TokenType.OpenParenthesis, out shifted))
+            return null;
+        
+        tokens = shifted;
+
+        if (GetTokenAndConsume<AssignmentToken>(ref tokens) is null )
+        {
+            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+            return new VariableDeclarationNode(GetString(id, fileContent));            
+        }
+        
+        var rhs = ParseExpression(ref tokens, fileContent);
+        AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
+        return new VariableDeclarationNode(GetString(id, fileContent), rhs, storageClass);
+    }
+    
     private static IBlockItem? ParseBlockItem(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
         if (tokens.IsEmpty)
@@ -139,10 +246,10 @@ public record ProgramNode(List<FunctionDeclarationNode> Functions) : IAstNodeTag
         if (ParseStatement(ref tokens, fileContent) is { } statement)
             return statement;       
         
-        if (ParseDeclaration(ref tokens, fileContent) is { } declaration)
+        if (ParseVariableDecl(ref tokens, fileContent) is { } declaration)
             return declaration;
         
-        if (ParseFunction(ref tokens, fileContent) is { } func)
+        if (ParseFunctionDecl(ref tokens, fileContent) is { } func)
             return func;
 
         return null;
@@ -169,38 +276,7 @@ public record ProgramNode(List<FunctionDeclarationNode> Functions) : IAstNodeTag
             => CheckType(tokens, TokenType.Identifier) &&
                Shift(tokens, out var shifted) &&
                CheckType(shifted, TokenType.Colon);
-    }
-
-    private static VariableDeclarationNode? ParseDeclaration(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
-    {
-        var shifted = tokens;
-        
-        // TODO: Handle different type other than int.
-        if (GetTokenAndConsume<KeywordToken>(ref shifted) is not { } keyword)
-            return null;
-        
-        if (keyword.Keyword is not Keyword.Int)
-            throw new FormatException($"Expected 'int' but found '{keyword.Keyword.ToStringFast()}'");
-
-        if (GetTokenAndConsume<IdentifierToken>(ref shifted) is not { } id)
-            return null;
-
-        // If we find a parenthesis, then this is a function declaration.
-        if (CheckTypeAndConsume(shifted, TokenType.OpenParenthesis, out shifted))
-            return null;
-        
-        tokens = shifted;
-
-        if (GetTokenAndConsume<AssignmentToken>(ref tokens) is null )
-        {
-            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
-            return new VariableDeclarationNode(GetString(id, fileContent));            
-        }
-        
-        var rhs = ParseExpression(ref tokens, fileContent);
-        AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
-        return new VariableDeclarationNode(GetString(id, fileContent), rhs);
-    }
+    }    
 
     private static IStatementNode? ParseStatement(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
     {
@@ -327,7 +403,7 @@ public record ProgramNode(List<FunctionDeclarationNode> Functions) : IAstNodeTag
         
         AssertTypeAndConsume(tokens, TokenType.OpenParenthesis, fileContent.Span, out tokens);
 
-        IForLoopInitializer? init = ParseDeclaration(ref tokens, fileContent);
+        IForLoopInitializer? init = ParseVariableDecl(ref tokens, fileContent);
 
         if (init is null)
         {
@@ -977,4 +1053,10 @@ public record ProgramNode(List<FunctionDeclarationNode> Functions) : IAstNodeTag
     [Pure]
     private static string GetString(IToken token, in ReadOnlyMemory<char> fileContent)
         => fileContent.Slice(token.Index, token.Length).ToString();
+
+    private readonly record struct Specifiers
+    (
+        Keyword? Type, 
+        StorageClass StorageClass
+    );
 }

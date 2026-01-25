@@ -69,5 +69,7 @@ public enum Keyword
     [Display(Name = "volatile")]
     Volatile,
     [Display(Name = "while")]
-    While
+    While,
+    [Display(Name = "_Bool")]
+    Bool
 }

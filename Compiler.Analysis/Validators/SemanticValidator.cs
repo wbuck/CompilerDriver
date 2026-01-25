@@ -27,11 +27,16 @@ public class SemanticValidator
     public ProgramNode Validate(ProgramNode program)
     {
         Dictionary<string, List<Mangled>> identifiers = [];
-        var functions = program.Functions
-            .Select(f => ResolveFunction(f, identifiers, true))
+        var nodes = program.Nodes
+            .Select(n => n switch 
+            { 
+                FunctionDeclarationNode func => ResolveFunction(func, identifiers, true),
+                VariableDeclarationNode variable => ResolveDeclaration(variable, identifiers),
+                _ => throw new UnreachableException($"Unknown program node: {n.Tag.ToStringFast()}")
+            })
             .ToList();
         
-        return new ProgramNode(functions);
+        return new ProgramNode(nodes);
     }           
     
     private BlockNode ResolveBlock(BlockNode block, Dictionary<string, List<Mangled>> identifiers)
@@ -45,7 +50,7 @@ public class SemanticValidator
             })
         ]);
 
-    private FunctionDeclarationNode ResolveFunction(
+    private IDeclarationNode ResolveFunction(
         FunctionDeclarationNode node, 
         Dictionary<string, List<Mangled>> identifiers,
         bool allowDefinition)

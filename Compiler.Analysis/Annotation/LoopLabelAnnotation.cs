@@ -12,11 +12,16 @@ public class LoopLabelAnnotation
     public static ProgramNode Annotate(ProgramNode node)
     {
         LoopLabelAnnotation annotator = new();
-        var functions = node.Functions
-            .Select(f => annotator.Function(f, null))
+        var functions = node.Nodes
+            .Select(GetNode)
             .ToList();
         
-        return node with { Functions = functions };       
+        return node with { Nodes = functions };  
+        
+        IDeclarationNode GetNode(IDeclarationNode decl)
+            => decl is FunctionDeclarationNode func 
+                ? annotator.Function(func, null) 
+                : decl;
     }
         
     private FunctionDeclarationNode Function(FunctionDeclarationNode node, string? label)

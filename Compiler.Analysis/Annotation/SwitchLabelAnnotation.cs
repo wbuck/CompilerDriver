@@ -12,15 +12,25 @@ public class SwitchLabelAnnotation
     public static ProgramNode Annotate(ProgramNode node)
     {
         SwitchLabelAnnotation annotator = new();
-        var functions = node.Functions
-            .Select(f => annotator.Function(f, null, null))
+        var nodes = node.Nodes
+            .Select(GetNode)
             .ToList();
         
-        return node with { Functions = functions };
+        return node with { Nodes = nodes };
+        
+        IDeclarationNode GetNode(IDeclarationNode decl)
+            => decl is FunctionDeclarationNode func 
+                ? annotator.Function(func, null, null) 
+                : decl;   
     }
         
     private FunctionDeclarationNode Function(FunctionDeclarationNode node, string? label, List<SwitchLabel>? cases)
-        => node with { Body = node.Body is not null ? Block(node.Body, label, cases, false) : null };
+        => node with
+        {
+            Body = node.Body is not null 
+                ? Block(node.Body, label, cases, false) 
+                : null
+        };
 
     [return: NotNullIfNotNull(nameof(statement))]
     private IStatementNode? Statement(IStatementNode? statement, string? label, List<SwitchLabel>? cases, bool inLoop)

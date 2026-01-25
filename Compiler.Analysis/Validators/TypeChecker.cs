@@ -14,8 +14,7 @@ public static class TypeChecker
     {
         try
         {
-            Symbols.Clear();
-            node.Functions.ForEach(FunctionDecl);
+            Check(node);
             return true;
         }
         catch (FormatException ex)
@@ -28,7 +27,20 @@ public static class TypeChecker
     public static void Check(ProgramNode node)
     {
         Symbols.Clear();
-        node.Functions.ForEach(FunctionDecl);
+        foreach (var decl in node.Nodes)
+        {
+            switch (decl)
+            {
+                case FunctionDeclarationNode function:
+                    FunctionDecl(function);
+                    break;
+                case VariableDeclarationNode variable:
+                    VariableDecl(variable);
+                    break;
+                default:
+                    throw new UnreachableException($"Unknown program node: {decl.Tag.ToStringFast()}");
+            }
+        }
     }
     
     private static void Block(BlockNode node) =>
