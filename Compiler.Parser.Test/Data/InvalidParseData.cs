@@ -8,6 +8,122 @@ public class InvalidParseData : TheoryData<string, string>
         Add
         (
             """
+            int main(void) {
+                static a:
+                return 1;
+            }
+            """,
+            "error: type specifier missing"
+        );
+        Add
+        (
+            """
+            x:
+            int foo = 0;
+            
+            int main(void) {
+                return 0;
+            }
+            """,
+            "error: type specifier missing"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                extern a:
+                return 1;
+            }
+            """,
+            "error: type specifier missing"
+        );
+        Add
+        (
+            """
+            int f(static int i) {
+                return i;
+            }
+            
+            int main(void) {
+                return f(1);
+            }
+            """,
+            "error: invalid storage class specifier in function declarator"
+        );
+        Add
+        (
+            """
+            static extern int a;
+            
+            int main(void) {
+                return 0;
+            }
+            """,
+            "error: cannot combine with previous 'static' declaration specifier"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                static extern int foo = 0;
+                return foo;
+            }
+            """,
+            "error: cannot combine with previous 'static' declaration specifier"
+        );
+        Add
+        (
+            """
+            static int extern foo(void) {
+                return 0;
+            }
+            
+            int main(void) {
+                return foo();
+            }
+            """,
+            "error: cannot combine with previous 'static' declaration specifier"
+        );
+        Add
+        (
+            """
+            static var = 0;
+            
+            int main(void) {
+                return var;
+            }
+            """,
+            "error: type specifier missing"
+        );
+        Add
+        (
+            """
+            int f {
+                return 0
+            };
+            
+            int main(void) {
+                return 0;
+            }
+            """,
+            "error: expected identifier or '('"
+        );
+        Add
+        (
+            """
+            int f(extern int i) {
+                return i;
+            }
+            
+            int main(void) {
+                return f(1);
+            }
+            """,
+            "error: invalid storage class specifier in function declarator"
+        );
+        Add
+        (
+            """
             int bad_params(int a = 3) {
                 return 1;
             }

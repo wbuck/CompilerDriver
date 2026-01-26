@@ -225,8 +225,13 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
         specifiers ??= ParseTypeAndStorageClass(ref shifted);
         var (type, storageClass) = specifiers.Value;
         
-        if (type is null)
-            return null; 
+        switch (type)
+        {
+            case null when storageClass is StorageClass.None:
+                return null;
+            case null:
+                throw new FormatException("error: type specifier missing");
+        }
 
         if (GetTokenAndConsume<IdentifierToken>(ref shifted) is not { } id)
             return null;
