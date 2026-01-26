@@ -72,15 +72,25 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
 
         List<string> parameters = new(5);
         while (!CheckType(tokens, TokenType.CloseParenthesis))
-        {
-            CheckTypeAndConsume(tokens, TokenType.Comma, out tokens);
+        {          
+            CheckTypeAndConsume(tokens, TokenType.Comma, out tokens);  
+            var specifiers = ParseTypeAndStorageClass(ref tokens);
             
-            if (GetTokenAndConsume<KeywordToken>(ref tokens) is null)
-                throw new FormatException($"Expected parameter type but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+            if (specifiers.StorageClass is not StorageClass.None)
+                throw new FormatException("error: invalid storage class specifier in function declarator");
+            
+            if (specifiers.Type is null)
+                throw new FormatException("error: type specifier missing");
             
             if (GetTokenAndConsume<IdentifierToken>(ref tokens) is not { } id)
-                throw new FormatException($"Expected parameter name but found '{ReadTokenValue(tokens, fileContent.Span)}'");
+                throw new FormatException("error: missing the parameter name in a function definition");
             
+            if (CheckType(tokens, TokenType.Assignment))
+                throw new FormatException("error: C does not support default arguments");
+            
+            if (!CheckType(tokens, TokenType.Comma) && !CheckType(tokens, TokenType.CloseParenthesis))
+                throw new FormatException("error: expected ')'");
+                                  
             parameters.Add(GetString(id, fileContent));
         }
         return parameters;

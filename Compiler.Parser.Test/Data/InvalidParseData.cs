@@ -16,7 +16,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Expected parameter type but found '='"
+            "error: C does not support default arguments"
         );
         Add
         (
@@ -29,7 +29,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Expected parameter type but found '{'"
+            "error: expected ')'"
         );
         Add
         (
@@ -55,7 +55,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return foo(4);
             }
             """,
-            "Expected parameter type but found ')'"
+            "error: type specifier missing"
         );
         Add
         (
@@ -121,7 +121,7 @@ public class InvalidParseData : TheoryData<string, string>
             
             int main(void) { return 0;}
             """,
-            "Expected parameter type but found '}'"
+            "error: expected ')'"
         );
         Add
         (
@@ -793,6 +793,6 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Expected parameter type but found '{'");
+            "error: type specifier missing");
     }
 }
