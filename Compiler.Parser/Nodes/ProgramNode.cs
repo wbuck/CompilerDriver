@@ -56,7 +56,7 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
             
             if (ParseFunctionDecl(ref tokens, fileContent, specifiers) is { } func)            
                 nodes.Add(func);            
-            else if (ParseVariableDecl(ref tokens, fileContent) is { } decl)
+            else if (ParseVariableDecl(ref tokens, fileContent, specifiers) is { } decl)
                 nodes.Add(decl);
             else
                 throw new FormatException("error: expected identifier or '('");        
@@ -245,7 +245,7 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
         if (GetTokenAndConsume<AssignmentToken>(ref tokens) is null )
         {
             AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
-            return new VariableDeclarationNode(GetString(id, fileContent));            
+            return new VariableDeclarationNode(GetString(id, fileContent), StorageClass: storageClass);            
         }
         
         var rhs = ParseExpression(ref tokens, fileContent);

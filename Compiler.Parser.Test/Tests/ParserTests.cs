@@ -87,6 +87,11 @@ public class ParserTests(ITestOutputHelper output)
     [ClassData(typeof(FunctionData))]
     public void Functions(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
+    [Theory]
+    [ClassData(typeof(SpecifierData))]
+    public void Specifiers(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     private static void InvalidCheck(string fileContent, string message)
     {        

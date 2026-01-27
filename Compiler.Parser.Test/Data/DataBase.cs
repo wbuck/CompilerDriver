@@ -25,8 +25,8 @@ public class DataBase : TheoryData<string, ProgramNode>
     protected static CompoundNode Compound(params IBlockItem[] items)
         => new(new BlockNode(items.ToList()));
         
-    protected static ProgramNode GetExpected(params List<IDeclarationNode> functions) =>
-        new(functions);
+    protected static ProgramNode GetExpected(params List<IDeclarationNode> decls) =>
+        new(decls);
     
     protected static ProgramNode GetExpected(params List<IBlockItem> body) =>
         new([new FunctionDeclarationNode("main", "int", [], new BlockNode(body))]);
