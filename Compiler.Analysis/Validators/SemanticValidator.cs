@@ -106,7 +106,7 @@ public class SemanticValidator
     private string ResolveParameter(string parameter, Dictionary<string, List<Mangled>> identifiers)
     {
         if (identifiers.TryGetValue(parameter, out var names) && names.Last().FromCurrentScope)
-            throw new FormatException($"redefinition of parameter '{parameter}'");
+            throw new FormatException($"error: redefinition of parameter '{parameter}'");
         
         names ??= new List<Mangled>(2);
         var name = new Mangled(MangleIdentifier(parameter), true, false);
@@ -136,7 +136,7 @@ public class SemanticValidator
         Dictionary<string, List<Mangled>> identifiers)
     {
         if (!identifiers.TryGetValue(node.Identifier, out var names))
-            throw new FormatException($"use of undeclared identifier '{node.Identifier}'");
+            throw new FormatException($"error: use of undeclared identifier '{node.Identifier}'");
         
         var args = node.Args
             .Select(arg => ResolveExpression(arg, identifiers))
@@ -181,12 +181,9 @@ public class SemanticValidator
 
     private UnaryNode ResolveUnary(UnaryNode unary,  Dictionary<string, List<Mangled>> identifiers)
     {
-        if (IsIncrement(unary.Operator) && unary.Expression is not VariableNode)        
-            throw new FormatException("An lvalue is required as increment operand");
-        
-        if (IsDecrement(unary.Operator) && unary.Expression is not VariableNode)        
-            throw new FormatException("An lvalue is required as decrement operand");
-        
+        if ((IsIncrement(unary.Operator) || IsDecrement(unary.Operator)) && unary.Expression is not VariableNode)        
+            throw new FormatException("error: expression is not assignable");
+
         return unary with { Expression = ResolveExpression(unary.Expression, identifiers) };
 
         static bool IsIncrement(IUnaryOperatorNode op) =>

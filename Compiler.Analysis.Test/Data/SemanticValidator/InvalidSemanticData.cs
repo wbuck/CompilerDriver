@@ -15,7 +15,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return x;            
             }
             """,
-            "use of undeclared identifier 'a'"
+            "error: use of undeclared identifier 'a'"
         );
         Add
         (
@@ -38,7 +38,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 x()--;
             }
             """,
-            "Expected ';' but found '--'"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -49,7 +49,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 ++x();
             }
             """,
-            "An lvalue is required as increment operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -77,7 +77,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return 1;
             }
             """,
-            "use of undeclared identifier 'foo'"
+            "error: use of undeclared identifier 'foo'"
         );
         Add
         (
@@ -134,7 +134,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return foo(1, 2);
             }
             """,
-            "redefinition of parameter 'a'"
+            "error: redefinition of parameter 'a'"
         );
         Add
         (
@@ -161,7 +161,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return a + b;
             }
             """,
-            "redefinition of parameter 'a'"
+            "error: redefinition of parameter 'a'"
         );
         Add
         (
@@ -429,7 +429,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Expected function but found 'label'"
+            "error: type specifier missing"
         );
         Add
         (
@@ -565,7 +565,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return a++--;
             }
             """,
-            "An lvalue is required as decrement operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -575,7 +575,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 (a = 4)++;
             }
             """,
-            "An lvalue is required as increment operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -584,7 +584,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return --3;
             }
             """,
-            "An lvalue is required as decrement operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -595,7 +595,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "An lvalue is required as increment operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -655,7 +655,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return a++--;
             }
             """,
-            "An lvalue is required as decrement operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -665,7 +665,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return a--++;
             }
             """,
-            "An lvalue is required as increment operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -675,7 +675,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return --a++;
             }
             """,
-            "An lvalue is required as decrement operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -685,7 +685,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return --!a;
             }
             """,
-            "An lvalue is required as decrement operand"
+            "error: expression is not assignable"
         );
         Add
         (
@@ -695,7 +695,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return ++!a;
             }
             """,
-            "An lvalue is required as increment operand"
+            "error: expression is not assignable"
         );
         Add
         (

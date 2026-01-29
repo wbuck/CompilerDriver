@@ -4,7 +4,7 @@ namespace Compiler.Parser.Test.Data;
 public class InvalidParseData : TheoryData<string, string>
 {
     public InvalidParseData()
-    {
+    {        
         Add
         (
             """
@@ -106,7 +106,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "error: expected identifier or '('"
+            "error: expected ';' at end of declaration"
         );
         Add
         (
@@ -345,7 +345,7 @@ public class InvalidParseData : TheoryData<string, string>
                 }
             }
             """,
-            "Expected ';' but found '+='"
+            "error: expected ';' at end of declaration"
         );
         Add("""
             int main(void) {
@@ -591,7 +591,7 @@ public class InvalidParseData : TheoryData<string, string>
                 return bar;
             }
             """, 
-            "Expected ';' but found 'bar'");
+            "error: expected ';' at end of declaration");
         Add("""
             int main(void) {
                 int return = 4;
@@ -673,13 +673,6 @@ public class InvalidParseData : TheoryData<string, string>
             }
             """, 
             "Expected ';' but found 'a'");
-        Add("""
-            int main(void) {
-                int foo bar = 3;
-                return bar;
-            }
-            """, 
-            "Expected ';' but found 'bar'");
         Add("""
             int main(void) {
                 int return = 4;
@@ -892,13 +885,13 @@ public class InvalidParseData : TheoryData<string, string>
                 retur n 0;
             }
             """,
-            "Expected ';' but found 'n'");        
+            "Expected ';' but found 'n'");
         Add("""
             int main )( {
                 return 0;
             }
             """,
-            "error: expected identifier or '('");        
+            "error: expected ';' at end of declaration");
         Add("""
             int main(void) {
             return 0;

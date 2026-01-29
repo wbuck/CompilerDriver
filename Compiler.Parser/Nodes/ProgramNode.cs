@@ -237,15 +237,16 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
             return null;
 
         // If we find a parenthesis, then this is a function declaration.
-        if (CheckTypeAndConsume(shifted, TokenType.OpenParenthesis, out shifted))
-            return null;
+        if (CheckType(shifted, TokenType.OpenParenthesis))
+            return null;       
         
         tokens = shifted;
 
-        if (GetTokenAndConsume<AssignmentToken>(ref tokens) is null )
+        if (GetTokenAndConsume<AssignmentToken>(ref tokens) is null)
         {
-            AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
-            return new VariableDeclarationNode(GetString(id, fileContent), StorageClass: storageClass);            
+            return !CheckTypeAndConsume(tokens, TokenType.Semicolon, out tokens) 
+                ? throw new FormatException("error: expected ';' at end of declaration") 
+                : new VariableDeclarationNode(GetString(id, fileContent), StorageClass: storageClass);
         }
         
         var rhs = ParseExpression(ref tokens, fileContent);
@@ -711,12 +712,12 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
         return type != TokenType.Unknown;
     }        
     
-    private static IExpressionNode? ParseFactor(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)
+    private static IExpressionNode? ParseFactor(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent, bool ignoreUnary = false)
     {
         if (ParseConstant<int>(ref tokens, fileContent) is { } constant)
             return constant;
         
-        if (ParseUnary(ref tokens, fileContent) is { } unary)
+        if (!ignoreUnary && ParseUnary(ref tokens, fileContent) is { } unary)
             return unary;
         
         if (ParseParenthesizedExpression(ref tokens, fileContent) is { } expression)
@@ -821,9 +822,10 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
         if (expr is null && !IsPostfixUnary(tokens))
             return null;
 
-        expr ??= ParseVariable(ref tokens, fileContent);
-        expr ??= ParseParenthesizedExpression(ref tokens, fileContent);
-        expr ??= ParseConstant<int>(ref tokens, fileContent);
+        expr ??= ParseFactor(ref tokens, fileContent, true);
+        // expr ??= ParseVariable(ref tokens, fileContent);
+        // expr ??= ParseParenthesizedExpression(ref tokens, fileContent);
+        // expr ??= ParseConstant<int>(ref tokens, fileContent);
         
         if (expr is null)
             throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");
@@ -851,15 +853,40 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
             shifted = shifted[1..];
             result = true;
         }
-        else if (CheckType(shifted, TokenType.NumericConstant) || CheckType(shifted, TokenType.Identifier))
+        else if (CheckTypeAndConsume(shifted, TokenType.NumericConstant, out shifted))
         {
-            shifted = shifted[1..];
             result = true;
-        }        
+        }   
+        else if (CheckTypeAndConsume(shifted, TokenType.Identifier, out shifted))
+        {
+            if (CheckTypeAndConsume(shifted, TokenType.OpenParenthesis, out shifted) && 
+                Search(shifted, TokenType.CloseParenthesis, out shifted))
+            {
+                Shift(shifted, out shifted);
+            }
+            result = true;
+        }
         return result && shifted[0].Type is TokenType.Increment or TokenType.Decrement;
     }
-    
-    
+
+    [Pure]
+    private static bool Search(Span<IToken> tokens, TokenType type, out Span<IToken> result)
+    {
+        var shifted = tokens;
+        while (!shifted.IsEmpty)
+        {
+            if (CheckType(shifted, type))
+            {
+                result = shifted;
+                return true;
+            }
+
+            if (!Shift(shifted, out shifted))
+                break;
+        }
+        result = tokens;
+        return false;
+    }
     
     private static ConstantNode<T>? ParseConstant<T>(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent) 
         where T : INumber<T>
@@ -1041,7 +1068,6 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
     private static bool CheckType(in Span<IToken> tokens, in TokenType tokenType, int index = 0) 
         => index > -1 && tokens.Length > index && tokens[index].Type == tokenType;
 
-    [Pure]
     private static bool Shift(Span<IToken> tokens, out Span<IToken> shifted, int amount = 1)
     {
         if (tokens.Length < amount)
