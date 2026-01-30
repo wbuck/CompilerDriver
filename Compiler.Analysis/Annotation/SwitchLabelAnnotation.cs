@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using Compiler.Analysis.Helpers;
 using Compiler.Common.Helpers;
 using Compiler.Parser.Nodes;
 
@@ -74,7 +75,7 @@ public class SwitchLabelAnnotation
         Debug.Assert(node.Label is null, $"Label: '{node.Label}', for {nameof(CaseNode)} is not null");
         if (label is null) return node;
         
-        var constant = FoldExpression(node.ConstantExpression);
+        var constant = ExpressionFolder.FoldExpression(node.ConstantExpression);
 
         // Case labels will look like the following: switch1.case.123.
         var caseLabel = _labelGenerator.GetNextLabel($"{label}.case");
@@ -86,61 +87,6 @@ public class SwitchLabelAnnotation
             Statement = Statement(node.Statement, label, cases, inLoop)
         };
 
-    }
-
-    private int FoldExpression(IExpressionNode expression)
-        => expression switch
-        {
-            BinaryNode node => Binary(node),
-            UnaryNode node => Unary(node),
-            BitwiseNode node => Bitwise(node),
-            ConstantNode<int> node => node.Value,
-            _ => throw new UnreachableException()
-        };
-
-    private int Bitwise(BitwiseNode node)
-    {
-        var lhs = FoldExpression(node.Lhs);
-        var rhs = FoldExpression(node.Rhs);
-
-        return node.Operator switch
-        {
-            BitwiseAndNode => lhs & rhs,
-            BitwiseOrNode => lhs | rhs,
-            BitwiseXorNode => lhs ^ rhs,
-            BitwiseLeftShiftNode => lhs << rhs,
-            BitwiseRightShiftNode => lhs >> rhs,
-            _ => throw new UnreachableException()
-        };
-    }
-    
-    private int Unary(UnaryNode node)
-    {
-        var constant = FoldExpression(node.Expression);
-        
-        return node.Operator switch
-        {
-            NegateNode => -constant,
-            ComplementNode => ~constant,
-            NotNode => constant == 0 ? 1 : 0,
-            _ => throw new UnreachableException()
-        };
-    }
-
-    private int Binary(BinaryNode node)
-    {
-        var lhs = FoldExpression(node.Lhs);
-        var rhs = FoldExpression(node.Rhs);
-
-        return node.Operator switch
-        {
-            AdditionNode => lhs + rhs,
-            SubtractionNode => lhs - rhs,
-            MultiplicationNode => lhs * rhs,
-            DivisionNode => lhs / rhs,
-            RemainderNode => lhs % rhs,
-            _ => throw new UnreachableException()
-        };
     }
     
     private SwitchNode Switch(SwitchNode node)

@@ -3,7 +3,7 @@ namespace Compiler.Analysis.Test.Data.SemanticValidator;
 public class InvalidSemanticData : TheoryData<string, string>
 {
     public InvalidSemanticData()
-    {   
+    {           
         Add
         (
             """
@@ -82,21 +82,6 @@ public class InvalidSemanticData : TheoryData<string, string>
         Add
         (
             """
-            int main(void) {
-                int foo = 1;
-                int foo(void);
-                return foo;
-            }
-            
-            int foo(void) {
-                return 1;
-            }
-            """,
-            "redefinition of 'foo'"
-        );
-        Add
-        (
-            """
             int foo(int a) {
                 int a = 5;
                 return a;
@@ -106,7 +91,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return foo(3);
             }
             """,
-            "Duplicate variable declaration: a"
+            "error: redefinition of 'a'"
         );
         Add
         (
@@ -121,7 +106,22 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return 1;
             }
             """,
-            "Duplicate variable declaration: foo"
+            "error: redefinition of 'foo' as different kind of symbol"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int foo = 1;
+                int foo(void);                
+                return foo;
+            }
+
+            int foo(void) {
+                return 1;
+            }
+            """,
+            "error: redefinition of 'foo' as different kind of symbol"
         );
         Add
         (
@@ -146,7 +146,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return foo();
             }
             """,
-            "function definition is not allowed here"
+            "error: function definition is not allowed here"
         );
         Add
         (
@@ -288,7 +288,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Duplicate variable declaration: b"
+            "error: redefinition of 'b'"
         );
         Add
         (
@@ -310,7 +310,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return 0;
             }
             """,
-            "Duplicate variable declaration: b"
+            "error: redefinition of 'b'"
         );
         Add
         (
@@ -394,7 +394,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 }
             }            
             """,
-            "Duplicate variable declaration: a"
+            "error: redefinition of 'a'"
         );
         Add
         (
@@ -408,7 +408,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return a;
             }
             """,
-            "Duplicate variable declaration: a"
+            "error: redefinition of 'a'"
         );
         Add
         (
@@ -771,7 +771,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return a;
             }
             """,
-            "Duplicate variable declaration: a"
+            "error: redefinition of 'a'"
         );
         Add
         (
@@ -819,7 +819,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return a;
             }
             """,
-            "Duplicate variable declaration: a"
+            "error: redefinition of 'a'"
         );
         Add
         (
@@ -832,7 +832,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 return 1;
             }
             """,
-            "Duplicate variable declaration: a"
+            "error: redefinition of 'a'"
         );
         Add
         (

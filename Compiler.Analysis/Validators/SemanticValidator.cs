@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using Compiler.Common.Extensions;
 using Compiler.Parser.Nodes;
 
 namespace Compiler.Analysis.Validators;
@@ -26,12 +27,12 @@ public class SemanticValidator
 
     public ProgramNode Validate(ProgramNode program)
     {
-        Dictionary<string, List<Mangled>> identifiers = [];
+        Dictionary<string, List<Entry>> identifiers = [];
         var nodes = program.Nodes
             .Select(n => n switch 
             { 
-                FunctionDeclarationNode func => ResolveFunction(func, identifiers, true),
-                VariableDeclarationNode variable => ResolveDeclaration(variable, identifiers),
+                FunctionDeclarationNode func => ResolveFunction(func, identifiers, false),
+                VariableDeclarationNode variable => ResolveFileScopedVariableDecl(variable, identifiers),
                 _ => throw new UnreachableException($"Unknown program node: {n.Tag.ToStringFast()}")
             })
             .ToList();
@@ -39,12 +40,12 @@ public class SemanticValidator
         return new ProgramNode(nodes);
     }           
     
-    private BlockNode ResolveBlock(BlockNode block, Dictionary<string, List<Mangled>> identifiers)
+    private BlockNode ResolveBlock(BlockNode block, Dictionary<string, List<Entry>> identifiers)
         => new([
             ..block.Items.Select(i => i switch
             {
-                VariableDeclarationNode declaration => (IBlockItem)ResolveDeclaration(declaration, identifiers),
-                FunctionDeclarationNode node => ResolveFunction(node, identifiers, false),
+                VariableDeclarationNode declaration => (IBlockItem)ResolveVariableDecl(declaration, identifiers),
+                FunctionDeclarationNode node => ResolveFunction(node, identifiers, true),
                 IStatementNode statement => ResolveStatement(statement, identifiers),
                 _ => throw new UnreachableException($"Unknown block item: {i.Tag.ToStringFast()}")
             })
@@ -52,28 +53,35 @@ public class SemanticValidator
 
     private IDeclarationNode ResolveFunction(
         FunctionDeclarationNode node, 
-        Dictionary<string, List<Mangled>> identifiers,
-        bool allowDefinition)
+        Dictionary<string, List<Entry>> identifiers,
+        bool isBlockScope)
     {
-        if (identifiers.TryGetValue(node.Name, out var names))
+        if (identifiers.TryGetValue(node.Name, out var entries))
         {
-            if (names.Last() is { FromCurrentScope: true, ExternalLinkage: false })
-                throw new FormatException($"redefinition of '{node.Name}'");
+            var previous = entries.Last();
+            if (previous is { FromCurrentScope: true, IsFunction: false })
+                throw new FormatException($"error: redefinition of '{node.Name}' as different kind of symbol");
+            if (previous is { FromCurrentScope: true, HasLinkage: false })
+                throw new FormatException($"error: redefinition of '{node.Name}'");
         }
         
-        names ??= new List<Mangled>(2);
-        var name = new Mangled(node.Name, true, true);
+        entries ??= new List<Entry>(2);
+        var name = new Entry(node.Name, true, true, true);
         
-        names.Add(name);
-        identifiers[node.Name] = names;
+        entries.Add(name);
+        identifiers[node.Name] = entries;
         
         var duplicated = Duplicate(identifiers);
+        
         var parameters = node.Parameters
             .Select(p => ResolveParameter(p, duplicated))
             .ToList();
         
-        if (node.Body is not null && !allowDefinition)
-            throw new FormatException("function definition is not allowed here");
+        if (node.Body is not null && isBlockScope)
+            throw new FormatException("error: function definition is not allowed here");
+        
+        if (isBlockScope && node.StorageClass is StorageClass.Static)
+            throw new FormatException("error: function declared in block scope cannot have 'static' storage class");
    
         return node with
         {
@@ -82,34 +90,91 @@ public class SemanticValidator
         };       
     }
 
-    private VariableDeclarationNode ResolveDeclaration(
+    private static VariableDeclarationNode ResolveFileScopedVariableDecl(
         VariableDeclarationNode declaration, 
-        Dictionary<string, List<Mangled>> identifiers)
+        Dictionary<string, List<Entry>> identifiers)
     {
-        if (identifiers.TryGetValue(declaration.Identifier, out var names) && names.Last().FromCurrentScope)
-            throw new FormatException($"Duplicate variable declaration: {declaration.Identifier}");
+        identifiers.AddOrUpdate
+        (
+            declaration.Identifier,
+            static id => [GetName(id)],
+            static (id, names) =>
+            {
+                names.Add(GetName(id));
+                return names;
+            }
+        );
+        return declaration;
         
-        names ??= new List<Mangled>(2);
-        
-        var name = new Mangled(MangleIdentifier(declaration.Identifier), true, false);
-        names.Add(name);
+        static Entry GetName(string id) => 
+            new(id, true, true, false);
+    }
 
-        identifiers[declaration.Identifier] = names;        
+    private VariableDeclarationNode ResolveVariableDecl(
+        VariableDeclarationNode decl, 
+        Dictionary<string, List<Entry>> identifiers)
+    {
+        if (identifiers.TryGetValue(decl.Identifier, out var entries))
+        {
+            var previous = entries.Last();
+            if (previous is { FromCurrentScope: true, IsFunction: true })
+             throw new FormatException($"error: redefinition of '{decl.Identifier}' as different kind of symbol");
+            
+            if (previous is { FromCurrentScope: true, HasLinkage: true } && 
+                decl.StorageClass is not StorageClass.Extern)
+            {
+                throw new FormatException($"error: non-extern declaration of '{decl.Identifier}' follows extern declaration");
+            }
+            if (previous is { FromCurrentScope: true, HasLinkage: false } &&
+                decl.StorageClass is StorageClass.Extern)
+            {
+                throw new FormatException($"error: extern declaration of '{decl.Identifier}' follows non-extern declaration");           
+            }
+            if (previous is { FromCurrentScope: true, HasLinkage: false } && 
+                decl.StorageClass is not StorageClass.Extern)
+            {
+                throw new FormatException($"error: redefinition of '{decl.Identifier}'");
+            }
+        }
         
-        var initializer = declaration.Initializer is { } init
+        entries ??= new List<Entry>(2);
+        
+        var hasLinkage = decl.StorageClass is StorageClass.Extern;
+        var identifier = !hasLinkage 
+            ? MangleIdentifier(decl.Identifier) 
+            : decl.Identifier;
+        
+        var name = new Entry
+        (
+            identifier, 
+            true, 
+            hasLinkage, 
+            false
+        );
+        entries.Add(name);
+
+        identifiers[decl.Identifier] = entries;        
+        
+        var initializer = decl.Initializer is { } init
             ? ResolveExpression(init, identifiers)
             : null;
         
         return new VariableDeclarationNode(name, initializer);
     }
 
-    private string ResolveParameter(string parameter, Dictionary<string, List<Mangled>> identifiers)
+    private string ResolveParameter(string parameter, Dictionary<string, List<Entry>> identifiers)
     {
         if (identifiers.TryGetValue(parameter, out var names) && names.Last().FromCurrentScope)
             throw new FormatException($"error: redefinition of parameter '{parameter}'");
         
-        names ??= new List<Mangled>(2);
-        var name = new Mangled(MangleIdentifier(parameter), true, false);
+        names ??= new List<Entry>(2);
+        var name = new Entry
+        (
+            MangleIdentifier(parameter), 
+            true, 
+            false, 
+            false
+        );
         names.Add(name);
         
         identifiers[parameter] = names;
@@ -117,7 +182,7 @@ public class SemanticValidator
         return name;
     }
 
-    private IExpressionNode ResolveExpression(IExpressionNode expression, Dictionary<string, List<Mangled>> identifiers)
+    private IExpressionNode ResolveExpression(IExpressionNode expression, Dictionary<string, List<Entry>> identifiers)
         => expression switch
         {
             IAssignmentNode assignment => ResolveAssignment(assignment, identifiers),
@@ -133,7 +198,7 @@ public class SemanticValidator
 
     private FunctionCallNode ResolveFunctionCall(
         FunctionCallNode node,
-        Dictionary<string, List<Mangled>> identifiers)
+        Dictionary<string, List<Entry>> identifiers)
     {
         if (!identifiers.TryGetValue(node.Identifier, out var names))
             throw new FormatException($"error: use of undeclared identifier '{node.Identifier}'");
@@ -145,7 +210,7 @@ public class SemanticValidator
         return new FunctionCallNode(names.Last(), args);
     }
 
-    private ConditionalNode ResolveConditional(ConditionalNode conditional, Dictionary<string, List<Mangled>> identifiers) 
+    private ConditionalNode ResolveConditional(ConditionalNode conditional, Dictionary<string, List<Entry>> identifiers) 
         => new
         (
             ResolveExpression(conditional.Condition, identifiers), 
@@ -155,7 +220,7 @@ public class SemanticValidator
 
     private static VariableNode ResolveVariable(
         VariableNode variable,
-        Dictionary<string, List<Mangled>> identifiers)
+        Dictionary<string, List<Entry>> identifiers)
         => !identifiers.TryGetValue(variable.Identifier, out var names)
             ? throw new FormatException($"Undeclared variable: {variable.Identifier}")
             : new VariableNode(names.Last());
@@ -163,7 +228,7 @@ public class SemanticValidator
     private string MangleIdentifier(string identifier)
         => $"{identifier}.{_variableCount++}";
 
-    private BitwiseNode ResolveBitwise(BitwiseNode bitwise, Dictionary<string, List<Mangled>> identifiers)
+    private BitwiseNode ResolveBitwise(BitwiseNode bitwise, Dictionary<string, List<Entry>> identifiers)
         => new
            (
                bitwise.Operator, 
@@ -171,7 +236,7 @@ public class SemanticValidator
                ResolveExpression(bitwise.Rhs,  identifiers)
            );
     
-    private BinaryNode ResolveBinary(BinaryNode binary,  Dictionary<string, List<Mangled>> identifiers)
+    private BinaryNode ResolveBinary(BinaryNode binary,  Dictionary<string, List<Entry>> identifiers)
         => new
            (
                binary.Operator, 
@@ -179,7 +244,7 @@ public class SemanticValidator
                ResolveExpression(binary.Rhs, identifiers)
            );
 
-    private UnaryNode ResolveUnary(UnaryNode unary,  Dictionary<string, List<Mangled>> identifiers)
+    private UnaryNode ResolveUnary(UnaryNode unary,  Dictionary<string, List<Entry>> identifiers)
     {
         if ((IsIncrement(unary.Operator) || IsDecrement(unary.Operator)) && unary.Expression is not VariableNode)        
             throw new FormatException("error: expression is not assignable");
@@ -193,7 +258,7 @@ public class SemanticValidator
             op is PrefixDecrementNode or PostfixDecrementNode;
     }
 
-    private IAssignmentNode ResolveAssignment(IAssignmentNode assignment,  Dictionary<string, List<Mangled>> identifiers)
+    private IAssignmentNode ResolveAssignment(IAssignmentNode assignment,  Dictionary<string, List<Entry>> identifiers)
     {
         if (assignment.Lhs is not VariableNode)
             throw new FormatException("Expression must be modifiable lvalue");
@@ -217,7 +282,7 @@ public class SemanticValidator
     
     private RightShiftAssignmentNode ResolveRightShiftAssignment(
         RightShiftAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -225,7 +290,7 @@ public class SemanticValidator
     
     private LeftShiftAssignmentNode ResolveLeftShiftAssignment(
         LeftShiftAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -233,7 +298,7 @@ public class SemanticValidator
     
     private BitwiseXorAssignmentNode ResolveBitwiseXorAssignment(
         BitwiseXorAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -241,7 +306,7 @@ public class SemanticValidator
     
     private BitwiseOrAssignmentNode ResolveBitwiseOrAssignment(
         BitwiseOrAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -249,7 +314,7 @@ public class SemanticValidator
     
     private BitwiseAndAssignmentNode ResolveBitwiseAndAssignment(
         BitwiseAndAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -257,7 +322,7 @@ public class SemanticValidator
     
     private RemainderAssignmentNode ResolveRemainderAssignment(
         RemainderAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -265,7 +330,7 @@ public class SemanticValidator
     
     private DivisionAssignmentNode ResolveDivisionAssignment(
         DivisionAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -273,7 +338,7 @@ public class SemanticValidator
     
     private MultiplicationAssignmentNode ResolveMultiplicationAssignment(
         MultiplicationAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -281,7 +346,7 @@ public class SemanticValidator
     
     private SubtractionAssignmentNode ResolveSubtractionAssignment(
         SubtractionAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -289,7 +354,7 @@ public class SemanticValidator
     
     private AdditionAssignmentNode ResolveAdditionAssignment(
         AdditionAssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
@@ -297,14 +362,14 @@ public class SemanticValidator
     
     private AssignmentNode ResolveAssignment(
         AssignmentNode assignment,
-        Dictionary<string, List<Mangled>> identifiers) => assignment with
+        Dictionary<string, List<Entry>> identifiers) => assignment with
     {
         Lhs = ResolveExpression(assignment.Lhs, identifiers),
         Rhs = ResolveExpression(assignment.Rhs, identifiers)
     };
 
     [return: NotNullIfNotNull(nameof(statement))]
-    private IStatementNode? ResolveStatement(IStatementNode? statement, Dictionary<string, List<Mangled>> identifiers)
+    private IStatementNode? ResolveStatement(IStatementNode? statement, Dictionary<string, List<Entry>> identifiers)
         => statement switch
         {
             ReturnNode node => ResolveReturn(node, identifiers),
@@ -326,10 +391,10 @@ public class SemanticValidator
             _ => throw new UnreachableException($"Unknow statement type: {statement.Tag.ToStringFast()}")
         };
     
-    private DefaultNode ResolveDefault(DefaultNode node, Dictionary<string, List<Mangled>> identifiers)
+    private DefaultNode ResolveDefault(DefaultNode node, Dictionary<string, List<Entry>> identifiers)
         => node with { Statement = ResolveStatement(node.Statement, identifiers) };
 
-    private CaseNode ResolveCase(CaseNode node, Dictionary<string, List<Mangled>> identifiers)
+    private CaseNode ResolveCase(CaseNode node, Dictionary<string, List<Entry>> identifiers)
     { 
         AssertConstant(node.ConstantExpression);
         return node with
@@ -374,28 +439,28 @@ public class SemanticValidator
         AssertConstant(node.Rhs);
     }
     
-    private SwitchNode ResolveSwitch(SwitchNode node, Dictionary<string, List<Mangled>> identifiers)
+    private SwitchNode ResolveSwitch(SwitchNode node, Dictionary<string, List<Entry>> identifiers)
         => node with
         {
             Value = ResolveExpression(node.Value, identifiers), 
             Body = ResolveStatement(node.Body, identifiers)
         };
 
-    private LabelNode ResolveLabel(LabelNode node, Dictionary<string, List<Mangled>> identifiers)
+    private LabelNode ResolveLabel(LabelNode node, Dictionary<string, List<Entry>> identifiers)
         => node with { Statement = ResolveStatement(node.Statement, identifiers) };
 
-    private ReturnNode ResolveReturn(ReturnNode node, Dictionary<string, List<Mangled>> identifiers) 
+    private ReturnNode ResolveReturn(ReturnNode node, Dictionary<string, List<Entry>> identifiers) 
         => new(ResolveExpression(node.Expression, identifiers));
 
     private ExpressionNode ResolveExpressionStatement(
-        ExpressionNode node, Dictionary<string, List<Mangled>> identifiers) 
+        ExpressionNode node, Dictionary<string, List<Entry>> identifiers) 
             => new(ResolveExpression(node.Expression, identifiers));
 
-    private ForNode ResolveFor(ForNode node, Dictionary<string, List<Mangled>> identifiers)
+    private ForNode ResolveFor(ForNode node, Dictionary<string, List<Entry>> identifiers)
     {
         IForLoopInitializer? init = node.Initializer switch
         {
-            VariableDeclarationNode n => ResolveDeclaration(n, identifiers),
+            VariableDeclarationNode n => ResolveVariableDecl(n, identifiers),
             IExpressionNode n => ResolveExpression(n, identifiers),
             _ => null
         };
@@ -413,21 +478,21 @@ public class SemanticValidator
         return new ForNode(init, condition, post, body);
     }
 
-    private DoWhileNode ResolveDoWhile(DoWhileNode node, Dictionary<string, List<Mangled>> identifiers)
+    private DoWhileNode ResolveDoWhile(DoWhileNode node, Dictionary<string, List<Entry>> identifiers)
         => new
         (
             ResolveStatement(node.Body, identifiers),
             ResolveExpression(node.Condition, identifiers)
         );
     
-    private WhileNode ResolveWhile(WhileNode node, Dictionary<string, List<Mangled>> identifiers)
+    private WhileNode ResolveWhile(WhileNode node, Dictionary<string, List<Entry>> identifiers)
         => new
         (
             ResolveExpression(node.Condition, identifiers),
             ResolveStatement(node.Body, identifiers)
         );
 
-    private IfNode ResolveIf(IfNode node, Dictionary<string, List<Mangled>> identifiers)
+    private IfNode ResolveIf(IfNode node, Dictionary<string, List<Entry>> identifiers)
         => new
         (
             ResolveExpression(node.Condition, identifiers),
@@ -435,16 +500,28 @@ public class SemanticValidator
             ResolveStatement(node.Else, identifiers)
         );
     
-    private CompoundNode ResolveCompound(CompoundNode compound, Dictionary<string, List<Mangled>> identifiers)
+    private CompoundNode ResolveCompound(CompoundNode compound, Dictionary<string, List<Entry>> identifiers)
         => new(ResolveBlock(compound.Block, identifiers));
 
-    // Create a copy of the identifiers lookup table for
-    // each new scope that's entered.
-    private static Dictionary<string, List<Mangled>> Duplicate(in Dictionary<string, List<Mangled>> identifiers)
+    /// <summary>
+    /// Creates a deep copy of the identifiers lookup table, cloning each entry to ensure
+    /// that changes in the new scope are isolated from the parent scope.
+    /// </summary>
+    /// <param name="identifiers">
+    /// The dictionary representing the current scope's identifier table. Keys are identifier names,
+    /// and values are lists of entries containing information about the identifier.
+    /// </param>
+    /// <returns>
+    /// A dictionary containing a copied version of the input where each list of entries is
+    /// cloned to prevent modifications from affecting the original.
+    /// </returns>
+    private static Dictionary<string, List<Entry>> Duplicate(in Dictionary<string, List<Entry>> identifiers)
         => identifiers.ToDictionary
            (
                kvp => kvp.Key, 
-               kvp => kvp.Value.Select(mangled => new Mangled(mangled, false, false)).ToList()
+               kvp => kvp.Value
+                   .Select(entry => new Entry(entry, false, false, entry.IsFunction))
+                   .ToList()
            );
     
     private static void PrintError(ReadOnlySpan<char> error)
@@ -454,8 +531,8 @@ public class SemanticValidator
         Console.ResetColor();
     }
 
-    private readonly record struct Mangled(string Name, bool FromCurrentScope, bool ExternalLinkage)
+    private readonly record struct Entry(string Name, bool FromCurrentScope, bool HasLinkage, bool IsFunction)
     {
-        public static implicit operator string(Mangled mangled) => mangled.Name;
+        public static implicit operator string(Entry entry) => entry.Name;
     }
 }
