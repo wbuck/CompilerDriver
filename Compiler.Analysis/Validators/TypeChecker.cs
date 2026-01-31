@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Compiler.Analysis.Attributes;
 using Compiler.Analysis.Types;
 using Compiler.Parser.Nodes;
 
@@ -64,20 +65,31 @@ public static class TypeChecker
     
     private static void FunctionDecl(FunctionDeclarationNode node)
     { 
-        FuncDecl f = new(node.Parameters.Count);
+        FuncType newDecl = new(node.Parameters.Count);
         var defined = false;
+        var global = node.StorageClass is not StorageClass.Static;
         
         if (Symbols.TryGetValue(node.Name, out var entry))
         {
-            if (entry is not FuncEntry { Type: FuncDecl decl } fe || decl != f)
-                throw new FormatException($"conflicting types for '{node.Name}'");
+            if (entry is not FuncEntry { Type: FuncType previousDecl } funcEntry)
+                throw new FormatException($"error: redefinition of '{node.Name}' as different kind of symbol");
             
-            defined = fe.Defined;
-        }
-        if (defined && node.Body is not null)
-            throw new FormatException($"redefinition of '{node.Name}'");
-        
-        Symbols[node.Name] = new FuncEntry(node.Name, f, defined || node.Body is not null);
+            if (previousDecl != newDecl)
+                throw new FormatException($"error: conflicting types for '{node.Name}'");
+            
+            defined = funcEntry.Attributes.Defined;
+            
+            if (funcEntry.Attributes.Global && node.StorageClass is StorageClass.Static)
+                throw new FormatException($"error: static declaration of '{node.Name}' follows non-static declaration");
+            
+            if (defined && node.Body is not null)
+                throw new FormatException($"error: redefinition of '{node.Name}'");  
+            
+            global = funcEntry.Attributes.Global;
+        }        
+                
+        var attributes = new FuncAttributes(defined || node.Body is not null, global);
+        Symbols[node.Name] = new FuncEntry(node.Name, newDecl, attributes);
 
         if (node.Body is null) return;
         
@@ -264,7 +276,7 @@ public static class TypeChecker
     {
         var type = Symbols[node.Identifier].Type;
         
-        if (type is not FuncDecl func)
+        if (type is not FuncType func)
             throw new FormatException($"called object type '{type.TypeName}' is not a function");
         
         if (node.Args.Count < func.ParamCount)
@@ -305,5 +317,5 @@ public readonly record struct FuncEntry
 (
     string Name,
     IType Type,
-    bool Defined
+    FuncAttributes Attributes
 ) : IEntry;

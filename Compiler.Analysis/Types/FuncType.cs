@@ -1,6 +1,6 @@
 namespace Compiler.Analysis.Types;
 
-public readonly record struct FuncDecl(int ParamCount) : IType
+public readonly record struct FuncType(int ParamCount) : IType
 {
     public string TypeName => $"func({ParamCount})";
 }
