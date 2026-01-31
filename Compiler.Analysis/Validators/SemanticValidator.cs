@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using Compiler.Analysis.Helpers;
 using Compiler.Common.Extensions;
 using Compiler.Parser.Nodes;
 
@@ -396,47 +397,14 @@ public class SemanticValidator
 
     private CaseNode ResolveCase(CaseNode node, Dictionary<string, List<Entry>> identifiers)
     { 
-        AssertConstant(node.ConstantExpression);
+        if (ExpressionFolder.FoldExpression(node.ConstantExpression) is not { } constant)
+            throw new FormatException("error: expression is not an integer constant expression");
+
         return node with
         {
-            ConstantExpression = ResolveExpression(node.ConstantExpression, identifiers),
+            ConstantExpression = constant,
             Statement = ResolveStatement(node.Statement, identifiers)
         };
-    }
-
-    private void AssertConstant(IExpressionNode expression)
-    {
-        switch (expression)
-        {
-            case BinaryNode node:
-                Binary(node);
-                break;
-            case UnaryNode node:
-                Unary(node);
-                break;
-            case BitwiseNode node:
-                Bitwise(node);
-                break;
-            case ConstantNode<int>:
-                break;
-            default: 
-                throw new FormatException("case label does not reduce to an integer constant");
-        }
-    }
-
-    private void Bitwise(BitwiseNode node)
-    {
-        AssertConstant(node.Lhs);
-        AssertConstant(node.Rhs);
-    }
-    
-    private void Unary(UnaryNode node)
-        => AssertConstant(node.Expression);
-
-    private void Binary(BinaryNode node)
-    {
-        AssertConstant(node.Lhs);
-        AssertConstant(node.Rhs);
     }
     
     private SwitchNode ResolveSwitch(SwitchNode node, Dictionary<string, List<Entry>> identifiers)

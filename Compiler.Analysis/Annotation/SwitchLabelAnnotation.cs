@@ -75,11 +75,14 @@ public class SwitchLabelAnnotation
         Debug.Assert(node.Label is null, $"Label: '{node.Label}', for {nameof(CaseNode)} is not null");
         if (label is null) return node;
         
-        var constant = ExpressionFolder.FoldExpression(node.ConstantExpression);
+        // The semantic analyzer guarantees that the constant expression
+        // will evaluate to an integer.
+        var constant = ExpressionFolder.FoldExpression(node.ConstantExpression)!;
+        Debug.Assert(constant is not null);
 
         // Case labels will look like the following: switch1.case.123.
         var caseLabel = _labelGenerator.GetNextLabel($"{label}.case");
-        cases?.Add(new SwitchLabel(caseLabel, node.ConstantExpression, constant));
+        cases?.Add(new SwitchLabel(caseLabel, node.ConstantExpression, constant.Value));
 
         return node with
         {
