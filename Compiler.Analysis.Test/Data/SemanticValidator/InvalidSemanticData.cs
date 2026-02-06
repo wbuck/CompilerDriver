@@ -185,7 +185,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 }
             }
             """,
-            "case label does not reduce to an integer constant"
+            "error: expression is not an integer constant expression"
         );
         Add
         (
@@ -197,7 +197,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 }
             }
             """,
-            "case label does not reduce to an integer constant"
+            "error: expression is not an integer constant expression"
         );
         Add
         (
@@ -209,7 +209,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 }
             }
             """,
-            "case label does not reduce to an integer constant"
+            "error: expression is not an integer constant expression"
         );
         Add
         (
@@ -223,7 +223,7 @@ public class InvalidSemanticData : TheoryData<string, string>
                 }
             }
             """,
-            "case label does not reduce to an integer constant"
+            "error: expression is not an integer constant expression"
         );        
         Add
         (

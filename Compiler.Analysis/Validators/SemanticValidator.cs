@@ -105,6 +105,13 @@ public class SemanticValidator
                 return names;
             }
         );
+
+        if (declaration.Initializer is { } init && 
+            ExpressionFolder.FoldExpression(init) is { } constant)
+        {
+            return declaration with { Initializer = constant };
+        }
+        
         return declaration;
         
         static Entry GetName(string id) => 
@@ -159,6 +166,9 @@ public class SemanticValidator
         var initializer = decl.Initializer is { } init
             ? ResolveExpression(init, identifiers)
             : null;
+        
+        if (initializer is not null && ExpressionFolder.FoldExpression(initializer) is { } constant)
+            initializer = constant;
         
         return new VariableDeclarationNode(name, initializer);
     }

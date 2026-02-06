@@ -107,11 +107,11 @@ public class LabelValidator
             }
             
             Dictionary<int, (SwitchLabel, int)> lookup = new(node.Cases.Count);
-            foreach (var @case in node.Cases.Where(c => c.CalculatedValue.HasValue))
+            foreach (var @case in node.Cases.Where(c => c.Value is not null))
             {
                 lookup.AddOrUpdate
                 (
-                    @case.CalculatedValue!.Value, 
+                    @case.Value!.Value, 
                     _ => (@case, 1), 
                     (_, prev) => (prev.Item1, prev.Item2 + 1)
                 );
@@ -122,7 +122,7 @@ public class LabelValidator
                 if (count == 1) continue;
                 
                 sb ??= new StringBuilder();               
-                sb.AppendLine($"duplicate case value: {@case.CalculatedValue}");
+                sb.AppendLine($"duplicate case value: {@case.Value!.Value}");
             }
             if (sb is not null)
                 throw new FormatException(sb.ToString().TrimEnd());

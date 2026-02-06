@@ -81,7 +81,7 @@ public class CompoundStatementData : DataBase
                 new VariableDeclarationNode
                 (
                     "twenty.1", 
-                    new BinaryNode(MultiplicationNode.Operator, Const(10), Const(2))
+                    Const(20)
                 ),
                 Compound(Compound()),
                 Ret(new BinaryNode(AdditionNode.Operator, Var("ten.0"), Var("twenty.1")))

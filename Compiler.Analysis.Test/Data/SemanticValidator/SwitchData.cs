@@ -26,9 +26,9 @@ public class SwitchData : DataBase
                     Compound
                          (
                              new CaseNode(Const(1), new BreakNode()),
-                             new CaseNode(new UnaryNode(NegateNode.Operator, Const(1)), new BreakNode()),
-                             new CaseNode(new UnaryNode(NotNode.Operator, Const(1)), new BreakNode()),
-                             new CaseNode(new UnaryNode(ComplementNode.Operator, Const(1)), new BreakNode())
+                             new CaseNode(Const(-1), new BreakNode()),
+                             new CaseNode(Const(0), new BreakNode()),
+                             new CaseNode(Const(-2), new BreakNode())
                          )
                 )
             )

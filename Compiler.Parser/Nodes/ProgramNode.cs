@@ -224,14 +224,11 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
         
         specifiers ??= ParseTypeAndStorageClass(ref shifted);
         var (type, storageClass) = specifiers.Value;
-        
-        switch (type)
-        {
-            case null when storageClass is StorageClass.None:
-                return null;
-            case null:
-                throw new FormatException("error: type specifier missing");
-        }
+
+        if (type is null && storageClass is StorageClass.None)
+            return null;
+        if (type is null) 
+            throw new FormatException("error: type specifier missing");
 
         if (GetTokenAndConsume<IdentifierToken>(ref shifted) is not { } id)
             return null;
@@ -249,9 +246,10 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
                 : new VariableDeclarationNode(GetString(id, fileContent), StorageClass: storageClass);
         }
         
-        var rhs = ParseExpression(ref tokens, fileContent);
+        var init = ParseExpression(ref tokens, fileContent);
+        
         AssertTypeAndConsume(tokens, TokenType.Semicolon, fileContent.Span, out tokens);
-        return new VariableDeclarationNode(GetString(id, fileContent), rhs, storageClass);
+        return new VariableDeclarationNode(GetString(id, fileContent), init, storageClass);
     }
     
     private static IBlockItem? ParseBlockItem(ref Span<IToken> tokens, ReadOnlyMemory<char> fileContent)

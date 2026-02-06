@@ -46,8 +46,8 @@ public class SwitchData : DataBase
                                                            new CaseNode(Const(2), new ContinueNode(".while1"), ".switch3.case5")
                                                        ),
                                                   [
-                                                      new SwitchLabel(".switch3.case4", Const(1), 1),
-                                                      new SwitchLabel(".switch3.case5", Const(2), 2)
+                                                      new SwitchLabel(".switch3.case4", Const(1)),
+                                                      new SwitchLabel(".switch3.case5", Const(2))
                                                   ],
                                                   ".switch3"
                                               ), 
@@ -56,7 +56,7 @@ public class SwitchData : DataBase
                                           new BreakNode(".switch1")
                                       ),
                                  [
-                                     new SwitchLabel(".switch1.case2", Const(1), 1)
+                                     new SwitchLabel(".switch1.case2", Const(1))
                                  ],
                                  ".switch1"
                              )
@@ -94,8 +94,8 @@ public class SwitchData : DataBase
                                      new CaseNode(Const(2), new ContinueNode(".while1"), ".switch1.case3")
                                  ),
                             [
-                                new SwitchLabel(".switch1.case2", Const(1), 1),
-                                new SwitchLabel(".switch1.case3", Const(2), 2)
+                                new SwitchLabel(".switch1.case2", Const(1)),
+                                new SwitchLabel(".switch1.case3", Const(2))
                             ],
                             ".switch1"
                         ),
@@ -123,19 +123,7 @@ public class SwitchData : DataBase
                          (
                              new CaseNode
                              (
-                                 new UnaryNode
-                                 (
-                                     ComplementNode.Operator,
-                                     new UnaryNode
-                                     (
-                                         NegateNode.Operator,
-                                         new UnaryNode
-                                         (
-                                             NotNode.Operator, 
-                                             Const(1)
-                                         )
-                                     )
-                                 ),
+                                 Const(-1),
                                  new BreakNode(".switch1"),
                                  ".switch1.case2"
                              )
@@ -144,16 +132,7 @@ public class SwitchData : DataBase
                         new SwitchLabel
                         (
                             ".switch1.case2", 
-                            new UnaryNode
-                            (
-                                ComplementNode.Operator, 
-                                new UnaryNode
-                                (
-                                    NegateNode.Operator, 
-                                    new UnaryNode(NotNode.Operator, Const(1))
-                                )
-                            ), 
-                            -1
+                            Const(-1)
                         )
                     ],
                     ".switch1"
@@ -178,17 +157,7 @@ public class SwitchData : DataBase
                          (
                              new CaseNode
                              (
-                                 new BinaryNode
-                                 (
-                                     MultiplicationNode.Operator,
-                                     Const(12),
-                                     new BinaryNode
-                                         (
-                                             AdditionNode.Operator,
-                                             Const(2),
-                                             new UnaryNode(NotNode.Operator, Const(3))
-                                         )
-                                 ),
+                                 Const(24),
                                  new BreakNode(".switch1"),
                                  ".switch1.case2"
                              )
@@ -197,17 +166,8 @@ public class SwitchData : DataBase
                         new SwitchLabel
                         (
                             ".switch1.case2", 
-                            new BinaryNode
-                            (
-                                MultiplicationNode.Operator, 
-                                Const(12), 
-                                new BinaryNode
-                                    (
-                                        AdditionNode.Operator, 
-                                        Const(2), 
-                                        new UnaryNode(NotNode.Operator, Const(3)))
-                                    ), 
-                            24)
+                            Const(24)
+                        )
                     ],
                     ".switch1"
                 )                
@@ -231,7 +191,7 @@ public class SwitchData : DataBase
                     (
                         new CaseNode
                         (
-                            new BinaryNode(AdditionNode.Operator, Const(1), new UnaryNode(NegateNode.Operator, Const(1))), 
+                            Const(0), 
                             new BreakNode(".switch1"),
                             ".switch1.case2"
                         )
@@ -240,8 +200,7 @@ public class SwitchData : DataBase
                         new SwitchLabel
                         (
                             ".switch1.case2", 
-                            new BinaryNode(AdditionNode.Operator, Const(1), new UnaryNode(NegateNode.Operator, Const(1))), 
-                            0
+                            Const(0)
                         )
                     ], 
                     ".switch1"
@@ -266,13 +225,13 @@ public class SwitchData : DataBase
                     (
                         new CaseNode
                         (
-                            new UnaryNode(ComplementNode.Operator, Const(3)),  
+                            Const(-4),  
                             Ret(new UnaryNode(NegateNode.Operator, Const(4))),
                             ".switch1.case2"
                         )
                     ),
                     [
-                        new SwitchLabel(".switch1.case2", new UnaryNode(ComplementNode.Operator, Const(3)), -4)
+                        new SwitchLabel(".switch1.case2", Const(-4))
                     ],
                     ".switch1"
                 )
@@ -296,13 +255,13 @@ public class SwitchData : DataBase
                     (
                         new CaseNode
                         (
-                            new UnaryNode(NegateNode.Operator, Const(1)),  
+                            Const(-1),  
                             Ret(new UnaryNode(NegateNode.Operator, Const(1))),
                             ".switch1.case2"
                         )
                     ),
                     [
-                        new SwitchLabel(".switch1.case2", new UnaryNode(NegateNode.Operator, Const(1)), -1)
+                        new SwitchLabel(".switch1.case2", Const(-1))
                     ],
                     ".switch1"
                 )
@@ -326,13 +285,13 @@ public class SwitchData : DataBase
                     (
                         new CaseNode
                         (
-                            new UnaryNode(NotNode.Operator, Const(1)),  
+                            Const(0),  
                             Ret(Const(0)),
                             ".switch1.case2"
                         )
                     ),
                     [
-                        new SwitchLabel(".switch1.case2", new UnaryNode(NotNode.Operator, Const(1)), 0)
+                        new SwitchLabel(".switch1.case2", Const(0))
                     ],
                     ".switch1"
                 )
@@ -356,13 +315,13 @@ public class SwitchData : DataBase
                     (
                         new CaseNode
                         (
-                            new BinaryNode(RemainderNode.Operator, Const(25), Const(2)),  
+                            Const(1),  
                             Ret(Const(1)),
                             ".switch1.case2"
                         )
                     ),
                     [
-                        new SwitchLabel(".switch1.case2", new BinaryNode(RemainderNode.Operator, Const(25), Const(2)), 1)
+                        new SwitchLabel(".switch1.case2", Const(1))
                     ],
                     ".switch1"
                 )
@@ -386,13 +345,13 @@ public class SwitchData : DataBase
                     (
                         new CaseNode
                         (
-                            new BinaryNode(MultiplicationNode.Operator, Const(20), Const(2)),  
+                            Const(40),  
                             Ret(Const(40)),
                             ".switch1.case2"
                         )
                     ),
                     [
-                        new SwitchLabel(".switch1.case2", new BinaryNode(MultiplicationNode.Operator, Const(20), Const(2)), 40)
+                        new SwitchLabel(".switch1.case2", Const(40))
                     ],
                     ".switch1"
                 )
@@ -416,13 +375,13 @@ public class SwitchData : DataBase
                     (
                         new CaseNode
                         (
-                            new BinaryNode(DivisionNode.Operator, Const(40), Const(2)),  
+                            Const(20),  
                             Ret(Const(20)),
                             ".switch1.case2"
                         )
                     ),
                     [
-                        new SwitchLabel(".switch1.case2", new BinaryNode(DivisionNode.Operator, Const(40), Const(2)), 20)
+                        new SwitchLabel(".switch1.case2", Const(20))
                     ],
                     ".switch1"
                 )
@@ -446,13 +405,13 @@ public class SwitchData : DataBase
                     (
                         new CaseNode
                         (
-                            new BinaryNode(SubtractionNode.Operator, Const(1), Const(2)),  
+                            Const(-1),  
                             Ret(new UnaryNode(NegateNode.Operator, Const(1))),
                             ".switch1.case2"
                         )
                     ),
                     [
-                        new SwitchLabel(".switch1.case2", new BinaryNode(SubtractionNode.Operator, Const(1), Const(2)), -1)
+                        new SwitchLabel(".switch1.case2", Const(-1))
                     ],
                     ".switch1"
                 )
@@ -476,13 +435,13 @@ public class SwitchData : DataBase
                          (
                              new CaseNode
                              (
-                                 new BinaryNode(AdditionNode.Operator, Const(5), Const(5)),  
+                                 Const(10),  
                                  Ret(Const(10)),
                                  ".switch1.case2"
                              )
                          ),
                     [
-                        new SwitchLabel(".switch1.case2", new BinaryNode(AdditionNode.Operator, Const(5), Const(5)), 10)
+                        new SwitchLabel(".switch1.case2", Const(10))
                     ],
                     ".switch1"
                 )
@@ -513,10 +472,10 @@ public class SwitchData : DataBase
                              new CaseNode(Const(5), Ret(Const(5)), ".switch1.case5")
                          ),
                     [
-                        new SwitchLabel(".switch1.case2", Const(0), 0),
-                        new SwitchLabel(".switch1.case3", Const(1), 1),
-                        new SwitchLabel(".switch1.case4", Const(3), 3),
-                        new SwitchLabel(".switch1.case5", Const(5), 5)
+                        new SwitchLabel(".switch1.case2", Const(0)),
+                        new SwitchLabel(".switch1.case3", Const(1)),
+                        new SwitchLabel(".switch1.case4", Const(3)),
+                        new SwitchLabel(".switch1.case5", Const(5))
                     ],
                     ".switch1"
                 )
@@ -608,11 +567,11 @@ public class SwitchData : DataBase
                              )
                          ),
                     [
-                        new SwitchLabel(".switch1.case2", Const(0), 0),
-                        new SwitchLabel(".switch1.case3", Const(4), 4),
-                        new SwitchLabel(".switch1.case4", Const(3), 3),
-                        new SwitchLabel(".switch1.case5", Const(2), 2),
-                        new SwitchLabel(".switch1.case6", Const(1), 1)
+                        new SwitchLabel(".switch1.case2", Const(0)),
+                        new SwitchLabel(".switch1.case3", Const(4)),
+                        new SwitchLabel(".switch1.case4", Const(3)),
+                        new SwitchLabel(".switch1.case5", Const(2)),
+                        new SwitchLabel(".switch1.case6", Const(1))
                     ],
                     ".switch1"
                 ),
@@ -655,8 +614,8 @@ public class SwitchData : DataBase
                                          new DefaultNode(Ret(Const(0)), ".switch3.default")
                                      ),
                                      [
-                                         new SwitchLabel(".switch3.case4", Const(0), 0),
-                                         new SwitchLabel(".switch3.default", null, null)
+                                         new SwitchLabel(".switch3.case4", Const(0)),
+                                         new SwitchLabel(".switch3.default", null)
                                      ],
                                      ".switch3"
                                  ),
@@ -669,8 +628,8 @@ public class SwitchData : DataBase
                              )
                          ),
                     [
-                        new SwitchLabel(".switch1.case2", Const(1), 1),
-                        new SwitchLabel(".switch1.default", null, null)
+                        new SwitchLabel(".switch1.case2", Const(1)),
+                        new SwitchLabel(".switch1.default", null)
                     ],
                     ".switch1"
                 ),

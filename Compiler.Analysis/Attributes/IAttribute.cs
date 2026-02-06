@@ -23,6 +23,8 @@ public sealed record FuncAttributes(bool Defined, bool Global) : IAttribute
 
 public sealed record LocalAttributes : IAttribute
 {
+    public static LocalAttributes Instance { get; } = new();
+    private LocalAttributes() { }
     public AttributeType Type => AttributeType.Local;
 }
 
@@ -41,7 +43,9 @@ public sealed record NoInitializer : StaticInitValue
     private NoInitializer()
     { }
 }
-public sealed record Initial<T>(T Value) : StaticInitValue where T: INumber<T>;
+
+public interface IConstantInit;
+public sealed record Initial<T>(T Value) : StaticInitValue, IConstantInit where T: INumber<T>;
 
 public sealed record StaticAttributes(StaticInitValue InitialValue, bool Global) : IAttribute
 {

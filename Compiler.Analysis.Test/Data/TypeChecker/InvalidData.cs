@@ -52,7 +52,7 @@ public class InvalidData : TheoryData<string, string>
                 return 4;
             }
             """,
-            "conflicting types for 'foo'"
+            "error: conflicting types for 'foo'"
         );
         Add
         (
@@ -69,7 +69,7 @@ public class InvalidData : TheoryData<string, string>
                 return foo(1, 2);
             }
             """,
-            "conflicting types for 'foo'"
+            "error: conflicting types for 'foo'"
         );
         Add
         (
@@ -99,7 +99,7 @@ public class InvalidData : TheoryData<string, string>
                 return 4;
             }
             """,
-            "redefinition of 'foo'"
+            "error: redefinition of 'foo'"
         );
         Add
         (
@@ -116,7 +116,7 @@ public class InvalidData : TheoryData<string, string>
                 return 4;
             }
             """,
-            "redefinition of 'foo'"
+            "error: redefinition of 'foo'"
         );
         Add
         (

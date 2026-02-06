@@ -144,7 +144,7 @@ public class LocalVariableData : DataBase
             """,
             GetExpected
             (
-                new VariableDeclarationNode("a.0", new UnaryNode(NegateNode.Operator, Const(2593))),
+                new VariableDeclarationNode("a.0", Const(-2593)),
                 new ExpressionNode
                 (
                     new AssignmentNode

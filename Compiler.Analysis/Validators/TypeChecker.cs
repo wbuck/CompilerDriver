@@ -36,7 +36,7 @@ public static class TypeChecker
                     FunctionDecl(function);
                     break;
                 case VariableDeclarationNode variable:
-                    VariableDecl(variable);
+                    FileScopeVariableDecl(variable);
                     break;
                 default:
                     throw new UnreachableException($"Unknown program node: {decl.Tag.ToStringFast()}");
@@ -50,7 +50,7 @@ public static class TypeChecker
             switch (i)
             {
                 case VariableDeclarationNode declaration:
-                    VariableDecl(declaration);
+                    BlockScopeVariableDecl(declaration);
                     break;
                 case FunctionDeclarationNode declaration:
                     FunctionDecl(declaration);
@@ -93,14 +93,102 @@ public static class TypeChecker
 
         if (node.Body is null) return;
         
-        node.Parameters.ForEach(p => Symbols[p] = new VarEntry(p, Int.Instance));
+        node.Parameters.ForEach(p => Symbols[p] = new VarEntry(p, Int.Instance, LocalAttributes.Instance));
         Block(node.Body);
     }
 
-    private static void VariableDecl(VariableDeclarationNode node)
+    private static void FileScopeVariableDecl(VariableDeclarationNode node)
     {
-        Symbols[node.Identifier] = new VarEntry(node.Identifier, Int.Instance);
-        if (node.Initializer is not null) Expression(node.Initializer);
+        if (node.Initializer is not null and not IConstantNode)
+            throw new FormatException("error: initializer element is not a compile-time constant");
+
+        StaticInitValue newInit = node.Initializer switch
+        {
+            ConstantNode<int> constant => new Initial<int>(constant.Value),
+            null when node.StorageClass is StorageClass.Extern => NoInitializer.Instance,
+            null => Tentative.Instance,
+            _ => throw new UnreachableException($"unreachable code: {node.Tag.ToStringFast()}")
+        };
+        
+        var global = node.StorageClass is not StorageClass.Static;
+
+        if (Symbols.TryGetValue(node.Identifier, out var entry))
+        {
+            if (entry is not VarEntry { Type: Int, Attributes: StaticAttributes previous })
+                throw new FormatException($"error: redefinition of '{entry.Name}' as different kind of symbol");
+            
+            if (node.StorageClass is StorageClass.Extern)
+                global = previous.Global;
+            
+            else if (previous.Global && !global)
+                throw new FormatException($"error: static declaration of '{entry.Name}' follows non-static declaration");
+
+            newInit = previous.InitialValue switch
+            {
+                IConstantInit when newInit is IConstantInit => 
+                    throw new FormatException($"error: redefinition of '{entry.Name}'"),
+                IConstantInit => previous.InitialValue,
+                Tentative when newInit is not IConstantInit => Tentative.Instance,
+                _ => newInit
+            };
+        }
+        
+        var attributes = new StaticAttributes(newInit, global);
+        Symbols.AddOrUpdate
+        (
+            node.Identifier, 
+            id => new VarEntry(id, Int.Instance, attributes), 
+            (id, prev) => (VarEntry)prev with { Attributes = attributes }
+        );
+    }
+
+    private static void BlockScopeVariableDecl(VariableDeclarationNode node)
+    {
+        if (node.StorageClass is StorageClass.Extern)
+        {
+            if (node.Initializer is not null)
+                throw new FormatException("error: declaration of block scope identifier with linkage cannot have an initializer");
+
+            if (Symbols.TryGetValue(node.Identifier, out var entry) && entry is not VarEntry)
+                throw new FormatException($"error: redefinition of '{entry.Name}' as different kind of symbol");
+
+            Symbols.TryAdd
+            (
+                node.Identifier,
+                new VarEntry(node.Identifier, Int.Instance, new StaticAttributes(NoInitializer.Instance, true))
+            );
+        }
+        else if (node.StorageClass is StorageClass.Static)
+        {
+            if (node.Initializer is not null and not IConstantNode)
+                throw new FormatException("error: initializer element is not a compile-time constant");
+
+            var init = node.Initializer switch
+            {
+                ConstantNode<int> c => new Initial<int>(c.Value),
+                null => new Initial<int>(0),
+                _ => throw new UnreachableException($"unreachable code: {node.Tag.ToStringFast()}")
+            };
+
+            var symbol = new VarEntry(node.Identifier, Int.Instance, new StaticAttributes(init, false));
+            Symbols.AddOrUpdate
+            (
+                node.Identifier,
+                _ => symbol,
+                (_, _) => symbol
+            );
+        }
+        else
+        {
+            Symbols.AddOrUpdate
+            (
+                node.Identifier,
+                id => new VarEntry(id, Int.Instance, LocalAttributes.Instance),
+                (id, symbol) => (VarEntry)symbol with { Attributes = LocalAttributes.Instance }
+            );
+            
+            if (node.Initializer is not null) Expression(node.Initializer);
+        }
     }
     
     private static void Statement(IStatementNode statement)
@@ -168,8 +256,11 @@ public static class TypeChecker
     {
         switch (init)
         {
-            case VariableDeclarationNode declaration:
-                VariableDecl(declaration);
+            case VariableDeclarationNode node:
+                if (node.StorageClass is not StorageClass.None)
+                    throw new FormatException("error: declaration of non-local variable in 'for' loop");
+                
+                BlockScopeVariableDecl(node);
                 break;
             case IExpressionNode node:
                 Expression(node);
@@ -310,7 +401,8 @@ public interface IEntry
 public readonly record struct VarEntry
 (
     string Name,
-    IType Type
+    IType Type,
+    IAttribute Attributes
 ) : IEntry;
 
 public readonly record struct FuncEntry

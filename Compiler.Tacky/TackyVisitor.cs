@@ -17,12 +17,13 @@ public class TackyVisitor
             .Where(n => n switch
             {
                 FunctionDeclarationNode { Body: null } => false,
+                VariableDeclarationNode => false,
                 _ => true
             })
             .ToArray();
         // TODO: Handle file scoped variable declarations.
-        // return new TackyProgram(nodes.Select(VisitFunction).ToList());
-        throw new NotImplementedException();
+        return new TackyProgram(nodes.OfType<FunctionDeclarationNode>().Select(VisitFunction).ToList());
+        // throw new NotImplementedException();
     }
 
     private TackyFunction VisitFunction(FunctionDeclarationNode node)
@@ -151,12 +152,12 @@ public class TackyVisitor
 
             foreach (var @case in cases
                          .Where(c => !c.Label.EndsWith("default"))
-                         .OrderByDescending(c => c.CalculatedValue))
+                         .OrderByDescending(c => c.Value!.Value))
             {
                 var equal = new TackyBinary
                 (
                     TackyEqual.Operator,
-                    new TackyConstant<int>(@case.CalculatedValue!.Value),
+                    new TackyConstant<int>(@case.Value!.Value),
                     rhs,
                     dest
                 );
