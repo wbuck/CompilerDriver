@@ -7,6 +7,20 @@ public class InvalidData : TheoryData<string, string>
         Add
         (
             """
+            int main(void) {
+                static int i = 0;
+            
+                switch(0) {
+                    case i: return 0;
+                }
+                return 0;
+            }
+            """,
+            "error: expression is not an integer constant expression"
+        );
+        Add
+        (
+            """
             extern int foo;
             
             int main(void) {
