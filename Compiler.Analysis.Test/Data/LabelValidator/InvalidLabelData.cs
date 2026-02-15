@@ -7,6 +7,18 @@ public class InvalidLabelData : TheoryData<string, string>
         Add
         (
             """
+            int x = 10;
+            
+            int main(void) {
+                goto x;
+                return 0;
+            }
+            """,
+            "Label 'x' used but not defined"
+        );
+        Add
+        (
+            """
             int foo(void) {
                 return 3;
             }

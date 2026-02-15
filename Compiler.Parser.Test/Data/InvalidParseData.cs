@@ -4,7 +4,7 @@ namespace Compiler.Parser.Test.Data;
 public class InvalidParseData : TheoryData<string, string>
 {
     public InvalidParseData()
-    {        
+    {   
         Add
         (
             """

@@ -8,6 +8,90 @@ public class InvalidData : TheoryData<string, string>
         (
             """
             int main(void) {
+                return x;
+            }            
+            int x = 0;
+            """,
+            "Undeclared variable: x"
+        );
+        Add
+        (
+            """
+            int f(int i) {
+                extern int i;
+                return i;
+            }
+            
+            int main(void) {
+                return 0;
+            }
+            """,
+            "error: extern declaration of 'i' follows non-extern declaration"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                {
+                    extern int a;
+                }
+                return a;
+            }
+            
+            int a = 1;
+            """,
+            "Undeclared variable: a"
+        );
+        Add
+        (
+            """
+            int i = 10;
+            
+            int main(void) {
+                extern int i;
+                int i;
+                return i;
+            }
+            """,
+            "error: non-extern declaration of 'i' follows extern declaration"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                static int x = 0;
+                extern int x;
+                return x;
+            }
+            """,
+            "error: extern declaration of 'x' follows non-extern declaration"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int x = 3;         
+                extern int x;
+                return x;
+            }
+            """,
+            "error: extern declaration of 'x' follows non-extern declaration"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int x = 1;
+                static int x;
+                return x;
+            }
+            """,
+            "error: redefinition of 'x'"
+        );
+        Add
+        (
+            """
+            int main(void) {
                 static int i = 0;
             
                 switch(0) {
