@@ -7,6 +7,197 @@ public class InvalidData : TheoryData<string, string>
         Add
         (
             """
+            extern int foo;
+            
+            int main(void) {
+                return foo();
+            }
+            """,
+            "error: called object type 'int' is not a function"
+        );
+        Add
+        (
+            """
+            int main(void) {            
+                int x = 0;           
+                for (static int i = 0; i < 10; i = i + 1) {
+                    x = x + 1;
+                }            
+                return x;
+            }
+            """,
+            "error: declaration of non-local variable in 'for' loop"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                static int foo(void);
+                return foo();
+            }
+            
+            static int foo(void) {
+                return 0;
+            }
+            """,
+            "error: function declared in block scope cannot have 'static' storage class"
+        );
+        Add
+        (
+            """
+            int foo(void) {
+                return 0;
+            }
+            
+            int main(void) {
+                extern int foo;
+                return 0;
+            }
+            """,
+            "error: redefinition of 'foo' as different kind of symbol"
+        );
+        Add
+        (
+            """
+            int foo(void);            
+            int foo;
+            
+            int main(void) {
+                return 0;
+            }
+            """,
+            "error: redefinition of 'foo' as different kind of symbol"
+        );
+        Add
+        (
+            """
+            int foo = 10;
+            
+            int main(void) {
+                int foo(void);
+                return 0;
+            }
+            """,
+            "error: redefinition of 'foo' as different kind of symbol"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int a = 1;
+                static int b = a * 2;
+                return b;
+            }
+            """,
+            "error: initializer element is not a compile-time constant"
+        );
+        Add
+        (
+            """
+            int a = 10;
+            int b = 1 + a;
+            
+            int main(void) {
+                return b;
+            }
+            """,
+            "error: initializer element is not a compile-time constant"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                extern int i = 0;
+                return i;
+            }
+            """,
+            "error: declaration of block scope identifier with linkage cannot have an initializer"
+        );
+        Add
+        (
+            """
+            int main(void) {
+            
+                int x = 0;           
+                for (extern int i = 0; i < 10; i = i + 1) {
+                    x = x + 1;
+                }
+            
+                return x;
+            }
+            """,
+            "error: declaration of non-local variable in 'for' loop"
+        );
+        Add
+        (
+            """
+            static int foo;
+            
+            int main(void) {
+                return foo;
+            }
+            
+            int foo = 3;
+            """,
+            "error: non-static declaration of 'foo' follows static declaration"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int x = 3;
+                {
+                    extern int x;
+                }
+                return x;
+            }
+            static int x = 10;
+            """,
+            "error: static declaration of 'x' follows non-static declaration"
+        );
+        Add
+        (
+            """
+            int foo = 3;
+            
+            int main(void) {
+                return 0;
+            }
+            
+            int foo = 4;
+            """,
+            "error: redefinition of 'foo'"
+        );
+        Add
+        (
+            """
+            int foo(void);
+            
+            int main(void) {
+                return foo();
+            }            
+            static int foo(void) {
+                return 0;
+            }
+            """,
+            "error: static declaration of 'foo' follows non-static declaration"
+        );
+        Add
+        (
+            """
+            int main(void) {
+                int foo(void);
+                return foo();
+            }           
+            static int foo(void) {
+                return 0;
+            }
+            """,
+            "error: static declaration of 'foo' follows non-static declaration"
+        );
+        Add
+        (
+            """
             int x(void);
             int main(void) {
                 int a = 10;
@@ -37,7 +228,7 @@ public class InvalidData : TheoryData<string, string>
                 return x();
             }
             """,
-            "called object type 'int' is not a function"
+            "error: called object type 'int' is not a function"
         );
         Add
         (
@@ -129,7 +320,7 @@ public class InvalidData : TheoryData<string, string>
                 return foo(1);
             }
             """,
-            "too few arguments to function call, expected 2, have 1"
+            "error: too few arguments to function call, expected 2, have 1"
         );
         Add
         (
@@ -142,7 +333,7 @@ public class InvalidData : TheoryData<string, string>
                 return foo(1, 2);
             }
             """,
-            "too many arguments to function call, expected 1, have 2"
+            "error: too many arguments to function call, expected 1, have 2"
         );
         Add
         (

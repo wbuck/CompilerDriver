@@ -54,6 +54,11 @@ public class SemanticValidatorTests(ITestOutputHelper output)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
     
     [Theory]
+    [ClassData(typeof(SpecifierData))]
+    public void Specifiers(string fileContent, ProgramNode expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+    
+    [Theory]
     [ClassData(typeof(InvalidSemanticData))]
     public void InvalidSemantics(string fileContent, string message)
         => InvalidCheck(fileContent, message);

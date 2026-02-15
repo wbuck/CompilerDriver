@@ -120,8 +120,13 @@ public static class TypeChecker
             if (node.StorageClass is StorageClass.Extern)
                 global = previous.Global;
             
-            else if (previous.Global && !global)
-                throw new FormatException($"error: static declaration of '{entry.Name}' follows non-static declaration");
+            else switch (previous.Global)
+            {
+                case true when !global:
+                    throw new FormatException($"error: static declaration of '{entry.Name}' follows non-static declaration");
+                case false when global:
+                    throw new FormatException($"error: non-static declaration of '{entry.Name}' follows static declaration");
+            }
 
             newInit = previous.InitialValue switch
             {
@@ -368,12 +373,12 @@ public static class TypeChecker
         var type = Symbols[node.Identifier].Type;
         
         if (type is not FuncType func)
-            throw new FormatException($"called object type '{type.TypeName}' is not a function");
+            throw new FormatException($"error: called object type '{type.TypeName}' is not a function");
         
         if (node.Args.Count < func.ParamCount)
-            throw new FormatException($"too few arguments to function call, expected {func.ParamCount}, have {node.Args.Count}");
+            throw new FormatException($"error: too few arguments to function call, expected {func.ParamCount}, have {node.Args.Count}");
         if (node.Args.Count > func.ParamCount)
-            throw new FormatException($"too many arguments to function call, expected {func.ParamCount}, have {node.Args.Count}");
+            throw new FormatException($"error: too many arguments to function call, expected {func.ParamCount}, have {node.Args.Count}");
 
         node.Args.ForEach(Expression);
     }

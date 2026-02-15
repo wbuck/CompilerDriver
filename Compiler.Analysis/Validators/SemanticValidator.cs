@@ -32,22 +32,22 @@ public class SemanticValidator
         var nodes = program.Nodes
             .Select(n => n switch 
             { 
-                FunctionDeclarationNode func => ResolveFunction(func, identifiers, false),
-                VariableDeclarationNode variable => ResolveFileScopedVariableDecl(variable, identifiers),
+                FunctionDeclarationNode node => ResolveFunction(node, identifiers, false),
+                VariableDeclarationNode node => ResolveFileScopedVariableDecl(node, identifiers),
                 _ => throw new UnreachableException($"Unknown program node: {n.Tag.ToStringFast()}")
             })
             .ToList();
         
-        return new ProgramNode(nodes);
+        return program with { Nodes = nodes };
     }           
     
     private BlockNode ResolveBlock(BlockNode block, Dictionary<string, List<Entry>> identifiers)
         => new([
             ..block.Items.Select(i => i switch
             {
-                VariableDeclarationNode declaration => (IBlockItem)ResolveVariableDecl(declaration, identifiers),
+                VariableDeclarationNode node => (IBlockItem)ResolveVariableDecl(node, identifiers),
                 FunctionDeclarationNode node => ResolveFunction(node, identifiers, true),
-                IStatementNode statement => ResolveStatement(statement, identifiers),
+                IStatementNode node => ResolveStatement(node, identifiers),
                 _ => throw new UnreachableException($"Unknown block item: {i.Tag.ToStringFast()}")
             })
         ]);
@@ -170,7 +170,7 @@ public class SemanticValidator
         if (initializer is not null && ExpressionFolder.FoldExpression(initializer) is { } constant)
             initializer = constant;
         
-        return new VariableDeclarationNode(name, initializer);
+        return decl with { Identifier = name, Initializer = initializer };
     }
 
     private string ResolveParameter(string parameter, Dictionary<string, List<Entry>> identifiers)

@@ -821,9 +821,6 @@ public record ProgramNode(List<IDeclarationNode> Nodes) : IAstNodeTag
             return null;
 
         expr ??= ParseFactor(ref tokens, fileContent, true);
-        // expr ??= ParseVariable(ref tokens, fileContent);
-        // expr ??= ParseParenthesizedExpression(ref tokens, fileContent);
-        // expr ??= ParseConstant<int>(ref tokens, fileContent);
         
         if (expr is null)
             throw new FormatException($"Expected expression but found '{ReadTokenValue(tokens, fileContent.Span)}'");

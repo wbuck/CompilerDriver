@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Compiler.Analysis.Attributes;
 using Compiler.Analysis.Test.Data.TypeChecker;
 using Compiler.Analysis.Validators;
 using Compiler.Lexer;
@@ -32,6 +34,27 @@ public class TypeCheckerTests(ITestOutputHelper output)
     [ClassData(typeof(FunctionData))]
     public void Functions(string fileContent, ProgramNode expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
+
+    [Fact]
+    public void ShouldInitializeBlockScopedStaticVariableToZeroInSymbolTable()
+    {
+        var node = Parse
+        (
+            """
+            int main(void) {
+                static int v;
+                return v;
+            }                        
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(TypeChecker.SymbolTable.TryGetValue("v.0", out var symbol));
+        var entry = Assert.IsType<VarEntry>(symbol);
+        var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
+        var init = Assert.IsType<Initial<int>>(attribute.InitialValue);
+        Assert.Equal(0, init.Value);
+    }
     
     [Theory]
     [ClassData(typeof(InvalidData))]
@@ -49,12 +72,17 @@ public class TypeCheckerTests(ITestOutputHelper output)
         });
         Assert.Equal(message, exception.Message);
     }
-    
-    private ProgramNode GetResult(string fileContent, ProgramNode expected)
+
+    private static ProgramNode Parse(string fileContent)
     {
         var tokens = CollectionsMarshal.AsSpan(GetTokens(fileContent));
         var validator = new SemanticValidator();
-        var actual = validator.Validate(ProgramNode.Parse(ref tokens, fileContent.AsMemory()));
+        return validator.Validate(ProgramNode.Parse(ref tokens, fileContent.AsMemory()));
+    }
+    
+    private ProgramNode GetResult(string fileContent, ProgramNode expected)
+    {
+        var actual = Parse(fileContent);
         TypeChecker.Check(actual);
         
         output.WriteLine("Input:");
