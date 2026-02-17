@@ -1,4 +1,4 @@
-namespace Compiler.Analysis.Types;
+namespace Compiler.Common.Symbols;
 
 public interface IType
 {

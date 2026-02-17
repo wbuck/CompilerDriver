@@ -1,4 +1,4 @@
-namespace Compiler.Analysis.Attributes;
+namespace Compiler.Common.Symbols;
 
 public sealed record NoInitializer : StaticInitValue
 {

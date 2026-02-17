@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using Compiler.Common.Helpers;
+using Compiler.Common.Symbols;
 using Compiler.Parser.Nodes;
 using Compiler.Tacky.Helpers;
 using Compiler.Tacky.Tac;
@@ -10,43 +11,72 @@ namespace Compiler.Tacky;
 public class TackyVisitor
 {
     private readonly LabelGenerator _labelGenerator = new();
+    private readonly VariableFactory _variableFactory = new();
     
     public TackyProgram Visit(ProgramNode program)
     {
-        var nodes = program.Nodes
-            .Where(n => n switch
+        var topLevelValues = program.Nodes
+            .OfType<FunctionDeclarationNode>()
+            .Where(n => n.Body is not null)
+            .Select(VisitFunction)
+            .Cast<ITackyTopLevel>()
+            .ToList();
+        
+        return new TackyProgram(GetVariablesFromSymbolTable(topLevelValues));
+    }
+
+    private static List<ITackyTopLevel> GetVariablesFromSymbolTable(List<ITackyTopLevel> topLevelValues)
+    {
+        foreach (var entry in SymbolCollection.Symbols.Values)
+        {
+            if (entry is not VarEntry || entry.Attributes is not StaticAttributes attrs)
+                continue;
+
+            if (attrs.InitialValue is NoInitializer)
+                continue;
+
+            var value = attrs.InitialValue switch
             {
-                FunctionDeclarationNode { Body: null } => false,
-                VariableDeclarationNode => false,
-                _ => true
-            })
-            .ToArray();
-        // TODO: Handle file scoped variable declarations.
-        return new TackyProgram(nodes.OfType<FunctionDeclarationNode>().Select(VisitFunction).ToList());
-        // throw new NotImplementedException();
+                Initial<int> i => new TackyStaticVariable(entry.Name, attrs.Global, i.Value),
+                Tentative => new TackyStaticVariable(entry.Name, attrs.Global, 0),
+                _ => throw new UnreachableException($"Unknown static variable initial value type: {attrs.InitialValue.GetType().Name}")
+            };
+            
+            topLevelValues.Add(value);
+        }
+        return topLevelValues;
     }
 
     private TackyFunction VisitFunction(FunctionDeclarationNode node)
     {
-        var instructions = VisitBlock(node.Body!, [], new VariableFactory());        
+        var instructions = VisitBlock
+        (
+            node.Body!, 
+            []
+        );        
         instructions.Add(new TackyReturn(new TackyConstant<int>(0)));
-        return new TackyFunction(node.Name, node.Parameters, instructions);
+        return new TackyFunction
+        (
+            node.Name, 
+            ((FuncAttributes)SymbolCollection.Get<FuncEntry>(node.Name).Attributes).Global, 
+            node.Parameters, 
+            instructions
+        );
     }
 
     private List<ITackyInstruction> VisitBlock(
         BlockNode block, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         foreach (var item in block.Items)
         {
             switch (item)
             {
                 case VariableDeclarationNode node:
-                    VisitDeclaration(node, instructions, factory);
+                    VisitDeclaration(node, instructions);
                     break;
                 case IStatementNode node:
-                    VisitStatement(node, instructions, factory);
+                    VisitStatement(node, instructions);
                     break;
                 case FunctionDeclarationNode:
                     // We don't care about function declarations in blocks.'
@@ -59,54 +89,57 @@ public class TackyVisitor
     }
 
     private List<ITackyInstruction> VisitDeclaration(
-        VariableDeclarationNode declaration, List<ITackyInstruction> instructions, VariableFactory factory)
+        VariableDeclarationNode node, 
+        List<ITackyInstruction> instructions)
     {
-        if (declaration is not { Initializer: { } rhs }) 
+        if (node is not { Initializer: { } rhs } || 
+            node.StorageClass is not StorageClass.None) 
             return instructions;
-        
-        var lhs = new VariableNode(declaration.Identifier);
-        VisitAssignment(lhs, rhs, instructions, factory);
+
+        var lhs = new VariableNode(node.Identifier);
+        VisitAssignment(lhs, rhs, instructions);
         return instructions;
     }
 
     private List<ITackyInstruction> VisitStatement(
-        IStatementNode statement, List<ITackyInstruction> instructions, VariableFactory factory)
+        IStatementNode statement, 
+        List<ITackyInstruction> instructions)
     {
         switch (statement)
         {
             case ReturnNode node:
-                return VisitReturn(node, instructions, factory);
+                return VisitReturn(node, instructions);
             case IfNode node:
-                return VisitIf(node, instructions, factory);
+                return VisitIf(node, instructions);
             case ExpressionNode node:
                 // We don't care about the result of the expression statement
                 // in this case.
-                _ = VisitExpression(node.Expression, instructions, factory);
+                _ = VisitExpression(node.Expression, instructions);
                 return instructions;
             case NullNode:
                 return instructions;
             case LabelNode node:
-                return VisitLabel(node, instructions, factory);
+                return VisitLabel(node, instructions);
             case GotoNode node:
                 return VisitGoto(node, instructions);
             case CompoundNode { Block: { } block }:
-                return VisitBlock(block, instructions, factory);
+                return VisitBlock(block, instructions);
             case BreakNode node:
                 return VisitBreak(node, instructions);
             case ContinueNode node:
                 return VisitContinue(node, instructions);
             case WhileNode node:
-                return VisitWhile(node, instructions, factory);
+                return VisitWhile(node, instructions);
             case DoWhileNode node:
-                return VisitDoWhile(node, instructions, factory);
+                return VisitDoWhile(node, instructions);
             case ForNode node:
-                return VisitFor(node, instructions, factory);
+                return VisitFor(node, instructions);
             case SwitchNode node:
-                return VisitSwitch(node, instructions, factory);
+                return VisitSwitch(node, instructions);
             case CaseNode node:
-                return VisitCase(node, instructions, factory);
+                return VisitCase(node, instructions);
             case DefaultNode node:
-                return VisitDefault(node, instructions, factory);
+                return VisitDefault(node, instructions);
             default:
                 throw new UnreachableException($"Unknown statement type: {statement.Tag.ToStringFast()}");
         }
@@ -114,41 +147,38 @@ public class TackyVisitor
     
     private List<ITackyInstruction> VisitDefault(
         DefaultNode node, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         Debug.Assert(node.Label is not null);
         instructions.Add(new TackyLabel(node.Label!));
         
-        VisitStatement(node.Statement, instructions, factory);
+        VisitStatement(node.Statement, instructions);
         
         return instructions;
     }
 
     private List<ITackyInstruction> VisitCase(
         CaseNode node, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         Debug.Assert(node.Label is not null);
         instructions.Add(new TackyLabel(node.Label!));
         
-        VisitStatement(node.Statement, instructions, factory);
+        VisitStatement(node.Statement, instructions);
         
         return instructions;
     }
 
     private List<ITackyInstruction> VisitSwitch(
         SwitchNode node, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         Debug.Assert(node.Label is not null); 
                 
         if (node is { Cases: { } cases })
         {
-            var dest = factory.GetNextVariable();           
-            var rhs = VisitExpression(node.Value, instructions, factory);
+            var dest = _variableFactory.GetNextVariable();           
+            var rhs = VisitExpression(node.Value, instructions);
 
             foreach (var @case in cases
                          .Where(c => !c.Label.EndsWith("default"))
@@ -171,7 +201,7 @@ public class TackyVisitor
             instructions.Add(new TackyJump(GetBreakLabel(node.Label)));
                 
         }
-        VisitStatement(node.Body, instructions, factory);
+        VisitStatement(node.Body, instructions);
         instructions.Add(new TackyLabel(GetBreakLabel(node.Label)));
         
         return instructions;
@@ -193,17 +223,16 @@ public class TackyVisitor
 
     private List<ITackyInstruction> VisitForInit(
         IForLoopInitializer? init, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         switch (init)
         {
             case VariableDeclarationNode declaration:
-                return VisitDeclaration(declaration, instructions, factory);
+                return VisitDeclaration(declaration, instructions);
             case IExpressionNode expression:
                 // We can ignore the return value here as it's not used in the
                 // for loop initializer.
-                VisitExpression(expression, instructions, factory);
+                VisitExpression(expression, instructions);
                 return instructions;
             case null:
                 return instructions;
@@ -214,8 +243,7 @@ public class TackyVisitor
     
     private List<ITackyInstruction> VisitFor(
         ForNode node, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         Debug.Assert(node.Label is not null);  
         
@@ -223,23 +251,23 @@ public class TackyVisitor
         var breakLabel = GetBreakLabel(node.Label);
         var beginLabel = BeginLabel(node.Label);
         
-        VisitForInit(node.Initializer, instructions, factory);
+        VisitForInit(node.Initializer, instructions);
         instructions.Add(new TackyLabel(beginLabel));
 
         if (node is { Condition: { } condition })
         {
-            var result = VisitExpression(condition, instructions, factory);
+            var result = VisitExpression(condition, instructions);
             instructions.Add(new TackyJumpIfZero(result, breakLabel));
         }
         
-        VisitStatement(node.Body, instructions, factory);
+        VisitStatement(node.Body, instructions);
         instructions.Add(new TackyLabel(continueLabel));
 
         if (node is { Post: { } post })
         {
             // We can ignore the return value here as it's not used
             // in the for loop post-expression.
-            VisitExpression(post, instructions, factory);            
+            VisitExpression(post, instructions);            
         }
         instructions.Add(new TackyJump(beginLabel));
         instructions.Add(new TackyLabel(breakLabel));
@@ -249,8 +277,7 @@ public class TackyVisitor
     
     private List<ITackyInstruction> VisitDoWhile(
         DoWhileNode node, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         Debug.Assert(node.Label is not null);
         
@@ -259,10 +286,10 @@ public class TackyVisitor
         var beginLabel = BeginLabel(node.Label);
         
         instructions.Add(new TackyLabel(beginLabel));
-        VisitStatement(node.Body, instructions, factory);        
+        VisitStatement(node.Body, instructions);        
         instructions.Add(new TackyLabel(continueLabel));
         
-        var condition = VisitExpression(node.Condition, instructions, factory);        
+        var condition = VisitExpression(node.Condition, instructions);        
         instructions.Add(new TackyJumpIfNotZero(condition, beginLabel));
         
         instructions.Add(new TackyLabel(breakLabel));
@@ -272,8 +299,7 @@ public class TackyVisitor
 
     private List<ITackyInstruction> VisitWhile(
         WhileNode node, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         Debug.Assert(node.Label is not null);
         var continueLabel = GetContinueLabel(node.Label!);
@@ -281,10 +307,10 @@ public class TackyVisitor
         
         instructions.Add(new TackyLabel(continueLabel));
         
-        var condition = VisitExpression(node.Condition, instructions, factory);        
+        var condition = VisitExpression(node.Condition, instructions);        
         instructions.Add(new TackyJumpIfZero(condition,  breakLabel));
 
-        VisitStatement(node.Body, instructions, factory);
+        VisitStatement(node.Body, instructions);
         
         instructions.Add(new TackyJump(continueLabel));
         instructions.Add(new TackyLabel(breakLabel));
@@ -298,61 +324,60 @@ public class TackyVisitor
         return instructions;
     }
 
-    private List<ITackyInstruction> VisitLabel(LabelNode label, List<ITackyInstruction> instructions, VariableFactory factory)
+    private List<ITackyInstruction> VisitLabel(LabelNode label, List<ITackyInstruction> instructions)
     {
         instructions.Add(new TackyLabel(label.Name));
-        return VisitStatement(label.Statement, instructions, factory);
+        return VisitStatement(label.Statement, instructions);
     }
 
-    private List<ITackyInstruction> VisitReturn(ReturnNode @return, List<ITackyInstruction> instructions, VariableFactory factory)
+    private List<ITackyInstruction> VisitReturn(ReturnNode @return, List<ITackyInstruction> instructions)
     {        
-        instructions.Add(new TackyReturn(VisitExpression(@return.Expression, instructions, factory)));
+        instructions.Add(new TackyReturn(VisitExpression(@return.Expression, instructions)));
         return instructions;
     }
     
     private ITackyValue VisitExpression(
-        IExpressionNode expression, in List<ITackyInstruction> instructions, VariableFactory factory)
+        IExpressionNode expression, in List<ITackyInstruction> instructions)
         => expression switch
         {
             IConstantNode constant => VisitConstant(constant),
-            UnaryNode unary => VisitUnary(unary, instructions, factory),            
-            BitwiseNode bitwise => VisitBitwise(bitwise, instructions, factory),
-            BinaryNode binary => VisitBinary(binary, instructions, factory),
-            VariableNode variable => factory.GetNextVariable(variable.Identifier),
-            ConditionalNode conditional => VisitConditional(conditional, instructions, factory),
-            IAssignmentNode { IsCompound: false } assignment => VisitAssignment(assignment, instructions, factory),
-            IAssignmentNode { IsCompound: true } assignment => VisitCompoundAssignment(assignment, instructions, factory),
-            FunctionCallNode functionCall => VisitFunctionCall(functionCall, instructions, factory),
+            UnaryNode unary => VisitUnary(unary, instructions),            
+            BitwiseNode bitwise => VisitBitwise(bitwise, instructions),
+            BinaryNode binary => VisitBinary(binary, instructions),
+            VariableNode variable => _variableFactory.GetNextVariable(variable.Identifier),
+            ConditionalNode conditional => VisitConditional(conditional, instructions),
+            IAssignmentNode { IsCompound: false } assignment => VisitAssignment(assignment, instructions),
+            IAssignmentNode { IsCompound: true } assignment => VisitCompoundAssignment(assignment, instructions),
+            FunctionCallNode functionCall => VisitFunctionCall(functionCall, instructions),
             _ => throw new FormatException($"Unknown expression type: {expression.Tag.ToStringFast()}")
         };
 
     private TackyVariable VisitFunctionCall(
         FunctionCallNode node, 
-        List<ITackyInstruction> instructions,
-        VariableFactory factory)
+        List<ITackyInstruction> instructions)
     {
         var args = node.Args
-            .Select(a => VisitExpression(a, instructions, factory))
+            .Select(a => VisitExpression(a, instructions))
             .ToList();
 
-        var dest = factory.GetNextVariable();
+        var dest = _variableFactory.GetNextVariable();
         instructions.Add(new TackyFunctionCall(node.Identifier, args, dest));
         return dest;
     }
 
     private TackyVariable VisitConditional(
-        ConditionalNode conditional, List<ITackyInstruction> instructions, VariableFactory factory)
+        ConditionalNode conditional, List<ITackyInstruction> instructions)
     {
         var elseLabel = _labelGenerator.GetNextLabel(TackyConstants.CONDITION_ELSE_LABEL);
         var endLabel =  _labelGenerator.GetNextLabel(TackyConstants.CONDITION_END_LABEL);
-        var dest = factory.GetNextVariable();
+        var dest = _variableFactory.GetNextVariable();
         
-        var condition = VisitExpression(conditional.Condition, instructions, factory); 
+        var condition = VisitExpression(conditional.Condition, instructions); 
         
         instructions.Add(new TackyJumpIfZero(condition, elseLabel));       
         instructions.Add(new TackyCopy
         (
-            VisitExpression(conditional.True, instructions, factory), 
+            VisitExpression(conditional.True, instructions), 
             dest
         ));        
         instructions.Add(new TackyJump(endLabel));
@@ -360,7 +385,7 @@ public class TackyVisitor
         instructions.Add(new TackyLabel(elseLabel));                   
         instructions.Add(new TackyCopy
         (
-            VisitExpression(conditional.False, instructions, factory), 
+            VisitExpression(conditional.False, instructions), 
             dest
         ));
         
@@ -369,13 +394,13 @@ public class TackyVisitor
     }
 
     private TackyVariable VisitAssignment(
-        IAssignmentNode assignment, List<ITackyInstruction> instructions, VariableFactory factory)
-        => VisitAssignment(assignment.Lhs, assignment.Rhs, instructions, factory);
+        IAssignmentNode assignment, List<ITackyInstruction> instructions)
+        => VisitAssignment(assignment.Lhs, assignment.Rhs, instructions);
 
-    private TackyVariable VisitCompoundAssignment(IAssignmentNode assignment, List<ITackyInstruction> instructions, VariableFactory factory)
+    private TackyVariable VisitCompoundAssignment(IAssignmentNode assignment, List<ITackyInstruction> instructions)
     {
-        var left = VisitExpression(assignment.Lhs, instructions, factory);
-        var right = VisitExpression(assignment.Rhs, instructions, factory);
+        var left = VisitExpression(assignment.Lhs, instructions);
+        var right = VisitExpression(assignment.Rhs, instructions);
         
         // This should never happen as the semantic analysis stage should
         // have handled this already.
@@ -397,10 +422,10 @@ public class TackyVisitor
     }
 
     private TackyVariable VisitAssignment(
-        IExpressionNode lhs, IExpressionNode rhs, List<ITackyInstruction> instructions, VariableFactory factory)
+        IExpressionNode lhs, IExpressionNode rhs, List<ITackyInstruction> instructions)
     {
-        var left = VisitExpression(lhs, instructions, factory);
-        var right = VisitExpression(rhs, instructions, factory);        
+        var left = VisitExpression(lhs, instructions);
+        var right = VisitExpression(rhs, instructions);        
         
         // This should never happen as the semantic analysis stage should
         // have handled this already.
@@ -412,11 +437,11 @@ public class TackyVisitor
     }
 
     private TackyVariable VisitBitwise(
-        BitwiseNode bitwise, in List<ITackyInstruction> instructions, VariableFactory factory)
+        BitwiseNode bitwise, in List<ITackyInstruction> instructions)
     {
-        var lhs = VisitExpression(bitwise.Lhs, instructions, factory);
-        var rhs = VisitExpression(bitwise.Rhs, instructions, factory);
-        var dest = factory.GetNextVariable();
+        var lhs = VisitExpression(bitwise.Lhs, instructions);
+        var rhs = VisitExpression(bitwise.Rhs, instructions);
+        var dest = _variableFactory.GetNextVariable();
         
         instructions.Add(new TackyBitwise(GetBitwiseOperator(bitwise), lhs, rhs, dest));
         return dest;
@@ -424,15 +449,15 @@ public class TackyVisitor
     }
     
     private TackyVariable VisitBinaryLogicalOr(
-        BinaryNode binary, in List<ITackyInstruction> instructions, VariableFactory factory)
+        BinaryNode binary, in List<ITackyInstruction> instructions)
     {                        
         var trueLabel = _labelGenerator.GetNextLabel(TackyConstants.OR_WHEN_NOT_ZERO_LABEL);        
         
-        instructions.Add(new TackyJumpIfNotZero(VisitExpression(binary.Lhs, instructions, factory), trueLabel));
-        instructions.Add(new TackyJumpIfNotZero(VisitExpression(binary.Rhs, instructions, factory), trueLabel));
+        instructions.Add(new TackyJumpIfNotZero(VisitExpression(binary.Lhs, instructions), trueLabel));
+        instructions.Add(new TackyJumpIfNotZero(VisitExpression(binary.Rhs, instructions), trueLabel));
         
         var endLabel = _labelGenerator.GetNextLabel(TackyConstants.OR_END_LABEL);  
-        var result = factory.GetNextVariable();
+        var result = _variableFactory.GetNextVariable();
         
         instructions.Add(new TackyCopy(ITackyValue.False, result));
         instructions.Add(new TackyJump(endLabel));
@@ -444,44 +469,44 @@ public class TackyVisitor
         return result;
     }
     
-    private List<ITackyInstruction> VisitIf(IfNode @if, List<ITackyInstruction> instructions, VariableFactory factory)
+    private List<ITackyInstruction> VisitIf(IfNode @if, List<ITackyInstruction> instructions)
     {
         if (@if.Else is not null)
-            return VisitIfElse(@if, instructions, factory);
+            return VisitIfElse(@if, instructions);
         
         var endLabel = _labelGenerator.GetNextLabel(TackyConstants.IF_END_LABEL);
-        var condition = VisitExpression(@if.Condition, instructions, factory);
+        var condition = VisitExpression(@if.Condition, instructions);
         instructions.Add(new TackyJumpIfZero(condition, endLabel));
-        instructions.AddRange(VisitStatement(@if.Then, [], factory));
+        instructions.AddRange(VisitStatement(@if.Then, []));
         instructions.Add(new TackyLabel(endLabel));
         return instructions;
     }
     
-    private List<ITackyInstruction> VisitIfElse(IfNode @if, List<ITackyInstruction> instructions, VariableFactory factory)
+    private List<ITackyInstruction> VisitIfElse(IfNode @if, List<ITackyInstruction> instructions)
     {
         var endLabel = _labelGenerator.GetNextLabel(TackyConstants.IF_END_LABEL);
         var elseLabel = _labelGenerator.GetNextLabel(TackyConstants.ELSE_LABEL);
-        var condition = VisitExpression(@if.Condition, instructions, factory);
+        var condition = VisitExpression(@if.Condition, instructions);
         instructions.Add(new TackyJumpIfZero(condition, elseLabel));
-        instructions.AddRange(VisitStatement(@if.Then, [], factory));
+        instructions.AddRange(VisitStatement(@if.Then, []));
         instructions.Add(new TackyJump(endLabel));
         instructions.Add(new TackyLabel(elseLabel));
         Debug.Assert(@if.Else is not null);
-        instructions.AddRange(VisitStatement(@if.Else!, [], factory));
+        instructions.AddRange(VisitStatement(@if.Else!, []));
         instructions.Add(new TackyLabel(endLabel));
         return instructions;
     }
 
     private TackyVariable VisitBinaryLogicalAnd(
-        BinaryNode binary, in List<ITackyInstruction> instructions, VariableFactory factory)
+        BinaryNode binary, in List<ITackyInstruction> instructions)
     {                        
         var falseLabel = _labelGenerator.GetNextLabel(TackyConstants.AND_WHEN_ZERO_LABEL);        
         
-        instructions.Add(new TackyJumpIfZero(VisitExpression(binary.Lhs, instructions, factory), falseLabel));
-        instructions.Add(new TackyJumpIfZero(VisitExpression(binary.Rhs, instructions, factory), falseLabel));
+        instructions.Add(new TackyJumpIfZero(VisitExpression(binary.Lhs, instructions), falseLabel));
+        instructions.Add(new TackyJumpIfZero(VisitExpression(binary.Rhs, instructions), falseLabel));
         
         var endLabel = _labelGenerator.GetNextLabel(TackyConstants.AND_END_LABEL);  
-        var result = factory.GetNextVariable();
+        var result = _variableFactory.GetNextVariable();
         
         instructions.Add(new TackyCopy(ITackyValue.True, result));
         instructions.Add(new TackyJump(endLabel));
@@ -493,36 +518,36 @@ public class TackyVisitor
         return result;
     }
     
-    private TackyVariable VisitBinary(BinaryNode binary, List<ITackyInstruction> instructions, VariableFactory factory)
+    private TackyVariable VisitBinary(BinaryNode binary, List<ITackyInstruction> instructions)
     {
         return binary switch
         {
-            { Operator: LogicalAndNode } => VisitBinaryLogicalAnd(binary, instructions, factory),
-            { Operator: LogicalOrNode } => VisitBinaryLogicalOr(binary, instructions, factory),
+            { Operator: LogicalAndNode } => VisitBinaryLogicalAnd(binary, instructions),
+            { Operator: LogicalOrNode } => VisitBinaryLogicalOr(binary, instructions),
             _ => VisitBinaryInternal()
         };
         
         TackyVariable VisitBinaryInternal()
         {
-            var lhs = VisitExpression(binary.Lhs, instructions, factory);
-            var rhs = VisitExpression(binary.Rhs, instructions, factory);    
-            var dest = factory.GetNextVariable();
+            var lhs = VisitExpression(binary.Lhs, instructions);
+            var rhs = VisitExpression(binary.Rhs, instructions);    
+            var dest = _variableFactory.GetNextVariable();
         
             instructions.Add(new TackyBinary(GetBinaryOperator(binary), lhs, rhs, dest));
             return dest;
         }
     }
     
-    private TackyVariable VisitUnary(UnaryNode unary, List<ITackyInstruction> instructions, VariableFactory factory)
+    private TackyVariable VisitUnary(UnaryNode unary, List<ITackyInstruction> instructions)
     {
-        var source = VisitExpression(unary.Expression, instructions, factory);
+        var source = VisitExpression(unary.Expression, instructions);
         if (unary is { Operator: PrefixIncrementNode or PrefixDecrementNode })
         {
             instructions.Add(new TackyBinary(GetBinaryOperator(unary.Operator), source, ITackyValue.One, source));
             return (TackyVariable)source;
         }
         
-        var dest = factory.GetNextVariable();
+        var dest = _variableFactory.GetNextVariable();
         if (unary is { Operator: PostfixIncrementNode or PostfixDecrementNode })
         {
             instructions.Add(new TackyCopy(source, dest));

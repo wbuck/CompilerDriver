@@ -1,5 +1,5 @@
 using System.Numerics;
 
-namespace Compiler.Analysis.Attributes;
+namespace Compiler.Common.Symbols;
 
 public sealed record Initial<T>(T Value) : StaticInitValue, IConstantInit where T: INumber<T>;

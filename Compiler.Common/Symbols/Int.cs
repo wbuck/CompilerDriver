@@ -1,4 +1,4 @@
-namespace Compiler.Analysis.Types;
+namespace Compiler.Common.Symbols;
 
 public readonly record struct Int : IType
 {

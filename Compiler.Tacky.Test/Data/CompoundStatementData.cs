@@ -72,11 +72,10 @@ public class CompoundStatementData : DataBase
             }
             """,
             GetExpected([
-                new TackyCopy(Const(10), Var("ten.0")),
-                new TackyBinary(TackyMultiplication.Operator, Const(10), Const(2), Var("tmp.1")),
-                new TackyCopy(Var("tmp.1"), Var("twenty.1")),
-                new TackyBinary(TackyAddition.Operator, Var("ten.0"), Var("twenty.1"), Var("tmp.2")),
-                Ret(Var("tmp.2"))
+                new TackyCopy(Const(10), Var("ten.0")),                
+                new TackyCopy(Const(20), Var("twenty.1")),
+                new TackyBinary(TackyAddition.Operator, Var("ten.0"), Var("twenty.1"), Var("tmp.1")),
+                Ret(Var("tmp.1"))
             ])
         );
         Add

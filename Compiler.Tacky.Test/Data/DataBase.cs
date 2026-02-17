@@ -7,11 +7,11 @@ public class DataBase : TheoryData<string, TackyProgram>
     protected static TackyProgram GetExpected(List<ITackyInstruction> instructions)
     {
         instructions.Add(new TackyReturn(new TackyConstant<int>(0)));
-        return new TackyProgram([new TackyFunction("main", [], instructions)]);
+        return new TackyProgram([new TackyFunction("main", true, [], instructions)]);
     }
 
-    protected static TackyProgram GetExpected(List<TackyFunction> functions)
-        => new(functions);
+    protected static TackyProgram GetExpected(List<ITackyTopLevel> topLevel)
+        => new(topLevel);
 
     protected static TackyConstant<int> Const(int value)
         => new(value);

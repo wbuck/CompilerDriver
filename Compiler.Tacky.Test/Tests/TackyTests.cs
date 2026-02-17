@@ -26,6 +26,7 @@ public class TackyTests(ITestOutputHelper output)
             .WithAddedModifier(AddPolymorphicTypeInfo<ITackyUnaryOperator>)
             .WithAddedModifier(AddPolymorphicTypeInfo<ITackyBinaryOperator>)
             .WithAddedModifier(AddPolymorphicTypeInfo<ITackyBitwiseOperator>)
+            .WithAddedModifier(AddPolymorphicTypeInfo<ITackyTopLevel>)
     };
     
     [Theory]

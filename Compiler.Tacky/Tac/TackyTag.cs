@@ -39,5 +39,6 @@ public enum TackyTag
     JumpIfZero,
     JumpIfNotZero,
     Label,
-    FunctionCall
+    FunctionCall,
+    StaticVariable
 }

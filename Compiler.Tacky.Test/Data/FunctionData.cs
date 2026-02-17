@@ -26,18 +26,18 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("main", [], [
+                new TackyFunction("main", true, [], [
                     Label("._label1"),
                     Label(".label_2"),
                     Ret(Const(0)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("main_", [], [
+                new TackyFunction("main_", true, [], [
                     Label(".label3"),
                     Ret(Const(0)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("_main", [], [
+                new TackyFunction("_main", true, [], [
                     Label(".label4"),
                     Ret(Const(0)),
                     Ret(Const(0))
@@ -59,14 +59,14 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("foo", [], [
+                new TackyFunction("foo", true, [], [
                     Jump(".foo1"),
                     Ret(Const(0)),
                     Label(".foo1"),
                     Ret(Const(1)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("main", [], [
+                new TackyFunction("main", true, [], [
                     new TackyFunctionCall("foo", [], Var(1)),
                     Ret(Var(1)),
                     Ret(Const(0))
@@ -91,14 +91,14 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("foo", [], [
+                new TackyFunction("foo", true, [], [
                     Jump(".label1"),
                     Ret(Const(0)),
                     Label(".label1"),
                     Ret(Const(5)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("main", [], [
+                new TackyFunction("main", true, [], [
                     Jump(".label2"),
                     Ret(Const(0)),
                     Label(".label2"),
@@ -122,11 +122,11 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("foo", [], [
+                new TackyFunction("foo", true, [], [
                     Ret(Const(2)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("main", [], [
+                new TackyFunction("main", true, [], [
                     new TackyCopy(Const(3), Var("x.0")),
                     new TackyFunctionCall("foo", [], Var(1)),
                     new TackyBinary(TackySubtraction.Operator, Var("x.0"), Var(1), Var("x.0")),
@@ -147,11 +147,11 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("three", [], [
+                new TackyFunction("three", true, [], [
                     Ret(Const(3)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("main", [], [
+                new TackyFunction("main", true, [], [
                     new TackyFunctionCall("three", [], Var(1)),
                     new TackyUnary(TackyNot.Operator, Var(1), Var(2)),
                     Ret(Var(2)),
@@ -173,12 +173,12 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("main", [], [
+                new TackyFunction("main", true, [], [
                     new TackyFunctionCall("f", [], Var(1)),
                     Ret(Var(1)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("f", [], [
+                new TackyFunction("f", true, [], [
                     Ret(Const(3)),
                     Ret(Const(0))
                 ])
@@ -202,7 +202,7 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("main", [], [
+                new TackyFunction("main", true, [], [
                     new TackyCopy(Const(3), Var("foo.0")),
                     new TackyCopy(Const(4), Var("bar.1")),
                     new TackyBinary(TackyAddition.Operator, Var("foo.0"), Var("bar.1"), Var(1)),
@@ -215,7 +215,7 @@ public class FunctionData : DataBase
                     Ret(Var(4)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("foo", [], [
+                new TackyFunction("foo", true, [], [
                     Ret(Const(8)),
                     Ret(Const(0))
                 ])
@@ -235,12 +235,12 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("main", [], [
+                new TackyFunction("main", true, [], [
                     new TackyFunctionCall("foo", [], Var(1)),
                     Ret(Var(1)),
                     Ret(Const(0))
                 ]),
-                new TackyFunction("foo", [], [
+                new TackyFunction("foo", true, [], [
                     Ret(Const(3)),
                     Ret(Const(0))
                 ])
@@ -258,7 +258,7 @@ public class FunctionData : DataBase
             }  
             """,
             GetExpected([
-                new TackyFunction("fib", [ "n.0" ], [
+                new TackyFunction("fib", true, [ "n.0" ], [
                    new TackyBinary(TackyEqual.Operator, Var("n.0"), Const(0), Var(1)),
                    new TackyJumpIfNotZero(Var("tmp.1"), $".{TackyConstants.OR_WHEN_NOT_ZERO_LABEL}3"),
                    new TackyBinary(TackyEqual.Operator, Var("n.0"), Const(1), Var(2)),
@@ -291,7 +291,7 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new TackyFunction("add", [ "x.0", "y.1" ], [
+                new TackyFunction("add", true, [ "x.0", "y.1" ], [
                     new TackyBinary(TackyAddition.Operator, Var("x.0"), Var("y.1"), Var(1)),
                     Ret(Var(1)),
                     Ret(Const(0))

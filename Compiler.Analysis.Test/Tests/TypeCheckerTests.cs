@@ -1,11 +1,10 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Compiler.Analysis.Attributes;
 using Compiler.Analysis.Test.Data.TypeChecker;
 using Compiler.Analysis.Validators;
+using Compiler.Common.Symbols;
 using Compiler.Lexer;
 using Compiler.Lexer.Tokens;
 using Compiler.Parser.Nodes;
@@ -49,7 +48,7 @@ public class TypeCheckerTests(ITestOutputHelper output)
         );
         TypeChecker.Check(node);
 
-        Assert.True(TypeChecker.SymbolTable.TryGetValue("v.0", out var symbol));
+        Assert.True(SymbolCollection.TryGetValue("v.0", out var symbol));
         var entry = Assert.IsType<VarEntry>(symbol);
         var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
         var init = Assert.IsType<Initial<int>>(attribute.InitialValue);

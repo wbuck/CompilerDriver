@@ -20,9 +20,11 @@ public record Program(List<Function> Functions): IAssembly
     
     public static Program Visit(TackyProgram tacky)
     {
-        var functions = tacky.Functions.Aggregate(new List<Function>(tacky.Functions.Count), (acc, func) =>
+        var functions = tacky.TopLevel
+            .Aggregate(new List<Function>(tacky.TopLevel.Count), (acc, func) =>
         {
-            var funcAssembly = VisitFunction(func);
+            // TODO: Handle variable declarations
+            var funcAssembly = VisitFunction((TackyFunction)func);
             
             PseudoReplacer replacer = new();            
             funcAssembly = replacer.Replace(funcAssembly);

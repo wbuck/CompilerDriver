@@ -1,6 +1,6 @@
 using NetEscapades.EnumGenerators;
 
-namespace Compiler.Analysis.Attributes;
+namespace Compiler.Common.Symbols;
 
 [EnumExtensions]
 public enum AttributeType

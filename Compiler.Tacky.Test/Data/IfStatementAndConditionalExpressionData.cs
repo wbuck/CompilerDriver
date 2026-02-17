@@ -285,14 +285,7 @@ public class IfStatementAndConditionalExpressionData : DataBase
             }
             """,
             GetExpected([
-                new TackyJumpIfZero(Const(1), $".{TackyConstants.CONDITION_ELSE_LABEL}1"),
-                new TackyBinary(TackyRemainder.Operator, Const(3), Const(2), Var("tmp.2")),
-                new TackyCopy(Var("tmp.2"), Var("tmp.1")),
-                Jump($".{TackyConstants.CONDITION_END_LABEL}2"),
-                Label($".{TackyConstants.CONDITION_ELSE_LABEL}1"),
-                new TackyCopy(Const(4), Var("tmp.1")),
-                Label($".{TackyConstants.CONDITION_END_LABEL}2"),
-                new TackyCopy(Var("tmp.1"), Var("a.0")),
+                new TackyCopy(Const(1), Var("a.0")),
                 Ret(Var("a.0"))
             ])
         );
@@ -683,8 +676,7 @@ public class IfStatementAndConditionalExpressionData : DataBase
             }
             """,
             GetExpected([
-                new TackyUnary(TackyNegate.Operator, Const(1), Var("tmp.1")),
-                new TackyCopy(Var("tmp.1"), Var("a.0")),
+                new TackyCopy(Const(-1), Var("a.0")),
                 new TackyBinary(TackyAddition.Operator, Var("a.0"), Const(1), Var("a.0")),
                 new TackyJumpIfZero(Var("a.0"), $".{TackyConstants.ELSE_LABEL}2"),
                 Ret(Const(0)),

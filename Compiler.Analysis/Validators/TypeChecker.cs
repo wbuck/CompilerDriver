@@ -1,16 +1,11 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
-using Compiler.Analysis.Attributes;
-using Compiler.Analysis.Types;
+using Compiler.Common.Symbols;
 using Compiler.Parser.Nodes;
 
 namespace Compiler.Analysis.Validators;
 
 public static class TypeChecker
 {
-    private static readonly ConcurrentDictionary<string, IEntry> Symbols = [];
-    public static IReadOnlyDictionary<string, IEntry> SymbolTable => Symbols; 
-
     public static bool TryCheck(ProgramNode node)
     {
         try
@@ -27,7 +22,7 @@ public static class TypeChecker
 
     public static void Check(ProgramNode node)
     {
-        Symbols.Clear();
+        SymbolCollection.Clear();
         foreach (var decl in node.Nodes)
         {
             switch (decl)
@@ -69,7 +64,7 @@ public static class TypeChecker
         var defined = false;
         var global = node.StorageClass is not StorageClass.Static;
         
-        if (Symbols.TryGetValue(node.Name, out var entry))
+        if (SymbolCollection.TryGetValue(node.Name, out var entry))
         {
             if (entry is not FuncEntry { Type: FuncType previousDecl } funcEntry)
                 throw new FormatException($"error: redefinition of '{node.Name}' as different kind of symbol");
@@ -77,23 +72,25 @@ public static class TypeChecker
             if (previousDecl != newDecl)
                 throw new FormatException($"error: conflicting types for '{node.Name}'");
             
-            defined = funcEntry.Attributes.Defined;
+            var attrs = IEntry.GetAttribute<FuncAttributes>(funcEntry);
             
-            if (funcEntry.Attributes.Global && node.StorageClass is StorageClass.Static)
+            defined = attrs.Defined;
+            
+            if (attrs.Global && node.StorageClass is StorageClass.Static)
                 throw new FormatException($"error: static declaration of '{node.Name}' follows non-static declaration");
             
             if (defined && node.Body is not null)
                 throw new FormatException($"error: redefinition of '{node.Name}'");  
             
-            global = funcEntry.Attributes.Global;
+            global = attrs.Global;
         }        
                 
         var attributes = new FuncAttributes(defined || node.Body is not null, global);
-        Symbols[node.Name] = new FuncEntry(node.Name, newDecl, attributes);
+        SymbolCollection.Add(node.Name, new FuncEntry(node.Name, newDecl, attributes));
 
         if (node.Body is null) return;
         
-        node.Parameters.ForEach(p => Symbols[p] = new VarEntry(p, Int.Instance, LocalAttributes.Instance));
+        node.Parameters.ForEach(p => SymbolCollection.Add(p, new VarEntry(p, Int.Instance, LocalAttributes.Instance)));
         Block(node.Body);
     }
 
@@ -112,7 +109,7 @@ public static class TypeChecker
         
         var global = node.StorageClass is not StorageClass.Static;
 
-        if (Symbols.TryGetValue(node.Identifier, out var entry))
+        if (SymbolCollection.TryGetValue(node.Identifier, out var entry))
         {
             if (entry is not VarEntry { Type: Int, Attributes: StaticAttributes previous })
                 throw new FormatException($"error: redefinition of '{entry.Name}' as different kind of symbol");
@@ -139,7 +136,7 @@ public static class TypeChecker
         }
         
         var attributes = new StaticAttributes(newInit, global);
-        Symbols.AddOrUpdate
+        SymbolCollection.AddOrUpdate
         (
             node.Identifier, 
             id => new VarEntry(id, Int.Instance, attributes), 
@@ -154,10 +151,10 @@ public static class TypeChecker
             if (node.Initializer is not null)
                 throw new FormatException("error: declaration of block scope identifier with linkage cannot have an initializer");
 
-            if (Symbols.TryGetValue(node.Identifier, out var entry) && entry is not VarEntry)
+            if (SymbolCollection.TryGetValue(node.Identifier, out var entry) && entry is not VarEntry)
                 throw new FormatException($"error: redefinition of '{entry.Name}' as different kind of symbol");
 
-            Symbols.TryAdd
+            SymbolCollection.TryAdd
             (
                 node.Identifier,
                 new VarEntry(node.Identifier, Int.Instance, new StaticAttributes(NoInitializer.Instance, true))
@@ -176,7 +173,7 @@ public static class TypeChecker
             };
 
             var symbol = new VarEntry(node.Identifier, Int.Instance, new StaticAttributes(init, false));
-            Symbols.AddOrUpdate
+            SymbolCollection.AddOrUpdate
             (
                 node.Identifier,
                 _ => symbol,
@@ -185,7 +182,7 @@ public static class TypeChecker
         }
         else
         {
-            Symbols.AddOrUpdate
+            SymbolCollection.AddOrUpdate
             (
                 node.Identifier,
                 id => new VarEntry(id, Int.Instance, LocalAttributes.Instance),
@@ -370,7 +367,7 @@ public static class TypeChecker
 
     private static void FunctionCall(FunctionCallNode node)
     {
-        var type = Symbols[node.Identifier].Type;
+        var type = SymbolCollection.Get(node.Identifier).Type;
         
         if (type is not FuncType func)
             throw new FormatException($"error: called object type '{type.TypeName}' is not a function");
@@ -385,7 +382,7 @@ public static class TypeChecker
 
     private static void Variable(VariableNode node)
     {
-        if (Symbols[node.Identifier].Type is not Int)
+        if (!SymbolCollection.IsType<Int>(node.Identifier))
             throw new FormatException($"function '{node.Identifier}' used as variable");
     }
     
@@ -396,23 +393,3 @@ public static class TypeChecker
         Console.ResetColor();
     }
 }
-
-public interface IEntry
-{
-    string Name { get; }
-    IType Type { get; }
-}
-
-public readonly record struct VarEntry
-(
-    string Name,
-    IType Type,
-    IAttribute Attributes
-) : IEntry;
-
-public readonly record struct FuncEntry
-(
-    string Name,
-    IType Type,
-    FuncAttributes Attributes
-) : IEntry;

@@ -11,4 +11,9 @@
       <ProjectReference Include="..\Compiler.Parser\Compiler.Parser.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Attributes\" />
+      <Folder Include="Types\" />
+    </ItemGroup>
+
 </Project>

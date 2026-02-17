@@ -1,4 +1,4 @@
-namespace Compiler.Analysis.Attributes;
+namespace Compiler.Common.Symbols;
 
 public sealed record FuncAttributes(bool Defined, bool Global) : IAttribute
 {
