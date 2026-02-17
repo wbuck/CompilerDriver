@@ -35,7 +35,7 @@ public class TypeCheckerTests(ITestOutputHelper output)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), strict: true);
 
     [Fact]
-    public void ShouldInitializeBlockScopedStaticVariableToZeroInSymbolTable()
+    public void ShouldInitializeBlockScopedStaticVariableToZero()
     {
         var node = Parse
         (
@@ -54,7 +54,186 @@ public class TypeCheckerTests(ITestOutputHelper output)
         var init = Assert.IsType<Initial<int>>(attribute.InitialValue);
         Assert.Equal(0, init.Value);
     }
-    
+
+    [Fact]
+    public void ShouldNotMarkFunctionWithInternalLinkageAsGlobal()
+    {
+        var node = Parse
+        (
+            """
+            static int func(void) {
+                return 0;
+            }                        
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("func", out var symbol));
+        var entry = Assert.IsType<FuncEntry>(symbol);
+        var attribute = Assert.IsType<FuncAttributes>(entry.Attributes);
+        Assert.False(attribute.Global);
+    }
+
+    [Fact]
+    public void ShouldMarkFunctionWithExternSpecifierAsGlobal()
+    {
+        var node = Parse
+        (
+            """
+            extern int func(void) {
+                return 0;
+            }                        
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("func", out var symbol));
+        var entry = Assert.IsType<FuncEntry>(symbol);
+        var attribute = Assert.IsType<FuncAttributes>(entry.Attributes);
+        Assert.True(attribute.Global);
+    }
+
+    [Fact]
+    public void ShouldMarkFunctionWithNoSpecifierAsGlobal()
+    {
+        var node = Parse
+        (
+            """
+            int func(void) {
+                return 0;
+            }                        
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("func", out var symbol));
+        var entry = Assert.IsType<FuncEntry>(symbol);
+        var attribute = Assert.IsType<FuncAttributes>(entry.Attributes);
+        Assert.True(attribute.Global);
+    }
+
+    [Fact]
+    public void ShouldMarkExternFileScopedVariableWithInitialValueOfNoInitializer()
+    {
+        var node = Parse
+        (
+            """
+            extern int v;                       
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("v", out var symbol));
+        var entry = Assert.IsType<VarEntry>(symbol);
+        var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
+        Assert.IsType<NoInitializer>(attribute.InitialValue);        
+    }
+
+    [Fact]
+    public void ShouldMarkStaticFileScopedVariableWithInitialValueOfTentativeWhenTheVariableIsNotInitialized()
+    {
+        var node = Parse
+        (
+            """
+            static int v;                       
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("v", out var symbol));
+        var entry = Assert.IsType<VarEntry>(symbol);
+        var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
+        Assert.IsType<Tentative>(attribute.InitialValue);
+    }
+
+    [Fact]
+    public void ShouldMarkFileScopedVariableWithNoSpecifierWithInitialValueOfTentativeWhenTheVariableIsNotInitialized()
+    {
+        var node = Parse
+        (
+            """
+            int v;                       
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("v", out var symbol));
+        var entry = Assert.IsType<VarEntry>(symbol);
+        var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
+        Assert.IsType<Tentative>(attribute.InitialValue);
+    }
+
+    [Fact]
+    public void ShouldMarkExternFileScopedVariableAsGlobal()
+    {
+        var node = Parse
+        (
+            """
+            extern int v;                       
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("v", out var symbol));
+        var entry = Assert.IsType<VarEntry>(symbol);
+        var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
+        Assert.True(attribute.Global);
+    }
+
+    [Fact]
+    public void ShouldNotMarkStaticFileScopedVariableAsGlobal()
+    {
+        var node = Parse
+        (
+            """
+            static int v;                       
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("v", out var symbol));
+        var entry = Assert.IsType<VarEntry>(symbol);
+        var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
+        Assert.False(attribute.Global);
+    }
+
+    [Fact]
+    public void ShouldMarkFileScopedVariableWithNoSpecifierAsGlobal()
+    {
+        var node = Parse
+        (
+            """
+            int v;                       
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("v", out var symbol));
+        var entry = Assert.IsType<VarEntry>(symbol);
+        var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
+        Assert.True(attribute.Global);
+    }
+
+    [Fact]
+    public void ShouldMarkLocalExternVariableAsGlobal()
+    {
+        var node = Parse
+        (
+            """
+            int main(void) {
+                extern int v;
+                return 0;
+            }                     
+            """
+        );
+        TypeChecker.Check(node);
+
+        Assert.True(SymbolCollection.TryGetValue("v", out var symbol));
+        var entry = Assert.IsType<VarEntry>(symbol);
+        var attribute = Assert.IsType<StaticAttributes>(entry.Attributes);
+        Assert.True(attribute.Global);
+    }
+
     [Theory]
     [ClassData(typeof(InvalidData))]
     public void InvalidTypes(string fileContent, string message)

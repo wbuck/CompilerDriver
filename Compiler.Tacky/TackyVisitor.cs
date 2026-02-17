@@ -22,10 +22,10 @@ public class TackyVisitor
             .Cast<ITackyTopLevel>()
             .ToList();
         
-        return new TackyProgram(GetVariablesFromSymbolTable(topLevelValues));
+        return new TackyProgram(ReadVariablesFromSymbolTable(topLevelValues));
     }
 
-    private static List<ITackyTopLevel> GetVariablesFromSymbolTable(List<ITackyTopLevel> topLevelValues)
+    private static List<ITackyTopLevel> ReadVariablesFromSymbolTable(List<ITackyTopLevel> topLevelValues)
     {
         foreach (var entry in SymbolCollection.Symbols.Values)
         {
