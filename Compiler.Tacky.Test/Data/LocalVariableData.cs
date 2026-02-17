@@ -166,18 +166,17 @@ public class LocalVariableData : DataBase
             }
             """,
             GetExpected([
-                new TackyUnary(TackyNegate.Operator, Const(2593), Var(1)),
-                new TackyCopy(Var(1), Var("a.0")),
+                new TackyCopy(Const(-2593), Var("a.0")),
                 new TackyBinary
                 (
                     TackyRemainder.Operator,
                     Var("a.0"),
                     Const(3),
-                    Var(2)
+                    Var(1)
                 ),
-                new TackyCopy(Var(2), Var("a.0")),
-                new TackyUnary(TackyNegate.Operator, Var("a.0"), Var(3)),
-                new TackyCopy(Var(3), Var("b.1")),
+                new TackyCopy(Var(1), Var("a.0")),
+                new TackyUnary(TackyNegate.Operator, Var("a.0"), Var(2)),
+                new TackyCopy(Var(2), Var("b.1")),
                 Ret(Var("b.1"))
             ])
         );
