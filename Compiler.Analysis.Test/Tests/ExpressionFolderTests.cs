@@ -20,6 +20,13 @@ public class ExpressionFolderTests
     [InlineData("5 & 1", 1)]
     [InlineData("5 | 2", 7)]
     [InlineData("5 ^ 1", 4)]
+    [InlineData("!1", 0)]
+    [InlineData("!0", 1)]
+    [InlineData("~1", -2)]
+    [InlineData("-100", -100)]
+    [InlineData("24 / (2 + 10) * (5 << 1)", 20)]
+    [InlineData("24 / (2 + 10) * (5 << !0)", 20)]
+    [InlineData("20 / ((2 + 2) * 5) * 7", 7)]
     public void ShouldFoldExpression(string expression, int result)
     {
         var node = Parse
