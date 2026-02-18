@@ -78,11 +78,15 @@ public class TackyTests(ITestOutputHelper output)
     [ClassData(typeof(SwitchData))]
     public void Switch(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), true);
-    
-    
+        
     [Theory]
     [ClassData(typeof(FunctionData))]
     public void Function(string fileContent, TackyProgram expected)
+        => Assert.Equivalent(expected, GetResult(fileContent, expected), true);
+
+    [Theory]
+    [ClassData(typeof(SpecifierData))]
+    public void Specifiers(string fileContent, TackyProgram expected)
         => Assert.Equivalent(expected, GetResult(fileContent, expected), true);
 
     private TackyProgram GetResult(string fileContent, TackyProgram expected)
