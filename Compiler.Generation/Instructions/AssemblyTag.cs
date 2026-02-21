@@ -57,5 +57,7 @@ public enum AssemblyTag
     Label,
     DeallocateStack,
     Push,
-    Call
+    Call,
+    Data,
+    StaticVariable
 }

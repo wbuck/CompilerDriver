@@ -52,7 +52,7 @@ public class GeneratorTests(ITestOutputHelper output)
         output.WriteLine(fileContent);
         output.WriteLine(string.Empty);
         output.WriteLine("Actual Result:");
-        actual.Functions.ForEach(f =>
+        actual.TopLevel.ForEach(f =>
         {
             output.WriteLine("Function {");
             output.WriteLine($"  Name = {f.Name},");
@@ -64,7 +64,7 @@ public class GeneratorTests(ITestOutputHelper output)
         
         output.WriteLine(string.Empty);
         output.WriteLine("Expected Result:");
-        expectedResult.Functions.ForEach(f =>
+        expectedResult.TopLevel.ForEach(f =>
         {
             output.WriteLine("Function {");
             output.WriteLine($"  Name = {f.Name},");

@@ -27,7 +27,7 @@ public static class Emitter
     public static string Emit(Program program)
     {
         StringBuilder builder = new();
-        program.Functions.ForEach(f => Emit(f, builder));
+        program.TopLevel.ForEach(f => Emit(f, builder));
         return builder.ToString();
     }
 

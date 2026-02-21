@@ -6,7 +6,7 @@ namespace Compiler.Generation.Helpers;
 internal static class InvalidInstructionReplacer
 {    
     public static Program Replace(Program program)
-        => new(program.Functions.Select(ReplaceFunction).ToList());
+        => new(program.TopLevel.Select(ReplaceFunction).ToList());
     
     private static Function ReplaceFunction(Function function)
         => new(function.Name, ReplaceInstructions(function.Instructions));

@@ -6,7 +6,7 @@ using Compiler.Tacky.Tac;
 
 namespace Compiler.Generation.Instructions;
 
-public record Program(List<Function> Functions): IAssembly
+public record Program(List<ITopLevel> TopLevel): IAssembly
 {
     private static readonly ImmutableArray<IReg> ArgumentRegisters =
     [
@@ -20,11 +20,16 @@ public record Program(List<Function> Functions): IAssembly
     
     public static Program Visit(TackyProgram tacky)
     {
-        var functions = tacky.TopLevel
-            .Aggregate(new List<Function>(tacky.TopLevel.Count), (acc, func) =>
+        var topLevel = tacky.TopLevel
+            .Aggregate(new List<ITopLevel>(tacky.TopLevel.Count), (acc, instruction) =>
         {
-            // TODO: Handle variable declarations
-            var funcAssembly = VisitFunction((TackyFunction)func);
+            if (instruction is TackyStaticVariable @static)
+            {
+                acc.Add(VisitStaticVariable(@static));
+                return acc;           
+            }
+            
+            var funcAssembly = VisitFunction((TackyFunction)instruction);
             
             PseudoReplacer replacer = new();            
             funcAssembly = replacer.Replace(funcAssembly);
@@ -36,14 +41,17 @@ public record Program(List<Function> Functions): IAssembly
             acc.Add(funcAssembly);
             return acc;
         });
-        return InvalidInstructionReplacer.Replace(new Program(functions));
+        return InvalidInstructionReplacer.Replace(new Program(topLevel));
     }
 
     private static int RoundToMultipleOf16(int value) => (value + 15) & ~0xF;
+
+    private static StaticVariable VisitStaticVariable(TackyStaticVariable tacky)
+        => new(tacky.Identifier, tacky.Global, tacky.Init);
     
-    private static Function VisitFunction(TackyFunction function)
+    private static Function VisitFunction(TackyFunction tacky)
     {
-        var parameters = CollectionsMarshal.AsSpan(function.Parameters);
+        var parameters = CollectionsMarshal.AsSpan(tacky.Parameters);
         
         var registerArgs = parameters[..Math.Min(parameters.Length, ArgumentRegisters.Length)];
         var stackArgs = parameters.Length > ArgumentRegisters.Length 
@@ -63,8 +71,9 @@ public record Program(List<Function> Functions): IAssembly
                    
         return new Function
         (
-            function.Name, 
-            moves.Concat(VisitInstructions(function.Instructions)).ToList()
+            tacky.Name, 
+            tacky.Global,
+            moves.Concat(VisitInstructions(tacky.Instructions)).ToList()
         );
     }
     
