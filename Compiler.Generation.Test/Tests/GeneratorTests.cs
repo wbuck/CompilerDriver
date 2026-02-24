@@ -52,29 +52,32 @@ public class GeneratorTests(ITestOutputHelper output)
         output.WriteLine(fileContent);
         output.WriteLine(string.Empty);
         output.WriteLine("Actual Result:");
-        actual.TopLevel.ForEach(f =>
-        {
-            output.WriteLine("Function {");
-            output.WriteLine($"  Name = {f.Name},");
-            output.WriteLine("  Instructions = [");
-            f.Instructions.ForEach(i => output.WriteLine($"    {i}"));
-            output.WriteLine("  ]");
-            output.WriteLine("}");
-        });
+        actual.TopLevel.ForEach(PrintInstruction);
         
         output.WriteLine(string.Empty);
         output.WriteLine("Expected Result:");
-        expectedResult.TopLevel.ForEach(f =>
-        {
-            output.WriteLine("Function {");
-            output.WriteLine($"  Name = {f.Name},");
-            output.WriteLine("  Instructions = [");
-            f.Instructions.ForEach(i => output.WriteLine($"    {i}"));
-            output.WriteLine("  ]");
-            output.WriteLine("}");
-        });
+        expectedResult.TopLevel.ForEach(PrintInstruction);
         
         return actual;
+    }
+
+    private void PrintInstruction(ITopLevel instruction)
+    {
+        if (instruction is Function func)
+        {
+            output.WriteLine("Function {");
+            output.WriteLine($"  Name = {func.Name},");
+            output.WriteLine($"  Global = {func.Global},");
+            output.WriteLine("  Instructions = [");
+            func.Instructions.ForEach(i => output.WriteLine($"    {i}"));
+            output.WriteLine("  ]");
+            output.WriteLine("}");
+            return;
+        }
+        output.WriteLine("StaticVariable {");
+        output.WriteLine($"  Name = {instruction.Name},");
+        output.WriteLine($"  Global = {instruction.Global},");            
+        output.WriteLine("}");
     }
     
     private static TackyProgram GetTacky(ReadOnlyMemory<char> fileContent)

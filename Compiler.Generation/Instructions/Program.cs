@@ -29,16 +29,16 @@ public record Program(List<ITopLevel> TopLevel): IAssembly
                 return acc;           
             }
             
-            var funcAssembly = VisitFunction((TackyFunction)instruction);
+            var func = VisitFunction((TackyFunction)instruction);
             
             PseudoReplacer replacer = new();            
-            funcAssembly = replacer.Replace(funcAssembly);
+            func = replacer.Replace(func);
             
             // Round the stack offset to the nearest multiple of 16 bytes
             // to make it easier during function calls.
             var stackSize = RoundToMultipleOf16(replacer.StackOffset);
-            funcAssembly.Instructions.Insert(0, new AllocateStack(stackSize));
-            acc.Add(funcAssembly);
+            func.Instructions.Insert(0, new AllocateStack(stackSize));
+            acc.Add(func);
             return acc;
         });
         return InvalidInstructionReplacer.Replace(new Program(topLevel));

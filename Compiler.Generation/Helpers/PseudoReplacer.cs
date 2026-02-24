@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Compiler.Common.Symbols;
 using Compiler.Generation.Instructions;
 
 namespace Compiler.Generation.Helpers;
@@ -86,6 +87,11 @@ internal class PseudoReplacer
         
         if (_offsets.TryGetValue(pseudo.Identifier, out var offset))
             return new Stack(-offset);
+
+        // Variables with static storage duration are not stored on the stack,
+        // they are stored in the data section.
+        if (SymbolCollection.GetValueOrDefault(pseudo.Identifier) is VarEntry { Attributes: StaticAttributes })
+            return new Data(pseudo.Identifier);
 
         StackOffset += Marshal.SizeOf<int>();
         _offsets[pseudo.Identifier] = StackOffset;

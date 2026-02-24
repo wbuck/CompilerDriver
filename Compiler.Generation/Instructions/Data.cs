@@ -1,6 +1,6 @@
 namespace Compiler.Generation.Instructions;
 
-public sealed record Data(string Identifier) : IOperand
+public sealed record Data(string Identifier) : IMemory
 {
     public AssemblyTag Tag => AssemblyTag.Data;
 }

@@ -22,7 +22,7 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new Function("foo", [
+                new Function("foo", true, [
                     AllocateStack(48),
                     Mov(Di.Register, Stack(-4)),
                     Mov(Si.Register, Stack(-8)),
@@ -46,7 +46,7 @@ public class FunctionData : DataBase
                     new Mov(Zero, Ax.Register),
                     Ret.Instruction
                 ]),
-                new Function("main", [
+                new Function("main", true, [
                     AllocateStack(16),
                     MovConstantToDi(1),
                     MovConstantToSi(2),
@@ -79,7 +79,7 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new Function("sub", [
+                new Function("sub", true, [
                     AllocateStack(16),
                     MovDiToStack(-4),
                     MovSiToStack(-8),

@@ -9,11 +9,11 @@ public class DataBase : TheoryData<string, Program>
     {
         instructions.Add(new Mov(Zero, Ax.Register));
         instructions.Add(Ret.Instruction);
-        return new Program([new Function("main", instructions)]);
+        return new Program([new Function("main", true, instructions)]);
     }
     
-    protected static Program GetExpected(List<Function> functions) 
-        => new(functions);
+    protected static Program GetExpected(List<ITopLevel> topLevel) 
+        => new(topLevel);
     
     protected static Mov Mov(IOperand src, IOperand dest) => 
         new(src, dest);

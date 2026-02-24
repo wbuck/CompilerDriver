@@ -13,6 +13,9 @@ public static class SymbolCollection
     public static bool TryGetValue(string name, [NotNullWhen(true)] out IEntry? entry) 
         => Symbols.TryGetValue(name, out entry);
     
+    public static IEntry? GetValueOrDefault(string name) 
+        => Symbols.GetValueOrDefault(name);
+    
     public static IEnumerable<IEntry> Values => Symbols.Values;
     
     public static int Count => Symbols.Count;
