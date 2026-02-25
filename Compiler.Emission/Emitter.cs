@@ -27,7 +27,8 @@ public static class Emitter
     public static string Emit(Program program)
     {
         StringBuilder builder = new();
-        program.TopLevel.ForEach(f => Emit(f, builder));
+        // TODO: Handle all top level instruction types.
+        program.TopLevel.OfType<Function>().ToList().ForEach(f => Emit(f, builder));
         return builder.ToString();
     }
 

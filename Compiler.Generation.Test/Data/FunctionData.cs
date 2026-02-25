@@ -92,7 +92,7 @@ public class FunctionData : DataBase
                     Mov(Zero, Ax.Register),
                     Ret.Instruction
                 ]),
-                new Function("main", [
+                new Function("main", true, [
                     AllocateStack(16),
                     MovConstantToStack(1, -4),
                     new Binary(Instructions.Add.Operator, Imm(2), Stack(-4)),
@@ -122,7 +122,7 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new Function("x", [
+                new Function("x", true, [
                     AllocateStack(32),
                     MovDiToStack(-4),
                     MovSiToStack(-8),
@@ -139,7 +139,7 @@ public class FunctionData : DataBase
                     Mov(Zero, Ax.Register),
                     Ret.Instruction
                 ]),
-                new Function("main", [
+                new Function("main", true, [
                     AllocateStack(16),
                     MovConstantToStack(4, -4),
                     new Mov(Imm(24), Ax.Register),
@@ -177,7 +177,7 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new Function("lots_of_args", [
+                new Function("lots_of_args", true, [
                     AllocateStack(64),                    
                     Mov(Di.Register, Stack(-4)),
                     Mov(Si.Register, Stack(-8)),
@@ -212,7 +212,7 @@ public class FunctionData : DataBase
                     Mov(Zero, Ax.Register),
                     Ret.Instruction
                 ]),
-                new Function("main", [
+                new Function("main", true, [
                     AllocateStack(32),
                     Mov(Zero, Stack(-4)),
                     Mov(Zero, Stack(-8)),
@@ -274,7 +274,7 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new Function("foo", [
+                new Function("foo", true, [
                     AllocateStack(48),
                     Mov(Di.Register, Stack(-4)),
                     Mov(Si.Register, Stack(-8)),
@@ -295,7 +295,7 @@ public class FunctionData : DataBase
                     Mov(Zero, Ax.Register),
                     Ret.Instruction
                 ]),
-                new Function("main", [
+                new Function("main", true, [
                     AllocateStack(16),
                     Mov(One, Di.Register),
                     Mov(Imm(2), Si.Register),
@@ -327,7 +327,7 @@ public class FunctionData : DataBase
             }
             """,
             GetExpected([
-                new Function("twice", [
+                new Function("twice", true, [
                     AllocateStack(16),
                     Mov(Di.Register, Stack(-4)),
                     Mov(Imm(2), Stack(-8)),
@@ -339,7 +339,7 @@ public class FunctionData : DataBase
                     Mov(Zero, Ax.Register),
                     Ret.Instruction
                 ]),
-                new Function("main", [
+                new Function("main", true, [
                     AllocateStack(16),
                     Mov(Imm(3), Di.Register),
                     Call("twice"),
